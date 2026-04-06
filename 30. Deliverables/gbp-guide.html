@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlocalX - Google Business Profile Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #F7F8FA;
+    color: #1A1A2E;
+    line-height: 1.75;
+    font-size: 15px;
+  }
+
+  /* ── Header ── */
+  .hero {
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
+    color: #fff;
+    padding: 56px 24px 48px;
+    text-align: center;
+  }
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .hero p {
+    font-size: 16px;
+    font-weight: 300;
+    opacity: 0.85;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    margin: -32px auto 40px;
+    position: relative;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    max-width: 800px;
+  }
+  .toc h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #0F3460;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #F7F8FA;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #1A1A2E;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .toc-item:hover {
+    background: #E8EDF5;
+    transform: translateY(-1px);
+  }
+  .toc-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #0F3460;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ── Section ── */
+  section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  section h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #0F3460;
+    margin-bottom: 8px;
+  }
+  section h2 .section-num {
+    display: inline-block;
+    background: #0F3460;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    text-align: center;
+    line-height: 36px;
+    font-size: 16px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  .section-desc {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #EAEDF3;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin: 32px 0 16px;
+  }
+  h3:first-of-type { margin-top: 0; }
+
+  /* ── Info Box ── */
+  .info-box {
+    background: #EEF2FF;
+    border-left: 4px solid #0F3460;
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  .info-box.warning {
+    background: #FFF8E1;
+    border-left-color: #F59E0B;
+  }
+  .info-box.success {
+    background: #ECFDF5;
+    border-left-color: #10B981;
+  }
+  .info-box > strong:first-child {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .info-box strong:not(:first-child) {
+    display: inline;
+  }
+
+  /* ── Email highlight ── */
+  .email-highlight {
+    display: inline-block;
+    background: #0F3460;
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin: 8px 0;
+    user-select: all;
+  }
+
+  /* ── Steps ── */
+  .steps { counter-reset: step; margin: 20px 0; }
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid #F0F2F5;
+    counter-increment: step;
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #0F3460, #1A5276);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .step-content { flex: 1; }
+  .step-content > strong:first-child {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .step-content p strong {
+    display: inline;
+  }
+  .step-content p {
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+  }
+  .step-content code {
+    background: #F0F2F5;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Consolas', monospace;
+  }
+
+  /* ── Method tabs ── */
+  .method-label {
+    display: inline-block;
+    background: #E8EDF5;
+    color: #0F3460;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Table ── */
+  .role-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  .role-table thead th {
+    background: #0F3460;
+    color: #fff;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .role-table thead th:first-child { border-radius: 10px 0 0 0; }
+  .role-table thead th:last-child { border-radius: 0 10px 0 0; }
+  .role-table tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #F0F2F5;
+  }
+  .role-table tbody tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+  .role-table tbody tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+  .role-table tbody tr:hover { background: #F7F8FA; }
+  .check { color: #10B981; font-weight: 700; }
+  .cross { color: #EF4444; font-weight: 700; }
+
+  /* ── Verification cards ── */
+  .verify-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .verify-card {
+    background: #F7F8FA;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .verify-card .v-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .verify-card h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .verify-card p {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+  }
+
+  /* ── FAQ ── */
+  .faq-item {
+    padding: 20px 0;
+    border-bottom: 1px solid #F0F2F5;
+  }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 8px;
+    color: #0F3460;
+  }
+  .faq-a {
+    font-size: 14px;
+    color: #555;
+  }
+  .faq-a strong {
+    display: inline;
+  }
+
+  /* ── References ── */
+  .ref-list {
+    list-style: none;
+    padding: 0;
+  }
+  .ref-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #F0F2F5;
+  }
+  .ref-list li:last-child { border-bottom: none; }
+  .ref-list a {
+    color: #0F3460;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .ref-list a:hover { text-decoration: underline; }
+  .ref-tag {
+    display: inline-block;
+    background: #E8EDF5;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #0F3460;
+    margin-left: 6px;
+  }
+
+  /* ── Official link box ── */
+  .official-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #F0F4FF;
+    border: 1px solid #D0DAFA;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    text-decoration: none;
+    color: #1A1A2E;
+    transition: all 0.2s;
+  }
+  .official-link:hover {
+    background: #E4EAFF;
+    border-color: #0F3460;
+  }
+  .official-link .ol-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: #0F3460;
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .official-link .ol-text {
+    flex: 1;
+  }
+  .official-link .ol-label {
+    font-size: 12px;
+    color: #666;
+  }
+  .official-link .ol-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0F3460;
+  }
+  .official-link .ol-arrow {
+    color: #0F3460;
+    font-size: 18px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 32px 20px 48px;
+    font-size: 13px;
+    color: #999;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 24px; }
+    section { padding: 28px 20px; }
+    .toc-grid { grid-template-columns: 1fr; }
+    .verify-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ HERO ════════ -->
+<div class="hero">
+  <div class="badge">GlocalX Partner Guide</div>
+  <h1>Google Business Profile<br>Setup Guide</h1>
+  <p>GlocalX 서비스 연동을 위한<br>구글 비즈니스 프로필 설정 안내서</p>
+</div>
+
+<!-- ════════ TOC ════════ -->
+<div class="container">
+<div class="toc">
+  <h2>목차</h2>
+  <div class="toc-grid">
+    <a href="#section1" class="toc-item">
+      <span class="toc-num">1</span>
+      관리자 추가 (프로필 보유 시)
+    </a>
+    <a href="#section2" class="toc-item">
+      <span class="toc-num">2</span>
+      프로필 신규 등록
+    </a>
+    <a href="#section3" class="toc-item">
+      <span class="toc-num">3</span>
+      비즈니스 인증 방법
+    </a>
+    <a href="#section4" class="toc-item">
+      <span class="toc-num">4</span>
+      자주 묻는 질문
+    </a>
+  </div>
+</div>
+
+<!-- ════════ SECTION 1: 관리자 추가 ════════ -->
+<section id="section1">
+  <h2><span class="section-num">1</span> 관리자 추가</h2>
+  <p class="section-desc">이미 구글 비즈니스 프로필을 보유하고 계신 점주님은 아래 방법 중 하나를 선택하여 GlocalX 계정을 관리자로 추가해주세요.</p>
+
+  <a href="https://support.google.com/business/answer/3403100?hl=ko" target="_blank" class="official-link">
+    <span class="ol-icon">G</span>
+    <span class="ol-text">
+      <span class="ol-label">Google 공식 가이드를 함께 참고하시면 더 편합니다</span>
+      <span class="ol-title">비즈니스 프로필 소유자 및 관리자 관리하기</span>
+    </span>
+    <span class="ol-arrow">&rarr;</span>
+  </a>
+
+  <div class="info-box">
+    <strong>추가할 이메일 주소</strong>
+    아래 이메일을 관리자로 초대해주세요:<br>
+    <span class="email-highlight">glocalx.kaist2026@gmail.com</span>
+  </div>
+
+  <!-- Method A -->
+  <h3><span class="method-label">방법 A</span> PC - 구글 검색에서 바로</h3>
+  <p>가장 간편한 방법입니다. 별도 사이트 접속 없이 구글 검색창에서 바로 진행할 수 있습니다.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>구글에 내 가게 이름 검색</strong>
+        <p>비즈니스 프로필과 연결된 구글 계정으로 로그인한 상태에서, <a href="https://www.google.com" target="_blank">google.com</a>에 본인 가게 이름을 검색합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>비즈니스 프로필 관리 메뉴 진입</strong>
+        <p>검색 결과 상단에 뜨는 내 비즈니스 프로필에서 <strong>"비즈니스 프로필 수정"</strong> 또는 점 3개 메뉴(<strong>&#8942;</strong>)를 클릭합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>사용자 및 권한 메뉴 선택</strong>
+        <p><strong>"비즈니스 프로필 설정"</strong> &rarr; <strong>"사용자 및 권한"</strong>을 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>사용자 추가</strong>
+        <p>왼쪽 상단의 <strong>"추가(+)"</strong> 버튼을 클릭합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong>이메일 입력 및 역할 선택</strong>
+        <p>이메일란에 <code>glocalx.kaist2026@gmail.com</code> 입력 후, 역할을 <strong>"관리자(Manager)"</strong>로 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <strong>초대 발송</strong>
+        <p><strong>"초대"</strong> 버튼을 클릭하면 완료됩니다. GlocalX 팀이 초대를 수락하면 즉시 관리가 시작됩니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Method B -->
+  <h3><span class="method-label">방법 B</span> 모바일 - Google Maps 앱</h3>
+  <p>스마트폰에서 Google Maps 앱을 이용하는 방법입니다.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>Google Maps 앱 실행</strong>
+        <p>스마트폰에서 Google Maps 앱을 열고, 비즈니스 프로필 소유자 계정으로 로그인되어 있는지 확인합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>내 비즈니스 프로필 선택</strong>
+        <p>하단의 <strong>"비즈니스"</strong> 탭을 누르거나, 상단 프로필 사진을 탭한 뒤 <strong>"내 비즈니스 프로필"</strong>을 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>사용자 관리 진입</strong>
+        <p><strong>"설정"</strong> &rarr; <strong>"사용자 및 권한"</strong>을 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>관리자 추가 및 초대</strong>
+        <p><strong>"추가(+)"</strong>를 누르고, 이메일에 <code>glocalx.kaist2026@gmail.com</code>을 입력한 뒤 역할을 <strong>"관리자(Manager)"</strong>로 선택하고 <strong>"초대"</strong>를 누릅니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Method C -->
+  <h3><span class="method-label">방법 C</span> business.google.com 직접 접속</h3>
+  <p>구글 비즈니스 프로필 관리 사이트에 직접 접속하는 방법입니다.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>사이트 접속 및 로그인</strong>
+        <p><a href="https://business.google.com" target="_blank">business.google.com</a>에 접속하여 비즈니스 프로필 소유자 계정으로 로그인합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>가게 선택</strong>
+        <p>관리 중인 비즈니스 목록에서 해당 가게를 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>사용자 메뉴 진입</strong>
+        <p>왼쪽 메뉴에서 <strong>"사용자"</strong>를 클릭합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>관리자 초대</strong>
+        <p><strong>"사용자 초대(+)"</strong> &rarr; 이메일: <code>glocalx.kaist2026@gmail.com</code> &rarr; 역할: <strong>"관리자(Manager)"</strong> &rarr; <strong>"초대"</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Table -->
+  <h3>역할별 권한 비교</h3>
+  <p>관리자(Manager) 역할은 게시글 작성과 리뷰 답변 등 운영에 필요한 권한만 부여됩니다. 점주님의 프로필 소유권은 안전하게 유지됩니다.</p>
+  <table class="role-table">
+    <thead>
+      <tr>
+        <th>권한</th>
+        <th>소유자 (점주님)</th>
+        <th>관리자 (GlocalX)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>게시글(Local Post) 작성/수정</td>
+        <td class="check">O</td>
+        <td class="check">O</td>
+      </tr>
+      <tr>
+        <td>사진 추가</td>
+        <td class="check">O</td>
+        <td class="check">O</td>
+      </tr>
+      <tr>
+        <td>고객 리뷰에 답변</td>
+        <td class="check">O</td>
+        <td class="check">O</td>
+      </tr>
+      <tr>
+        <td>비즈니스 정보 수정</td>
+        <td class="check">O</td>
+        <td class="check">O</td>
+      </tr>
+      <tr>
+        <td>실적/통계(Insights) 확인</td>
+        <td class="check">O</td>
+        <td class="check">O</td>
+      </tr>
+      <tr>
+        <td>다른 사용자 추가/삭제</td>
+        <td class="check">O</td>
+        <td class="cross">X</td>
+      </tr>
+      <tr>
+        <td>비즈니스 프로필 삭제</td>
+        <td class="check">O</td>
+        <td class="cross">X</td>
+      </tr>
+      <tr>
+        <td>소유권 이전</td>
+        <td class="check">O</td>
+        <td class="cross">X</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box success">
+    <strong>점주님 안심 포인트</strong>
+    관리자는 프로필을 삭제하거나 다른 사용자를 추가/제거할 수 없습니다. 점주님이 언제든지 관리자를 제거할 수 있으며, 프로필의 소유권은 변함없이 점주님에게 있습니다.
+  </div>
+</section>
+
+<!-- ════════ SECTION 2: 프로필 신규 등록 ════════ -->
+<section id="section2">
+  <h2><span class="section-num">2</span> 프로필 신규 등록</h2>
+  <p class="section-desc">구글 비즈니스 프로필이 아직 없는 경우, 아래 절차에 따라 무료로 등록하실 수 있습니다. 등록 후 관리자 추가(Section 1)를 진행해주세요.</p>
+
+  <a href="https://support.google.com/business/answer/2911778?hl=ko" target="_blank" class="official-link">
+    <span class="ol-icon">G</span>
+    <span class="ol-text">
+      <span class="ol-label">Google 공식 가이드를 함께 참고하시면 더 편합니다</span>
+      <span class="ol-title">비즈니스 프로필 추가 또는 소유권 주장하기</span>
+    </span>
+    <span class="ol-arrow">&rarr;</span>
+  </a>
+
+  <div class="info-box">
+    <strong>준비물</strong>
+    &bull; 구글(Gmail) 계정 (없으면 무료 생성)<br>
+    &bull; 가게 상호명, 주소, 전화번호<br>
+    &bull; 가게 외관/내부 사진 (인증 시 필요할 수 있음)
+  </div>
+
+  <h3>등록 절차</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>구글 비즈니스 프로필 사이트 접속</strong>
+        <p><a href="https://www.google.com/business/" target="_blank">google.com/business</a>에 접속하여 구글 계정으로 로그인합니다. 구글 계정이 없다면 먼저 Gmail을 만들어주세요.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>비즈니스 이름 입력 및 중복 확인</strong>
+        <p><strong>"비즈니스 추가"</strong>를 클릭하고, 가게 이름을 검색합니다. 이미 누군가 등록해둔 프로필이 있을 수 있으니 먼저 검색하여 확인합니다. 없으면 새로 생성합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>비즈니스 유형 선택</strong>
+        <p><strong>"오프라인 매장"</strong> (또는 "Local Store")을 선택합니다. 음식점이므로 고객이 직접 방문하는 유형입니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>카테고리 선택</strong>
+        <p>비즈니스 카테고리를 선택합니다. 예: <strong>"한식당"</strong>, <strong>"식당"</strong>, <strong>"일식집"</strong> 등 구글이 제공하는 목록에서 가장 적합한 것을 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong>주소 입력</strong>
+        <p>가게의 실제 주소를 정확하게 입력합니다. 건물명, 층수, 호수까지 구체적으로 기재할수록 고객이 찾기 쉬워집니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <strong>연락처 정보 입력</strong>
+        <p>가게 전화번호와 웹사이트(있는 경우)를 입력합니다. 전화번호는 인증에도 사용될 수 있으니 실제 사용 중인 번호를 입력해주세요.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <strong>영업시간 설정</strong>
+        <p>요일별 영업시간을 설정합니다. 정확한 영업시간이 등록되어 있어야 고객의 신뢰도가 높아집니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <strong>서비스 옵션 선택</strong>
+        <p>매장 식사(Dine-in), 포장(Takeout), 배달(Delivery) 등 해당하는 서비스를 선택합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <strong>비즈니스 설명 작성</strong>
+        <p>가게를 소개하는 간단한 설명을 작성합니다. 대표 메뉴, 분위기, 특징 등을 포함하면 좋습니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <strong>사진 업로드</strong>
+        <p>가게 외관, 내부, 대표 메뉴 사진을 업로드합니다. 고품질 사진이 있으면 고객 유입에 큰 도움이 됩니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">11</div>
+      <div class="step-content">
+        <strong>등록 완료 및 인증 진행</strong>
+        <p>기본 정보 입력이 끝나면 비즈니스 인증 절차가 안내됩니다. 인증 방법은 아래 Section 3을 참고해주세요.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box warning">
+    <strong>기존 프로필이 이미 존재하는 경우</strong>
+    구글 지도에 이미 가게가 등록되어 있지만 본인이 관리하고 있지 않은 경우, <strong>"소유권 주장(Claim)"</strong>을 통해 관리 권한을 가져올 수 있습니다. "이 비즈니스의 소유자이신가요?"를 클릭하고 인증 절차를 진행하세요.
+  </div>
+</section>
+
+<!-- ════════ SECTION 3: 인증 방법 ════════ -->
+<section id="section3">
+  <h2><span class="section-num">3</span> 비즈니스 인증 방법</h2>
+  <p class="section-desc">구글이 실제 사업장임을 확인하는 절차입니다. 아래 방법 중 구글이 제시하는 옵션을 선택하여 진행합니다. (모든 방법이 항상 제공되는 것은 아니며, 구글이 비즈니스 유형에 따라 가능한 방법을 안내합니다.)</p>
+
+  <a href="https://support.google.com/business/answer/7107242?hl=ko" target="_blank" class="official-link">
+    <span class="ol-icon">G</span>
+    <span class="ol-text">
+      <span class="ol-label">Google 공식 가이드를 함께 참고하시면 더 편합니다</span>
+      <span class="ol-title">Google에서 비즈니스 인증하기</span>
+    </span>
+    <span class="ol-arrow">&rarr;</span>
+  </a>
+
+  <div class="verify-grid">
+    <div class="verify-card">
+      <div class="v-icon">&#128241;</div>
+      <h4>전화 / 문자 인증</h4>
+      <p>등록된 전화번호로 인증 코드를 받아 입력합니다. 가장 빠른 방법으로, 즉시 인증이 완료됩니다.</p>
+    </div>
+    <div class="verify-card">
+      <div class="v-icon">&#9993;</div>
+      <h4>이메일 인증</h4>
+      <p>등록된 이메일로 인증 코드가 발송됩니다. 이메일 확인 후 코드를 입력하면 인증이 완료됩니다.</p>
+    </div>
+    <div class="verify-card">
+      <div class="v-icon">&#127909;</div>
+      <h4>영상 인증 (가장 일반적)</h4>
+      <p>가게 외관(간판, 주변 거리)과 내부를 1~3분 영상으로 촬영하여 업로드합니다. 약 5일 내 검토 완료됩니다.</p>
+    </div>
+    <div class="verify-card">
+      <div class="v-icon">&#128231;</div>
+      <h4>엽서(우편) 인증</h4>
+      <p>등록 주소로 5자리 인증 코드가 적힌 엽서가 발송됩니다. 평일 기준 5~14일 소요됩니다.</p>
+    </div>
+  </div>
+
+  <h3>영상 인증 촬영 팁</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong>사전 준비</strong>
+        <p>스마트폰 기본 브라우저에서 구글 계정에 미리 로그인해두세요. PC 화면의 QR 코드를 스캔하여 모바일 인증 페이지에 접속합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong>외부 촬영</strong>
+        <p>가게 간판, 주변 건물, 거리명 표지판 등이 보이도록 외부를 먼저 촬영합니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong>내부 촬영</strong>
+        <p>가게 내부, 주방, 직원 공간 등을 촬영합니다. 실제 운영 중인 사업장임을 보여주는 것이 핵심입니다.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong>촬영 규칙</strong>
+        <p>영상 길이 1~3분, 중간에 끊지 말고 연속 촬영, 촬영 직후 바로 업로드합니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box success">
+    <strong>인증 완료 후</strong>
+    인증이 완료되면 2~3주 이내에 Google 검색과 Google Maps에 프로필이 노출되기 시작합니다. 이후 Section 1의 절차에 따라 GlocalX 계정을 관리자로 추가해주세요.
+  </div>
+</section>
+
+<!-- ════════ SECTION 4: FAQ ════════ -->
+<section id="section4">
+  <h2><span class="section-num">4</span> FAQ</h2>
+  <p class="section-desc">자주 묻는 질문을 모았습니다.</p>
+
+  <div class="faq-item">
+    <div class="faq-q">Q. 관리자를 추가하면 내 가게 정보가 맘대로 바뀌나요?</div>
+    <div class="faq-a">GlocalX는 게시글을 올리기 전에 항상 점주님의 확인을 받습니다. 또한 관리자는 프로필을 삭제하거나 다른 사용자를 관리할 수 없으며, 점주님이 언제든 관리자를 제거할 수 있습니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. 비용이 드나요?</div>
+    <div class="faq-a">구글 비즈니스 프로필 등록 및 관리자 추가는 모두 <strong>무료</strong>입니다. 구글에서 비용을 청구하지 않습니다. 비용을 요구하는 곳이 있다면 사기이니 주의해주세요.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. 관리자를 나중에 제거할 수 있나요?</div>
+    <div class="faq-a">네. "사용자 및 권한" 메뉴에서 해당 관리자 옆의 점 3개 메뉴를 누르고 "삭제"를 선택하면 즉시 제거됩니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. 구글 비즈니스 프로필 등록은 얼마나 걸리나요?</div>
+    <div class="faq-a">기본 정보 입력은 10~15분이면 충분합니다. 다만, 비즈니스 인증(전화/영상/엽서)까지 포함하면 최소 당일(전화/이메일)에서 최대 2주(엽서) 정도 소요될 수 있습니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. 이미 구글 지도에 가게가 나오는데, 제가 등록한 적이 없어요.</div>
+    <div class="faq-a">구글이 자동으로 생성했거나 다른 사용자가 추가한 것일 수 있습니다. "이 비즈니스의 소유자이신가요?"를 클릭하여 소유권을 주장(Claim)하고, 인증을 받으면 관리할 수 있습니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. GlocalX가 정확히 어떤 서비스를 해주나요?</div>
+    <div class="faq-a">외국인 관광객을 대상으로 가게의 구글 비즈니스 프로필에 다국어(영어/일본어/중국어) 홍보 게시글을 AI 기반으로 작성하고 관리해드립니다. 음식 사진을 분석하여 매력적인 마케팅 콘텐츠를 자동 생성합니다.</div>
+  </div>
+</section>
+
+<!-- ════════ REFERENCES ════════ -->
+<section>
+  <h2>참고 자료</h2>
+  <p class="section-desc">더 자세한 내용은 아래 공식 문서와 가이드를 참고해주세요.</p>
+  <ul class="ref-list">
+    <li>
+      <a href="https://support.google.com/business/answer/3403100?hl=ko" target="_blank">비즈니스 프로필 소유자 및 관리자 관리하기</a>
+      <span class="ref-tag">Google 공식</span>
+    </li>
+    <li>
+      <a href="https://support.google.com/business/answer/7039811?hl=ko" target="_blank">Google 비즈니스 프로필 시작하기</a>
+      <span class="ref-tag">Google 공식</span>
+    </li>
+    <li>
+      <a href="https://support.google.com/business/answer/7107242?hl=ko" target="_blank">Google에서 비즈니스 인증하기</a>
+      <span class="ref-tag">Google 공식</span>
+    </li>
+    <li>
+      <a href="https://support.google.com/business/answer/2911778?hl=ko" target="_blank">비즈니스 프로필 추가 또는 소유권 주장하기</a>
+      <span class="ref-tag">Google 공식</span>
+    </li>
+    <li>
+      <a href="https://support.google.com/business/community-guide/353035427" target="_blank">How to Add Users to Your Google Business Profile (2025 Guide)</a>
+      <span class="ref-tag">커뮤니티 가이드</span>
+    </li>
+    <li>
+      <a href="https://biziq.com/blog/step-by-step-guide-how-to-add-users-to-your-google-business-profile/" target="_blank">Step-by-Step Guide: How to Add Users to GBP</a>
+      <span class="ref-tag">BizIQ</span>
+    </li>
+  </ul>
+</section>
+
+<div class="footer">
+  GlocalX &middot; KAIST IMMS &middot; 2026<br>
+  본 안내서는 GlocalX 파트너 점주님을 위해 제작되었습니다.
+</div>
+
+</div><!-- /.container -->
+</body>
+</html>

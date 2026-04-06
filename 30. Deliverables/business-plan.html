@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlocalX Business Plan</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+  :root {
+    --primary: #0F4C75;
+    --primary-light: #3282B8;
+    --accent: #BBE1FA;
+    --warm: #F76E11;
+    --warm-light: #FF9F45;
+    --dark: #1B262C;
+    --gray-900: #212529;
+    --gray-700: #495057;
+    --gray-400: #adb5bd;
+    --gray-200: #e9ecef;
+    --gray-100: #f8f9fa;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    color: var(--gray-900);
+    background: var(--gray-100);
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  /* --- Cover --- */
+  .cover {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--primary) 60%, var(--primary-light) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: var(--white);
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(247,110,17,0.15) 0%, transparent 70%);
+  }
+
+  .cover-badge {
+    display: inline-block;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 8px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+    color: var(--accent);
+  }
+
+  .cover h1 {
+    font-size: 56px;
+    font-weight: 900;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  .cover h1 span { color: var(--warm); }
+
+  .cover .subtitle {
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--accent);
+    margin-bottom: 48px;
+    max-width: 600px;
+  }
+
+  .cover-meta {
+    font-size: 14px;
+    color: var(--gray-400);
+    line-height: 2;
+  }
+
+  /* --- Layout --- */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  /* --- Section --- */
+  section {
+    padding: 80px 0;
+  }
+
+  section + section {
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .section-number {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--warm);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--dark);
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .section-lead {
+    font-size: 18px;
+    color: var(--gray-700);
+    margin-bottom: 48px;
+    max-width: 680px;
+  }
+
+  /* --- Stat Cards --- */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin: 40px 0;
+  }
+
+  .stat-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .stat-card .number {
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1.1;
+  }
+
+  .stat-card .number span {
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  .stat-card .label {
+    font-size: 14px;
+    color: var(--gray-700);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  .stat-card .source {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 6px;
+  }
+
+  .stat-card.accent {
+    background: var(--primary);
+    color: var(--white);
+  }
+
+  .stat-card.accent .number { color: var(--warm-light); }
+  .stat-card.accent .label { color: var(--accent); }
+  .stat-card.accent .source { color: rgba(255,255,255,0.5); }
+
+  /* --- Content Blocks --- */
+  h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 40px 0 16px;
+  }
+
+  p {
+    color: var(--gray-700);
+    margin-bottom: 16px;
+  }
+
+  .highlight-box {
+    background: var(--white);
+    border-left: 4px solid var(--warm);
+    padding: 24px 28px;
+    border-radius: 0 12px 12px 0;
+    margin: 32px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .highlight-box p {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--dark);
+  }
+
+  /* --- Problem Cards --- */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin: 32px 0;
+  }
+
+  .problem-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .problem-card .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .problem-card h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+
+  .problem-card p {
+    font-size: 14px;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  /* --- Flow Diagram --- */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    margin: 40px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-step {
+    flex: 1;
+    min-width: 160px;
+    background: var(--white);
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    position: relative;
+  }
+
+  .flow-step .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+  }
+
+  .flow-step h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+
+  .flow-step p {
+    font-size: 13px;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--gray-400);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* --- Journey Table --- */
+  .journey-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 32px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .journey-table th {
+    background: var(--primary);
+    color: var(--white);
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .journey-table td {
+    background: var(--white);
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .journey-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-auto { background: #d4edda; color: #155724; }
+  .badge-manual { background: #fff3cd; color: #856404; }
+  .badge-owner { background: #cce5ff; color: #004085; }
+
+  /* --- Comparison --- */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin: 40px 0;
+  }
+
+  .compare-box {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .compare-box.before { border-top: 4px solid var(--gray-400); }
+  .compare-box.after { border-top: 4px solid var(--warm); }
+
+  .compare-box h4 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .compare-box.before h4 { color: var(--gray-400); }
+  .compare-box.after h4 { color: var(--warm); }
+
+  .compare-box ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .compare-box ul li {
+    padding: 8px 0;
+    font-size: 15px;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .compare-box ul li:last-child { border-bottom: none; }
+
+  .compare-arrow {
+    font-size: 32px;
+    color: var(--warm);
+    font-weight: 700;
+  }
+
+  /* --- TOC --- */
+  .toc {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 40px;
+    margin: 40px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .toc h3 {
+    margin-top: 0;
+    margin-bottom: 24px;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 40px;
+  }
+
+  .toc-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .toc-list li a {
+    text-decoration: none;
+    color: var(--gray-700);
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .toc-list li a:hover { color: var(--primary); }
+
+  .toc-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--warm);
+    min-width: 24px;
+  }
+
+  /* --- Responsive --- */
+  @media (max-width: 768px) {
+    .cover h1 { font-size: 36px; }
+    .stat-row { grid-template-columns: 1fr; }
+    .problem-grid { grid-template-columns: 1fr; }
+    .compare { grid-template-columns: 1fr; }
+    .compare-arrow { transform: rotate(90deg); text-align: center; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); justify-content: center; }
+    .toc-list { grid-template-columns: 1fr; }
+    .container { padding: 0 20px; }
+  }
+
+  /* --- Print --- */
+  @media print {
+    .cover { min-height: auto; padding: 60px 40px; page-break-after: always; }
+    section { page-break-inside: avoid; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER ==================== -->
+<div class="cover">
+  <div class="cover-badge">BUSINESS PLAN 2026</div>
+  <h1>Glocal<span>X</span></h1>
+  <div class="subtitle">AI-Powered Local Business Marketing for Global Tourists</div>
+  <div class="subtitle" style="font-size:18px; margin-bottom: 48px;">
+    AI로 소상공인의 글로벌 고객 유입을 자동화하는 마케팅 에이전트
+  </div>
+  <div class="cover-meta">
+    KAIST MBA BIZ.69911 | Spring 2026<br>
+    AI-Driven Business Evolution: Strategy and Practice<br>
+    <br>
+    Working Draft &mdash; April 2026
+  </div>
+</div>
+
+<!-- ==================== TOC ==================== -->
+<section style="background: var(--white);">
+  <div class="container">
+    <div class="toc">
+      <h3>Table of Contents</h3>
+      <ol class="toc-list">
+        <li><a href="#executive-summary"><span class="toc-num">01</span> Executive Summary</a></li>
+        <li><a href="#problem"><span class="toc-num">02</span> Problem</a></li>
+        <li><a href="#solution"><span class="toc-num">03</span> Solution</a></li>
+        <li><a href="#market"><span class="toc-num">04</span> Market Analysis</a></li>
+        <li><a href="#business-model"><span class="toc-num">05</span> Business Model</a></li>
+        <li><a href="#technology"><span class="toc-num">06</span> Technology Architecture</a></li>
+        <li><a href="#gtm"><span class="toc-num">07</span> Go-to-Market Strategy</a></li>
+        <li><a href="#competition"><span class="toc-num">08</span> Competitive Analysis</a></li>
+        <li><a href="#team"><span class="toc-num">09</span> Team</a></li>
+        <li><a href="#roadmap"><span class="toc-num">10</span> Roadmap &amp; Milestones</a></li>
+        <li><a href="#risks"><span class="toc-num">11</span> Risks &amp; Mitigation</a></li>
+        <li><a href="#financials"><span class="toc-num">12</span> Financial Plan</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 01. EXECUTIVE SUMMARY ==================== -->
+<section id="executive-summary">
+  <div class="container">
+    <div class="section-number">01</div>
+    <h2 class="section-title">Executive Summary</h2>
+    <p class="section-lead">
+      외국인 관광객은 급증하고 있지만, 소상공인은 그들에게 도달할 수단이 없습니다.
+      GlocalX는 이 간극을 AI로 메웁니다.
+    </p>
+
+    <div class="highlight-box">
+      <p>
+        GlocalX는 소상공인의 Google Business Profile(GBP)에 AI가 생성한 다국어 마케팅 콘텐츠를
+        자동 게시하여, 외국인 관광객의 "길찾기(Directions)" 클릭을 늘리는 서비스입니다.
+        점주는 사진 한 장만 보내면, 나머지는 AI가 처리합니다.
+      </p>
+    </div>
+
+    <div class="stat-row" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <div class="number">1,894<span>만명</span></div>
+        <div class="label">2025 한국 인바운드 관광객</div>
+        <div class="source">역대 최고, 2019년 대비 +8.2%</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">364<span>만명</span></div>
+        <div class="label">2025 부산 외국인 관광객</div>
+        <div class="source">1조원 이상 관광 지출 (세계일보)</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="number">70<span>%+</span></div>
+        <div class="label">외국인 미식 관광 비율</div>
+        <div class="source">2019년 56.5%에서 급증</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">&lt;20<span>%</span></div>
+        <div class="label">GBP를 적극 관리하는 소상공인</div>
+        <div class="source">주1회 포스팅+리뷰 답변 기준 추산</div>
+      </div>
+    </div>
+
+    <h3>Core Value Proposition</h3>
+    <div class="compare">
+      <div class="compare-box before">
+        <h4>Before GlocalX</h4>
+        <ul>
+          <li>외국어 마케팅 역량 전무</li>
+          <li>GBP 방치 (한국어만, 업데이트 없음)</li>
+          <li>외국인 고객은 우연히 발견하거나 놓침</li>
+          <li>마케팅 대행사 이용 시 월 수십만원</li>
+        </ul>
+      </div>
+      <div class="compare-arrow">&rarr;</div>
+      <div class="compare-box after">
+        <h4>After GlocalX</h4>
+        <ul>
+          <li>사진 한 장 &rarr; AI가 EN/JP/TW 콘텐츠 자동 생성</li>
+          <li>GBP에 다국어 포스트 자동 게시</li>
+          <li>Google Maps에서 외국인에게 노출 극대화</li>
+          <li>월 2~3만원 구독</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 02. PROBLEM ==================== -->
+<section id="problem" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">02</div>
+    <h2 class="section-title">Problem</h2>
+    <p class="section-lead">
+      외국인 관광객은 Google Maps로 식당을 찾습니다.
+      하지만 대부분의 한국 소상공인은 Google에 존재하지 않거나, 한국어로만 존재합니다.
+    </p>
+
+    <h3>시장의 구조적 미스매치</h3>
+    <p>
+      2025년 한국을 방문한 외국인 관광객 1,894만명 중 70% 이상이 미식을 목적으로 방문합니다.
+      외국인의 56.2%가 네이버 지도를 사용해 본 경험이 있으나, 이는 현지 경로 탐색 보조 수단이며
+      <strong>입국 전 맛집 검색과 리뷰 검증 단계에서는 Google Maps(33.9%)가 절대적</strong>입니다.
+      특히 영어권 및 대만 관광객은 구글의 다국어 리뷰 자동 번역 기능에 크게 의존합니다.
+    </p>
+    <p>
+      그러나 한국 소상공인의 디지털 마케팅은 네이버 플레이스(90%+), 인스타그램(60%+) 등
+      <strong>내국인 대상 채널</strong>에 편중되어 있으며, GBP를 적극 관리하는 비율은 10~20% 미만으로 추산됩니다.
+    </p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">A</div>
+        <h4>언어 장벽</h4>
+        <p>
+          소상공인이 영어, 일본어, 중국어(번체)로 메뉴 설명, 포스트, 리뷰 답변을 작성하는 것은
+          사실상 불가능합니다. 단순 번역 앱으로는 "Authentic", "Local Secret" 같은
+          관광객이 반응하는 마케팅 품질이 나오지 않습니다.
+        </p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">B</div>
+        <h4>시간과 역량의 부재</h4>
+        <p>
+          하루 10시간 이상 영업하는 자영업자에게 GBP 관리, SEO 키워드 연구,
+          정기적 포스팅은 현실적으로 불가능한 요구입니다. 월 마케팅 비용 10~50만원 중
+          대부분이 배달앱과 네이버에 집중됩니다.
+        </p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">C</div>
+        <h4>기존 대안의 한계</h4>
+        <p>
+          네이버 플레이스 대행 월 20만원+, 배달의민족 울트라콜 월 88,000원.
+          글로벌 GBP 도구(Yext $499+, BrightLocal $39+)는 영어 UI에 고가격.
+          소상공인의 마진 구조에서 감당하기 힘든 비용이며, ROI 증명도 어렵습니다.
+        </p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">D</div>
+        <h4>Google Maps의 결정적 역할</h4>
+        <p>
+          소비자의 64%가 GBP를 통해 로컬 비즈니스를 검색하며,
+          로컬 검색의 46~48%가 24시간 내 실제 방문으로 전환됩니다.
+          사진이 있는 GBP는 길찾기 클릭이 42~45% 더 높습니다.
+          방치된 GBP는 곧 매출 손실입니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>
+        2026년 3월 Google 로컬 코어 업데이트: 리뷰의 "최신성(Recency)" 가중치가 2.3배 증가.
+        3년 전 200개 리뷰보다 최근 90일 내 20개 리뷰가 상위 노출에 유리.
+        리뷰 답변율 90% 이상이면 로컬 팩 상위권 확률 급상승.
+        &mdash; GBP를 방치하는 비용이 그 어느 때보다 커졌습니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 03. SOLUTION ==================== -->
+<section id="solution">
+  <div class="container">
+    <div class="section-number">03</div>
+    <h2 class="section-title">Solution</h2>
+    <p class="section-lead">
+      점주는 사진만 보냅니다. 나머지는 AI가 전부 처리합니다.
+    </p>
+
+    <h3>서비스 핵심 흐름</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <h4>사진 전송</h4>
+        <p>점주가 음식/매장 사진을 카카오톡이나 앱으로 전송</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>AI 분석 &amp; 생성</h4>
+        <p>멀티모달 LLM이 사진 분석 후 EN/JP/TW 마케팅 콘텐츠 자동 생성</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>GBP 자동 게시</h4>
+        <p>API를 통해 Google Business Profile에 다국어 포스트 자동 게시</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <h4>성과 리포트</h4>
+        <p>"길찾기" 클릭 수 변화를 추적하여 점주에게 리포트 전달</p>
+      </div>
+    </div>
+
+    <h3>고객 여정 상세</h3>
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th style="width:25%">단계</th>
+          <th style="width:40%">내용</th>
+          <th style="width:15%">점주 액션</th>
+          <th style="width:20%">처리 주체</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>온보딩</strong></td>
+          <td>서비스 설명 및 동의 확보, GBP 관리자 권한 추가</td>
+          <td>링크 클릭 1회</td>
+          <td><span class="badge badge-auto">GlocalX</span></td>
+        </tr>
+        <tr>
+          <td><strong>GBP 셋업</strong><br><small>(GBP 미보유 시)</small></td>
+          <td>GBP 생성 및 인증 지원 (현장 방문)</td>
+          <td>인증 전화 수신</td>
+          <td><span class="badge badge-auto">GlocalX</span></td>
+        </tr>
+        <tr>
+          <td><strong>초기 최적화</strong></td>
+          <td>비즈니스 설명 다국어화, 메뉴/사진 정리, SEO 키워드 적용</td>
+          <td>없음</td>
+          <td><span class="badge badge-auto">GlocalX + AI</span></td>
+        </tr>
+        <tr>
+          <td><strong>정기 포스팅</strong></td>
+          <td>점주가 보낸 사진 기반 다국어 포스트 생성 및 게시 (최대 1일 1회 권장)</td>
+          <td>사진 전송</td>
+          <td><span class="badge badge-auto">AI 자동</span></td>
+        </tr>
+        <tr>
+          <td><strong>리뷰 관리</strong></td>
+          <td>외국어 리뷰에 다국어 자동 답변 (긍정 리뷰 우선)</td>
+          <td>없음</td>
+          <td><span class="badge badge-auto">AI 자동</span></td>
+        </tr>
+        <tr>
+          <td><strong>성과 리포트</strong></td>
+          <td>월간 "길찾기" 클릭 수, 검색 노출 키워드 변화 리포트</td>
+          <td>확인만</td>
+          <td><span class="badge badge-auto">자동 생성</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>운영 단계별 자동화 수준</h3>
+    <p>
+      초기에는 사람이 개입하는 부분이 많습니다. 이것은 의도적입니다.
+      실제 점주와의 접점에서 학습한 내용을 바탕으로 자동화 범위를 점진적으로 확대합니다.
+      AI 콘텐츠의 브랜드 목소리 유지와 부자연스러운 표현 방지를 위해
+      Human-in-the-loop 가드레일 시스템을 운영합니다.
+    </p>
+    <p>
+      핵심 원칙: 구글의 스팸 정책을 준수하기 위해 단순 기계 번역이 아닌,
+      <strong>각 국가 관광객이 선호하는 키워드와 문화적 맥락을 반영한 창의적 콘텐츠</strong>를 생성합니다.
+    </p>
+
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th>구간</th>
+          <th>자동화 수준</th>
+          <th>사람이 하는 일</th>
+          <th>목표</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>PoC</strong><br><small>2026.05~06</small></td>
+          <td><span class="badge badge-manual">30%</span></td>
+          <td>현장 온보딩, AI 콘텐츠 수동 검수 및 보정, 수동 업로드(Plan B), API 승인 대기(2~4주)</td>
+          <td>파이프라인 검증 + 성과 데이터 확보</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 1</strong><br><small>2026.07~09</small></td>
+          <td><span class="badge badge-manual">60%</span></td>
+          <td>프롬프트 튜닝 완료, API 자동 게시, 온보딩만 수동</td>
+          <td>단위 비용 절감 + 서면 지역 확대</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 2</strong><br><small>2026.10~</small></td>
+          <td><span class="badge badge-auto">90%</span></td>
+          <td>예외 처리, 부정 리뷰 에스컬레이션, 신규 영업</td>
+          <td>구독 수익화 + 타 지역 확장</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 04. MARKET ANALYSIS ==================== -->
+<section id="market" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">04</div>
+    <h2 class="section-title">Market Analysis</h2>
+    <p class="section-lead">
+      관광객은 역대 최고, 미식 비중은 급증, 소상공인의 디지털 준비는 미흡.
+      이 간극이 곧 시장입니다.
+    </p>
+
+    <h3>TAM / SAM / SOM</h3>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="number">80<span>만+</span></div>
+        <div class="label">전국 음식점 수</div>
+        <div class="source">통계청/소상공인시장진흥공단</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">6<span>만+</span></div>
+        <div class="label">부산 음식점 수</div>
+        <div class="source">관광특구 상권 약 30%</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="number">8,000<span>+</span></div>
+        <div class="label">서면/부산진구 음식점</div>
+        <div class="source">FIT 유입 최밀집 상권 (추정치)</div>
+      </div>
+    </div>
+
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th>시장 구분</th>
+          <th>정의</th>
+          <th>규모</th>
+          <th>근거</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>TAM</strong><br>전체 시장</td>
+          <td>전국 관광상권 음식점 x 월 구독료</td>
+          <td>약 24만 곳 x 3만원 = <strong>월 72억원</strong></td>
+          <td>전국 80만 음식점 중 관광특구 비율 30%</td>
+        </tr>
+        <tr>
+          <td><strong>SAM</strong><br>유효 시장</td>
+          <td>부산 관광상권 음식점</td>
+          <td>약 1.8만 곳 x 3만원 = <strong>월 5.4억원</strong></td>
+          <td>부산 6만+ 음식점 x 관광특구 30%</td>
+        </tr>
+        <tr>
+          <td><strong>SOM</strong><br>확보 가능 시장</td>
+          <td>서면/부산진구 PoC 시작</td>
+          <td>5~10곳 (PoC) &rarr; <strong>100곳 (1년 내)</strong></td>
+          <td>8,000+ 음식점 중 상위 1%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>시장 성장 전망</h3>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon" style="background: #d4edda;">+</div>
+        <h4>2026년 인바운드 2,000만+ 전망</h4>
+        <p>한국관광공사 3,000만 관광객 달성 과제 추진 중. 부산은 400만 돌파 목표.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon" style="background: #d4edda;">+</div>
+        <h4>중국인 관광객 전환 효과</h4>
+        <p>한일 관계 변화로 일본행 중국인 관광객의 한국 전환이 2026년 본격화 전망.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon" style="background: #d4edda;">+</div>
+        <h4>미식 관광 비중 지속 확대</h4>
+        <p>56.5%(2019) &rarr; 70%+(2025). 쇼핑에서 경험/문화 중심으로 관광 트렌드 전환.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon" style="background: #d4edda;">+</div>
+        <h4>FIT(개별 관광객) 중심 재편</h4>
+        <p>단체 관광 &rarr; 개별 관광. Google Maps 의존도가 높은 고소득 관광객 비중 증가.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 05. BUSINESS MODEL ==================== -->
+<section id="business-model">
+  <div class="container">
+    <div class="section-number">05</div>
+    <h2 class="section-title">Business Model</h2>
+    <p class="section-lead">
+      월 2~3만원 구독 모델. 소상공인의 "저항 없는" 가격대에서 시작합니다.
+    </p>
+
+    <h3>가격 벤치마크</h3>
+    <table class="journey-table">
+      <thead>
+        <tr>
+          <th>비교 대상</th>
+          <th>월 비용</th>
+          <th>제공 가치</th>
+          <th>GlocalX 대비</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>네이버 플레이스 대행</td>
+          <td><strong>200,000원+</strong></td>
+          <td>네이버 SEO, 내국인 대상</td>
+          <td>7~10배 비쌈, 외국인 미대응</td>
+        </tr>
+        <tr>
+          <td>배달의민족 울트라콜</td>
+          <td><strong>88,000원</strong></td>
+          <td>배달앱 상위 노출</td>
+          <td>3배 비쌈, 오프라인 유입 없음</td>
+        </tr>
+        <tr>
+          <td>글로벌 GBP 도구 (BrightLocal)</td>
+          <td><strong>$39~59</strong></td>
+          <td>영어 UI, 리스팅 관리</td>
+          <td>영어 전용, 한국 소상공인 접근 불가</td>
+        </tr>
+        <tr>
+          <td>소상공인 SaaS 평균</td>
+          <td><strong>10,000~50,000원</strong></td>
+          <td>POS, 경영관리 등</td>
+          <td>GlocalX 가격대와 일치</td>
+        </tr>
+        <tr style="background: #fff3cd;">
+          <td><strong>GlocalX</strong></td>
+          <td><strong>20,000~30,000원</strong></td>
+          <td>AI 다국어 GBP 자동화</td>
+          <td>최저가로 글로벌 노출 제공</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Unit Economics</h3>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="number" style="font-size:24px;">1,500~3,000<span>원</span></div>
+        <div class="label">매장당 월 AI API 원가</div>
+        <div class="source">월 30건 포스팅 기준</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" style="font-size:24px;">30,000~50,000<span>원</span></div>
+        <div class="label">매장당 온보딩 비용</div>
+        <div class="source">현장 방문 1회 (교통비+인건비)</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="number" style="font-size:24px;">2<span>개월</span></div>
+        <div class="label">매장당 BEP</div>
+        <div class="source">온보딩 비용 회수 기간</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>
+        소상공인 마케팅 지불 의향 조사: "저항 없이" 지출 가능한 월 금액은 3~5만원 수준.
+        월 2~3만원은 이 하단에 진입하여, 기존 대행(20만원+) 대비 약 10%의 비용으로
+        "글로벌 노출"이라는 차별화된 가치를 제공합니다.
+      </p>
+    </div>
+
+    <h3>수익 구조 단계별 전환</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>단계</th><th>과금 여부</th><th>목적</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>PoC (5~10곳)</strong></td><td>무료</td><td>서비스 검증 + 성과 데이터 확보</td></tr>
+        <tr><td><strong>Phase 1 (50~100곳)</strong></td><td>월 20,000원</td><td>시장 반응 검증 + 구독 전환율 측정</td></tr>
+        <tr><td><strong>Phase 2 (100곳+)</strong></td><td>월 30,000원 + 프리미엄 옵션</td><td>수익화 + 타 지역 확장</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 06. TECHNOLOGY ==================== -->
+<section id="technology" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">06</div>
+    <h2 class="section-title">Technology Architecture</h2>
+    <p class="section-lead">
+      검증된 API와 최신 LLM을 조합한 실용적 아키텍처.
+      복잡함 대신 빠른 검증을 우선합니다.
+    </p>
+
+    <h3>시스템 구성</h3>
+    <div class="flow">
+      <div class="flow-step" style="border-top: 3px solid var(--warm);">
+        <div class="step-num">IN</div>
+        <h4>입력</h4>
+        <p>점주 사진 (카카오톡/앱)</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">AI</div>
+        <h4>멀티모달 LLM</h4>
+        <p>사진 분석 &rarr; 메뉴명/특징 추출 &rarr; SEO 키워드 매칭</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">GEN</div>
+        <h4>콘텐츠 생성</h4>
+        <p>EN/JP/TW 마케팅 포스트 생성 (문화적 맥락 반영)</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step" style="border-top: 3px solid var(--primary);">
+        <div class="step-num">API</div>
+        <h4>GBP 게시</h4>
+        <p>Local Posts API로 자동 게시 + Performance API로 성과 수집</p>
+      </div>
+    </div>
+
+    <h3>핵심 기술 스택</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>영역</th><th>기술</th><th>상태</th><th>비고</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>사진 분석</td>
+          <td>GPT-4o / Claude Vision</td>
+          <td><span class="badge badge-auto">검증됨</span></td>
+          <td>음식 구성요소 식별 93% 정확도 (ResearchGate)</td>
+        </tr>
+        <tr>
+          <td>콘텐츠 생성</td>
+          <td>GPT-4o / Claude</td>
+          <td><span class="badge badge-auto">검증됨</span></td>
+          <td>문화적 맥락 번역 가능 (EN&rarr;JP, EN&rarr;ZH-TW)</td>
+        </tr>
+        <tr>
+          <td>GBP 포스트 게시</td>
+          <td>Local Posts API (v4)</td>
+          <td><span class="badge badge-auto">활성</span></td>
+          <td>create/delete/get/list/patch 지원</td>
+        </tr>
+        <tr>
+          <td>성과 데이터</td>
+          <td>Performance API</td>
+          <td><span class="badge badge-auto">활성</span></td>
+          <td>BUSINESS_DIRECTION_REQUESTS 일별 조회</td>
+        </tr>
+        <tr>
+          <td>리뷰 답변</td>
+          <td>Reviews API</td>
+          <td><span class="badge badge-auto">활성</span></td>
+          <td>다국어 자동 답변 (긍정 리뷰 우선)</td>
+        </tr>
+        <tr>
+          <td>Q&A 관리</td>
+          <td>Q&A API</td>
+          <td><span class="badge badge-manual">폐지됨</span></td>
+          <td>2025.11 중단. Google Gemini 대체. 영향 제한적.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>품질 관리: Human-in-the-loop</h3>
+    <p>
+      DoorDash의 LLM 메뉴 인식 사례를 벤치마크합니다. AI가 생성한 콘텐츠는 다음 가드레일을 거칩니다:
+    </p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">1</div>
+        <h4>톤앤매너 검증</h4>
+        <p>업종별(고기/국밥/카페) 페르소나 가이드에 따라 AI 출력을 검수. 마케팅 담당이 품질 평가표(Scorecard)로 관리.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">2</div>
+        <h4>스팸 방지</h4>
+        <p>동일 내용 반복, 키워드 채우기 방지. 구글 품질 가이드를 준수하는 "창의적 콘텐츠"만 게시.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">3</div>
+        <h4>문화적 감수성</h4>
+        <p>일본어/중국어 번체 표현의 자연스러움을 네이티브 수준으로 검증. 초기에는 사람이, 이후 프롬프트로 자동화.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">4</div>
+        <h4>부정 리뷰 에스컬레이션</h4>
+        <p>긍정 리뷰는 자동 답변. 부정 리뷰는 점주에게 알림 후 맞춤 대응. 자동 답변 리스크 차단.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 07. GTM STRATEGY ==================== -->
+<section id="gtm">
+  <div class="container">
+    <div class="section-number">07</div>
+    <h2 class="section-title">Go-to-Market Strategy</h2>
+    <p class="section-lead">
+      서면에서 시작하여 부산, 전국, 그리고 글로벌로. 현장에서 검증하고 확장합니다.
+    </p>
+
+    <h3>확장 로드맵</h3>
+    <div class="flow">
+      <div class="flow-step" style="border-top: 3px solid var(--warm);">
+        <div class="step-num">1</div>
+        <h4>서면 PoC</h4>
+        <p>5~10곳<br>2026.05~06</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>서면 확대</h4>
+        <p>50~100곳<br>2026.07~09</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>부산 전역</h4>
+        <p>해운대/광안리/남포동<br>2026.10~2027</p>
+      </div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step" style="border-top: 3px solid var(--primary);">
+        <div class="step-num">4</div>
+        <h4>전국 + 글로벌</h4>
+        <p>서울/제주 + 해외 관광도시<br>2027~</p>
+      </div>
+    </div>
+
+    <h3>초기 영업 전략</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>항목</th><th>전략</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>타겟 선정</strong></td>
+          <td>서면역/전포카페거리 반경 500m, 외국인 유동인구 밀집 골목의 고기/국밥/회/카페/치킨/술집</td>
+        </tr>
+        <tr>
+          <td><strong>접근 방식</strong></td>
+          <td>GTM 담당이 직접 방문 영업. "사장님, 외국인 손님 늘려드립니다. 1분만 시간 주세요."</td>
+        </tr>
+        <tr>
+          <td><strong>온보딩</strong></td>
+          <td>GBP 보유 시: 카카오톡 링크 &rarr; 관리자 승인 (1분). 미보유 시: 현장 방문 셋업.</td>
+        </tr>
+        <tr>
+          <td><strong>PoC 인센티브</strong></td>
+          <td>무료 제공 + "길찾기 클릭이 늘었다"는 Before/After 데이터로 유료 전환 유도</td>
+        </tr>
+        <tr>
+          <td><strong>레퍼럴</strong></td>
+          <td>성과 확인한 점주가 옆 가게에 추천. 상권 밀집 특성상 입소문 확산 기대.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>글로벌 확장 비전</h3>
+    <div class="highlight-box">
+      <p>
+        GlocalX의 모델은 "관광객이 방문하는 로컬 상권"이 있는 곳이면 어디든 적용 가능합니다.
+        서울 이태원/명동, 제주, 그리고 도쿄/방콕/파리 등 글로벌 관광도시로의 확장이
+        동일한 AI 파이프라인으로 가능합니다. 바뀌는 것은 키워드와 언어 조합뿐입니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 08. COMPETITIVE ANALYSIS ==================== -->
+<section id="competition" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">08</div>
+    <h2 class="section-title">Competitive Analysis</h2>
+    <p class="section-lead">
+      글로벌 도구들은 비싸고 복잡합니다. 국내에는 이 니치를 노리는 서비스가 없습니다.
+    </p>
+
+    <h3>글로벌 GBP 관리 도구 비교</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>서비스</th><th>타겟</th><th>월 가격</th><th>한국 소상공인 적합성</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Yext</td><td>엔터프라이즈</td><td>$499+</td><td>가격/복잡성 &mdash; 부적합</td></tr>
+        <tr><td>BrightLocal</td><td>대행사/SMB</td><td>$39~59</td><td>영어 전용 UI &mdash; 부적합</td></tr>
+        <tr><td>Moz Local</td><td>중소기업</td><td>$16~33</td><td>기본 리스팅만 &mdash; 콘텐츠 생성 없음</td></tr>
+        <tr><td>Semrush Local</td><td>마케터</td><td>$20~60</td><td>전문가 도구 &mdash; 소상공인 진입 어려움</td></tr>
+        <tr><td>SOCi</td><td>프랜차이즈</td><td>커스텀</td><td>대규모 전용 &mdash; 부적합</td></tr>
+        <tr style="background: #fff3cd;">
+          <td><strong>GlocalX</strong></td>
+          <td><strong>한국 소상공인</strong></td>
+          <td><strong>2~3만원</strong></td>
+          <td><strong>한국어 UX, AI 다국어 콘텐츠, 원스탑</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>국내 경쟁 환경</h3>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">N</div>
+        <h4>네이버 플레이스 대행</h4>
+        <p>월 20만원+. 내국인 대상. 순위 보장형 광고나 트래픽 조작 기법 의존 리스크. 외국인 대응 불가.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">AI</div>
+        <h4>AI 마케팅 서비스</h4>
+        <p>인스타그램/블로그 포스팅 자동화 서비스 등장 중. 그러나 Google Maps + 외국인 특화 서비스는 부재.</p>
+      </div>
+    </div>
+
+    <h3>GlocalX 포지셔닝</h3>
+    <div class="highlight-box">
+      <p>
+        <strong>"소상공인 + 외국인 관광객 + AI + GBP"</strong>를 결합한 서비스는
+        한국 시장에 아직 존재하지 않습니다. 일본/대만의 Localo 같은 로컬 SEO 자동화 도구를
+        벤치마크하되, 한국 인바운드 시장에 최적화된 니치를 선점합니다.
+        GlocalX의 경쟁 우위는 "가장 쉬운 글로벌 마케팅 도구"라는 포지셔닝입니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 09. TEAM ==================== -->
+<section id="team">
+  <div class="container">
+    <div class="section-number">09</div>
+    <h2 class="section-title">Team</h2>
+    <p class="section-lead">
+      4인 팀. 각자의 전문 영역에서 기여하며, AI를 활용해 소규모 팀의 한계를 극복합니다.
+    </p>
+
+    <div class="stat-row" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <div class="number" style="font-size: 20px; color: var(--warm);">Marketing</div>
+        <div class="label" style="font-weight: 700; font-size: 16px; margin-top: 12px;">마케팅 데이터/전략</div>
+        <div class="source" style="font-size: 13px; margin-top: 8px; line-height: 1.5;">
+          SEO 키워드 리서치<br>
+          AI 콘텐츠 품질 검증<br>
+          경쟁 분석
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="number" style="font-size: 20px; color: var(--warm);">UX</div>
+        <div class="label" style="font-weight: 700; font-size: 16px; margin-top: 12px;">기획/UX</div>
+        <div class="source" style="font-size: 13px; margin-top: 8px; line-height: 1.5;">
+          초간편 입력 UX 설계<br>
+          대시보드 화면 설계<br>
+          AI 결과물 정합성 테스트
+        </div>
+      </div>
+      <div class="stat-card" style="border: 2px solid var(--warm);">
+        <div class="number" style="font-size: 20px; color: var(--warm);">Dev</div>
+        <div class="label" style="font-weight: 700; font-size: 16px; margin-top: 12px;">개발</div>
+        <div class="source" style="font-size: 13px; margin-top: 8px; line-height: 1.5;">
+          AI 파이프라인 구축<br>
+          GBP API 연동<br>
+          MVP 빌드 &amp; 배포
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="number" style="font-size: 20px; color: var(--warm);">GTM</div>
+        <div class="label" style="font-weight: 700; font-size: 16px; margin-top: 12px;">Go-to-Market</div>
+        <div class="source" style="font-size: 13px; margin-top: 8px; line-height: 1.5;">
+          PoC 매장 섭외<br>
+          BM 설계 &amp; 수익 모델<br>
+          현장 온보딩 &amp; 성과 발표
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <p>
+        이 수업의 핵심 질문: "AI가 있으면 한 사람이 팀의 일을 할 수 있는가?"
+        우리 팀은 4명이지만, AI(Cursor, Claude, GPT)를 활용한 vibe coding으로
+        이전에는 10명 이상이 필요했을 프로토타입을 5주 안에 만듭니다.
+        이것 자체가 AI 인사이트의 증거입니다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 10. ROADMAP ==================== -->
+<section id="roadmap" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">10</div>
+    <h2 class="section-title">Roadmap &amp; Milestones</h2>
+    <p class="section-lead">
+      과목 일정에 맞춘 5주 빌드 + 이후 사업화 로드맵.
+    </p>
+
+    <h3>과목 기간 (2026.04~06)</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>주차</th><th>날짜</th><th>마일스톤</th><th>담당</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Week 5</td><td>4/4</td>
+          <td>사업계획서 초안 완성, GBP API 신청 시작, 팀 역할 확정</td>
+          <td>전원</td>
+        </tr>
+        <tr>
+          <td>Week 6~7</td><td>4/11~18</td>
+          <td>AI 파이프라인 PoC (사진&rarr;다국어 콘텐츠), 키워드 리서치 초안, 와이어프레임</td>
+          <td>개발 / 마케팅 / UX</td>
+        </tr>
+        <tr>
+          <td>Week 8</td><td>4/25</td>
+          <td>문제 정의서 발표, PoC 매장 확정, 점주 관리자 추가 완료</td>
+          <td>전원 / GTM</td>
+        </tr>
+        <tr>
+          <td>Week 9</td><td>5/2</td>
+          <td>Means-Ends Analysis, 문제 정의서 수정, 유저 인터뷰 3건+</td>
+          <td>전원</td>
+        </tr>
+        <tr>
+          <td>Week 10</td><td>5/9</td>
+          <td>아키텍처 확정, 프로젝트 인프라 셋업, 첫 화면 빌드</td>
+          <td>개발 / UX</td>
+        </tr>
+        <tr style="background: #fff3cd;">
+          <td>Week 11~13</td><td>5/16~30</td>
+          <td><strong>Build Sprint: MVP 완성, API 연동, 실제 매장 콘텐츠 게시</strong></td>
+          <td>전원</td>
+        </tr>
+        <tr>
+          <td>Week 14</td><td>6/6</td>
+          <td>유저 테스트 결과 수집, Before/After 데이터 확보, 최종 이터레이션</td>
+          <td>전원</td>
+        </tr>
+        <tr>
+          <td>Week 15</td><td>6/13</td>
+          <td>Dress Rehearsal (7~8분 발표), 전략적 성찰 리포트 완성</td>
+          <td>전원</td>
+        </tr>
+        <tr style="background: #d4edda;">
+          <td>Week 16</td><td>6/20</td>
+          <td><strong>Demo Day: "비즈니스 문제 &rarr; 통념 &rarr; 우리가 만든 것 &rarr; AI 인사이트"</strong></td>
+          <td>전원</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>사업화 로드맵 (2026.07~)</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>단계</th><th>기간</th><th>목표</th><th>KPI</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Phase 1</strong> 검증</td>
+          <td>2026.07~09</td>
+          <td>서면 50~100곳 확대, 유료 전환 시작</td>
+          <td>구독 전환율, 이탈률</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 2</strong> 수익화</td>
+          <td>2026.10~</td>
+          <td>부산 전역 확대, 자동화 90%+</td>
+          <td>MRR, 매장당 길찾기 증가율</td>
+        </tr>
+        <tr>
+          <td><strong>Phase 3</strong> 확장</td>
+          <td>2027~</td>
+          <td>전국 관광상권 + 글로벌</td>
+          <td>도시당 확장 속도, CAC/LTV</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 11. RISKS ==================== -->
+<section id="risks">
+  <div class="container">
+    <div class="section-number">11</div>
+    <h2 class="section-title">Risks &amp; Mitigation</h2>
+    <p class="section-lead">
+      핵심 리스크를 인지하고, 각각에 대한 대응 전략을 갖추고 있습니다.
+    </p>
+
+    <table class="journey-table">
+      <thead>
+        <tr><th style="width:20%">리스크</th><th style="width:10%">심각도</th><th style="width:35%">설명</th><th style="width:35%">대응 전략</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Google API 정책 변경</strong></td>
+          <td><span class="badge" style="background:#f8d7da; color:#721c24;">높음</span></td>
+          <td>Q&A API 폐지(2025.11) 선례. Local Posts API도 언제든 변경될 수 있음.</td>
+          <td>Plan B(Deep Link) 유지. API 의존도를 분산하고, 핵심 가치(AI 콘텐츠 생성)는 API 독립적으로 설계.</td>
+        </tr>
+        <tr>
+          <td><strong>Google 스팸 정책 위반</strong></td>
+          <td><span class="badge" style="background:#f8d7da; color:#721c24;">높음</span></td>
+          <td>AI 자동 콘텐츠의 반복적 게시, 키워드 채우기 등이 계정 정지 사유.</td>
+          <td>단순 번역이 아닌 창의적 콘텐츠 생성. Human-in-the-loop 검수. 포스팅 빈도 제한(최대 1일 1회).</td>
+        </tr>
+        <tr>
+          <td><strong>개인정보보호법</strong></td>
+          <td><span class="badge" style="background:#fff3cd; color:#856404;">중간</span></td>
+          <td>점주 GBP 데이터 대리 처리 시 개인정보 처리 위탁 관련 법적 의무.</td>
+          <td>OAuth 2.0 권한 위임 방식 사용 (비밀번호 공유 아님). 명시적 처리위탁 동의서 확보.</td>
+        </tr>
+        <tr>
+          <td><strong>AI 콘텐츠 품질</strong></td>
+          <td><span class="badge" style="background:#fff3cd; color:#856404;">중간</span></td>
+          <td>멀티모달 LLM의 음식 인식 오류, 부자연스러운 번역, 브랜드 목소리 손실.</td>
+          <td>업종별 프롬프트 튜닝 + 마케팅 담당 품질 평가표. 초기 수동 검수 후 점진적 자동화.</td>
+        </tr>
+        <tr>
+          <td><strong>소상공인 이탈</strong></td>
+          <td><span class="badge" style="background:#fff3cd; color:#856404;">중간</span></td>
+          <td>성과를 체감하지 못하면 구독 해지. 길찾기 클릭 증가가 체감 매출로 연결되지 않을 수 있음.</td>
+          <td>월간 리포트로 가시적 성과 제공. "이번 달 외국인 길찾기 XX건" 같은 명확한 숫자.</td>
+        </tr>
+        <tr>
+          <td><strong>플랫폼 단일 의존</strong></td>
+          <td><span class="badge" style="background:#d4edda; color:#155724;">낮음</span></td>
+          <td>Google Maps/GBP에 100% 의존하는 구조.</td>
+          <td>중장기적으로 네이버 플레이스, TripAdvisor 등 멀티 플랫폼 지원 검토.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 12. FINANCIAL PLAN ==================== -->
+<section id="financials" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">12</div>
+    <h2 class="section-title">Financial Plan</h2>
+    <p class="section-lead">
+      PoC 단계에서는 학습 투자. 자동화 달성 후 수익화로 전환합니다.
+    </p>
+
+    <h3>단계별 비용/수익 구조</h3>
+    <table class="journey-table">
+      <thead>
+        <tr><th>항목</th><th>PoC (5~10곳)</th><th>Phase 1 (50~100곳)</th><th>Phase 2 (100곳+)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>월 수익</strong></td>
+          <td>0원 (무료)</td>
+          <td>100~200만원</td>
+          <td>300만원+</td>
+        </tr>
+        <tr>
+          <td><strong>AI API 비용</strong></td>
+          <td>~3만원</td>
+          <td>15~30만원</td>
+          <td>30만원+</td>
+        </tr>
+        <tr>
+          <td><strong>인프라 비용</strong></td>
+          <td>~5만원</td>
+          <td>~10만원</td>
+          <td>~20만원</td>
+        </tr>
+        <tr>
+          <td><strong>온보딩 비용</strong></td>
+          <td>15~50만원 (일회성)</td>
+          <td>100~200만원 (일회성)</td>
+          <td>영업 인력 인건비</td>
+        </tr>
+        <tr>
+          <td><strong>수동 운영 비용</strong></td>
+          <td>높음 (학습 투자)</td>
+          <td>중간 (자동화 60%)</td>
+          <td>낮음 (자동화 90%)</td>
+        </tr>
+        <tr style="background: #fff3cd;">
+          <td><strong>손익</strong></td>
+          <td><strong>적자 (투자)</strong></td>
+          <td><strong>손익분기 근접</strong></td>
+          <td><strong>흑자 전환</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>핵심 전제</h3>
+    <div class="highlight-box">
+      <p>
+        이 사업의 경제성은 <strong>자동화율</strong>에 달려 있습니다.
+        사람이 매 포스트를 검수하고 수동 업로드하는 한 비용은 감당할 수 없습니다.
+        AI 파이프라인의 품질이 "사람 검수 없이 게시 가능한" 수준에 도달하는 것이
+        사업 성립의 전제 조건이며, 이것이 PoC에서 검증해야 할 가장 중요한 가설입니다.
+      </p>
+    </div>
+
+    <h3>투자 불필요 구간</h3>
+    <p>
+      이 사업 모델은 초기 외부 투자 없이 시작 가능합니다. PoC 비용(AI API + 교통비)은
+      월 50만원 미만이며, Phase 1까지 수익으로 자체 운영이 가능한 구조입니다.
+      외부 투자는 Phase 2 이후 타 지역 확장 시점에 검토합니다.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Windows system files
+desktop.ini
+Thumbs.db
+ehthumbs.db
+
+# Google Drive
+.tmp.drivedownload/
+.tmp.driveupload/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
