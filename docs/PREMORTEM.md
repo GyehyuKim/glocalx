@@ -1,45 +1,58 @@
 # Premortem: GlocalX
 
-> "It is now June 20, 2026 — Demo Day. GlocalX has failed. What went wrong?"
+> "2026년 6월 20일 Demo Day. GlocalX는 실패했다. 무엇이 잘못되었는가?"
 
-Each team member writes 2-3 failure scenarios from their area of responsibility, then we discuss mitigations together.
+## Impact 기준
 
----
-
-## Dev / Tech (Gyehyu)
-
-| Failure Scenario | Impact | Mitigation |
-|-----------------|--------|------------|
-| | | |
+- **Critical**: 프로젝트 자체가 멈춤. 우회 방법 없음.
+- **High**: 심각한 타격이지만 피벗/우회 가능.
+- **Medium**: 아프지만 학기 내 치명적이지 않음.
+- **Low**: 대응할 시간 충분.
 
 ---
 
-## GTM / Business (Gyeongmun)
+## Dev / Tech (계휴)
 
-| Failure Scenario | Impact | Mitigation |
-|-----------------|--------|------------|
-| | | |
+| # | 실패 시나리오 | Impact | 대응 방안 |
+|---|-------------|--------|----------|
+| 1 | GBP API 승인이 5월 이후로 지연되어 Demo Day까지 MVP 시연 불가 | Critical | Deep Link를 Plan B로 활용하여 API 없이도 포스팅 가능한 구조 확보. AI 파이프라인은 API와 독립적으로 병렬 개발하여 콘텐츠 생성 자체는 준비 완료 상태 유지. |
+| 5 | AI가 생성한 콘텐츠에 오역, 문화적 부적절 표현, 존재하지 않는 메뉴 등이 포함되어 점주 신뢰 상실 또는 구글 스팸 정책 위반으로 게시물 삭제/계정 정지 | High | PoC 기간 모든 게시물에 Human-in-the-loop 검수 적용. 프롬프트 가드레일 구축 (메뉴 기반 어휘 제한, 문화적 민감도 필터). 보수적 템플릿으로 시작 후 품질 검증되면 점진적 확대. |
+| 8 | 구글이 GBP API 조건 변경, 엔드포인트 폐기(2025.11 Q&A API 사례), 자동 포스팅 제한 강화 | Medium | API 추상화 레이어 설계로 특정 API에 종속되지 않는 구조. Deep Link 폴백 이미 로드맵에 포함. 구글 개발자 블로그 모니터링으로 조기 감지. |
 
----
-
-## Marketing / Brand (Seungwon)
-
-| Failure Scenario | Impact | Mitigation |
-|-----------------|--------|------------|
-| | | |
+> 위 내용은 자유롭게 수정/추가해주세요.
 
 ---
 
-## AX / Operations (Yunji)
+## GTM / Business (경문)
 
-| Failure Scenario | Impact | Mitigation |
-|-----------------|--------|------------|
-| | | |
+| # | 실패 시나리오 | Impact | 대응 방안 |
+|---|-------------|--------|----------|
+| 6 | 점주가 GBP 관리자 권한 위임을 거부 ("내 가게 프로필을 왜 남한테 줘야 해?") - PoC 시작 자체가 불가 | Critical | |
+| 4 | 외국인 관광객 방문이 체감 가능하게 늘지 않아 점주가 효과를 느끼지 못하고 이탈 | High | |
+| 7 | 무료 PoC 기간엔 사용하다가 월 2-3만원 유료 전환 시점에 이탈 | Medium | |
 
 ---
 
-## Cross-cutting Risks (All)
+## Marketing / Brand (승원)
 
-| Failure Scenario | Owner | Impact | Mitigation |
-|-----------------|-------|--------|------------|
-| | | | |
+| # | 실패 시나리오 | Impact | 대응 방안 |
+|---|-------------|--------|----------|
+| 3 | 경쟁 위협: 구글이 GBP 다국어 자동번역 기능 출시, 또는 기존 네이버/인스타 광고 대행사가 GBP 시장에 진입 | Medium | |
+| 4 | 마케팅 콘텐츠가 외국인 관광객에게 어필 실패 - 노출은 되지만 실제 방문/전환으로 이어지지 않음 | High | |
+
+---
+
+## AX / Operations (윤지)
+
+| # | 실패 시나리오 | Impact | 대응 방안 |
+|---|-------------|--------|----------|
+| 5 | 콘텐츠 QA 병목 - 점포 수 증가 시 사람이 검수를 감당 못 하고, 품질 미달 콘텐츠가 게시됨 | High | |
+| 9 | 외부 환경 변화 (환율, 지정학 이슈 등)로 부산 인바운드 관광객 급감 - 서비스 수요 자체 감소 | Medium | |
+
+---
+
+## 공통 리스크 (전원)
+
+| # | 실패 시나리오 | Impact | 대응 방안 |
+|---|-------------|--------|----------|
+| 2 | 팀 실행력 부족 - 타 수업/업무로 시간 확보 어려움. Git 학습 곡선, 비동기 커뮤니케이션 지연으로 협업 마찰 | High | |
