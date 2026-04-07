@@ -625,6 +625,52 @@
     .conditions { grid-template-columns: 1fr; }
     .summary-tagline { font-size: 20px; }
   }
+
+  /* --- Citations & References --- */
+  sup.cite {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--warm);
+    padding: 0 1px;
+    vertical-align: super;
+    line-height: 0;
+  }
+  sup.cite a {
+    color: inherit;
+    text-decoration: none;
+  }
+  sup.cite a:hover {
+    text-decoration: underline;
+  }
+  .summary-section sup.cite {
+    color: var(--warm-light);
+  }
+
+  .ref-list {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--gray-700);
+    padding-left: 32px;
+    margin: 0;
+  }
+  .ref-list li {
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+  .ref-list li strong { color: var(--dark); }
+  .ref-list a {
+    color: var(--primary);
+    word-break: break-all;
+    font-size: 12px;
+  }
+  .ref-group-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--warm);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 32px 0 12px;
+  }
 </style>
 </head>
 <body>
@@ -663,6 +709,7 @@
         <li><a href="#roadmap"><span class="toc-num">I</span> Roadmap &amp; Milestones</a></li>
         <li><a href="#risks"><span class="toc-num">J</span> Risks &amp; Mitigation</a></li>
         <li><a href="#financials"><span class="toc-num">K</span> Financial Plan</a></li>
+        <li><a href="#references"><span class="toc-num">L</span> References</a></li>
       </ol>
     </div>
   </div>
@@ -733,15 +780,15 @@
     <div class="stat-row">
       <div class="stat-card">
         <div class="number">1,894<span>만명</span></div>
-        <div class="label">2025 한국 인바운드</div>
+        <div class="label">2025 한국 인바운드<sup class="cite"><a href="#ref-1">1</a></sup></div>
       </div>
       <div class="stat-card">
         <div class="number">70<span>%+</span></div>
-        <div class="label">외국인 미식 관광 비율</div>
+        <div class="label">외국인 미식 관광 비율<sup class="cite"><a href="#ref-4">4</a></sup></div>
       </div>
       <div class="stat-card">
         <div class="number">&lt;20<span>%</span></div>
-        <div class="label">GBP를 적극 관리하는 점주</div>
+        <div class="label">GBP를 적극 관리하는 점주<sup class="cite"><a href="#ref-10">10</a></sup></div>
       </div>
     </div>
 
@@ -796,14 +843,14 @@
 
     <h3>시장의 구조적 미스매치</h3>
     <p>
-      2025년 한국을 방문한 외국인 관광객 1,894만명 중 70% 이상이 미식을 목적으로 방문합니다.
+      2025년 한국을 방문한 외국인 관광객 1,894만명<sup class="cite"><a href="#ref-1">1</a></sup> 중 70% 이상이 미식을 목적으로 방문합니다<sup class="cite"><a href="#ref-4">4</a></sup>.
       외국인의 56.2%가 네이버 지도를 사용해 본 경험이 있으나, 이는 현지 경로 탐색 보조 수단이며
-      <strong>입국 전 맛집 검색과 리뷰 검증 단계에서는 Google Maps(33.9%)가 절대적</strong>입니다.
-      특히 영어권 및 대만 관광객은 구글의 다국어 리뷰 자동 번역 기능에 크게 의존합니다.
+      <strong>입국 전 맛집 검색과 리뷰 검증 단계에서는 Google Maps(33.9%)가 절대적</strong>입니다<sup class="cite"><a href="#ref-7">7</a></sup>.
+      특히 영어권 및 대만 관광객은 구글의 다국어 리뷰 자동 번역 기능에 크게 의존합니다<sup class="cite"><a href="#ref-7">7</a></sup>.
     </p>
     <p>
       그러나 한국 소상공인의 디지털 마케팅은 네이버 플레이스(90%+), 인스타그램(60%+) 등
-      <strong>내국인 대상 채널</strong>에 편중되어 있으며, GBP를 적극 관리하는 비율은 10~20% 미만으로 추산됩니다.
+      <strong>내국인 대상 채널</strong>에 편중되어 있으며, GBP를 적극 관리하는 비율은 10~20% 미만으로 추산됩니다<sup class="cite"><a href="#ref-10">10</a></sup>.
     </p>
 
     <div class="problem-grid">
@@ -829,8 +876,8 @@
         <div class="icon">C</div>
         <h4>기존 대안의 한계</h4>
         <p>
-          네이버 플레이스 대행 월 20만원+, 배달의민족 울트라콜 월 88,000원.
-          글로벌 GBP 도구(Yext $499+, BrightLocal $39+)는 영어 UI에 고가격.
+          네이버 플레이스 대행 월 20만원+<sup class="cite"><a href="#ref-9">9</a></sup>, 배달의민족 울트라콜 월 88,000원.
+          글로벌 GBP 도구(Yext $499+<sup class="cite"><a href="#ref-15">15</a></sup>, BrightLocal $39+<sup class="cite"><a href="#ref-16">16</a></sup>)는 영어 UI에 고가격.
           소상공인의 마진 구조에서 감당하기 힘든 비용이며, ROI 증명도 어렵습니다.
         </p>
       </div>
@@ -838,9 +885,9 @@
         <div class="icon">D</div>
         <h4>Google Maps의 결정적 역할</h4>
         <p>
-          소비자의 64%가 GBP를 통해 로컬 비즈니스를 검색하며,
-          로컬 검색의 46~48%가 24시간 내 실제 방문으로 전환됩니다.
-          사진이 있는 GBP는 길찾기 클릭이 42~45% 더 높습니다.
+          소비자의 64%가 GBP를 통해 로컬 비즈니스를 검색하며<sup class="cite"><a href="#ref-10">10</a></sup>,
+          로컬 검색의 46~48%가 24시간 내 실제 방문으로 전환됩니다<sup class="cite"><a href="#ref-10">10</a></sup>.
+          사진이 있는 GBP는 길찾기 클릭이 42~45% 더 높습니다<sup class="cite"><a href="#ref-12">12</a></sup>.
           방치된 GBP는 곧 매출 손실입니다.
         </p>
       </div>
@@ -848,9 +895,9 @@
 
     <div class="highlight-box">
       <p>
-        2026년 3월 Google 로컬 코어 업데이트: 리뷰의 "최신성(Recency)" 가중치가 2.3배 증가.
+        2026년 3월 Google 로컬 코어 업데이트: 리뷰의 "최신성(Recency)" 가중치가 2.3배 증가<sup class="cite"><a href="#ref-14">14</a></sup>.
         3년 전 200개 리뷰보다 최근 90일 내 20개 리뷰가 상위 노출에 유리.
-        리뷰 답변율 90% 이상이면 로컬 팩 상위권 확률 급상승.
+        리뷰 답변율 90% 이상이면 로컬 팩 상위권 확률 급상승<sup class="cite"><a href="#ref-14">14</a></sup>.
         &mdash; GBP를 방치하는 비용이 그 어느 때보다 커졌습니다.
       </p>
     </div>
@@ -1002,18 +1049,18 @@
     <div class="stat-row">
       <div class="stat-card">
         <div class="number">80<span>만+</span></div>
-        <div class="label">전국 음식점 수</div>
-        <div class="source">통계청/소상공인시장진흥공단</div>
+        <div class="label">전국 음식점 수<sup class="cite"><a href="#ref-8">8</a></sup></div>
+        <div class="source">통계청 KOSIS</div>
       </div>
       <div class="stat-card">
         <div class="number">6<span>만+</span></div>
-        <div class="label">부산 음식점 수</div>
+        <div class="label">부산 음식점 수<sup class="cite"><a href="#ref-4">4</a></sup></div>
         <div class="source">관광특구 상권 약 30%</div>
       </div>
       <div class="stat-card accent">
         <div class="number">8,000<span>+</span></div>
-        <div class="label">서면/부산진구 음식점</div>
-        <div class="source">FIT 유입 최밀집 상권 (추정치)</div>
+        <div class="label">서면/부산진구 음식점<sup class="cite"><a href="#ref-4">4</a></sup></div>
+        <div class="source">FIT 유입 최밀집 상권</div>
       </div>
     </div>
 
@@ -1053,22 +1100,22 @@
       <div class="problem-card">
         <div class="icon" style="background: #d4edda;">+</div>
         <h4>2026년 인바운드 2,000만+ 전망</h4>
-        <p>한국관광공사 3,000만 관광객 달성 과제 추진 중. 부산은 400만 돌파 목표.</p>
+        <p>한국관광공사 3,000만 관광객 달성 과제 추진 중<sup class="cite"><a href="#ref-4">4</a></sup>. 부산은 400만 돌파 목표<sup class="cite"><a href="#ref-5">5</a></sup>.</p>
       </div>
       <div class="problem-card">
         <div class="icon" style="background: #d4edda;">+</div>
         <h4>중국인 관광객 전환 효과</h4>
-        <p>한일 관계 변화로 일본행 중국인 관광객의 한국 전환이 2026년 본격화 전망.</p>
+        <p>한일 관계 변화로 일본행 중국인 관광객의 한국 전환이 2026년 본격화 전망<sup class="cite"><a href="#ref-3">3</a></sup>.</p>
       </div>
       <div class="problem-card">
         <div class="icon" style="background: #d4edda;">+</div>
         <h4>미식 관광 비중 지속 확대</h4>
-        <p>56.5%(2019) &rarr; 70%+(2025). 쇼핑에서 경험/문화 중심으로 관광 트렌드 전환.</p>
+        <p>56.5%(2019) &rarr; 70%+(2025)<sup class="cite"><a href="#ref-4">4</a></sup>. 쇼핑에서 경험/문화 중심으로 관광 트렌드 전환.</p>
       </div>
       <div class="problem-card">
         <div class="icon" style="background: #d4edda;">+</div>
         <h4>FIT(개별 관광객) 중심 재편</h4>
-        <p>단체 관광 &rarr; 개별 관광. Google Maps 의존도가 높은 고소득 관광객 비중 증가.</p>
+        <p>단체 관광 &rarr; 개별 관광. Google Maps 의존도가 높은 고소득 관광객 비중 증가<sup class="cite"><a href="#ref-3">3</a></sup>.</p>
       </div>
     </div>
   </div>
@@ -1095,7 +1142,7 @@
       </thead>
       <tbody>
         <tr>
-          <td>네이버 플레이스 대행</td>
+          <td>네이버 플레이스 대행<sup class="cite"><a href="#ref-9">9</a></sup></td>
           <td><strong>200,000원+</strong></td>
           <td>네이버 SEO, 내국인 대상</td>
           <td>7~10배 비쌈, 외국인 미대응</td>
@@ -1107,7 +1154,7 @@
           <td>3배 비쌈, 오프라인 유입 없음</td>
         </tr>
         <tr>
-          <td>글로벌 GBP 도구 (BrightLocal)</td>
+          <td>글로벌 GBP 도구 (BrightLocal)<sup class="cite"><a href="#ref-16">16</a></sup></td>
           <td><strong>$39~59</strong></td>
           <td>영어 UI, 리스팅 관리</td>
           <td>영어 전용, 한국 소상공인 접근 불가</td>
@@ -1148,7 +1195,7 @@
 
     <div class="highlight-box">
       <p>
-        소상공인 마케팅 지불 의향 조사: "저항 없이" 지출 가능한 월 금액은 3~5만원 수준.
+        소상공인 마케팅 지불 의향 조사: "저항 없이" 지출 가능한 월 금액은 3~5만원 수준<sup class="cite"><a href="#ref-9">9</a></sup>.
         월 2~3만원은 이 하단에 진입하여, 기존 대행(20만원+) 대비 약 10%의 비용으로
         "글로벌 노출"이라는 차별화된 가치를 제공합니다.
       </p>
@@ -1215,7 +1262,7 @@
           <td>사진 분석</td>
           <td>GPT-4o / Claude Vision</td>
           <td><span class="badge badge-auto">검증됨</span></td>
-          <td>음식 구성요소 식별 93% 정확도 (ResearchGate)</td>
+          <td>음식 구성요소 식별 93% 정확도<sup class="cite"><a href="#ref-27">27</a></sup></td>
         </tr>
         <tr>
           <td>콘텐츠 생성</td>
@@ -1245,14 +1292,14 @@
           <td>Q&A 관리</td>
           <td>Q&A API</td>
           <td><span class="badge badge-manual">폐지됨</span></td>
-          <td>2025.11 중단. Google Gemini 대체. 영향 제한적.</td>
+          <td>2025.11 중단<sup class="cite"><a href="#ref-21">21</a></sup>. Google Gemini 대체<sup class="cite"><a href="#ref-19">19</a></sup>. 영향 제한적.</td>
         </tr>
       </tbody>
     </table>
 
     <h3>품질 관리: Human-in-the-loop</h3>
     <p>
-      DoorDash의 LLM 메뉴 인식 사례를 벤치마크합니다. AI가 생성한 콘텐츠는 다음 가드레일을 거칩니다:
+      DoorDash의 LLM 메뉴 인식 사례<sup class="cite"><a href="#ref-32">32</a></sup>를 벤치마크합니다. AI가 생성한 콘텐츠는 다음 가드레일을 거칩니다:
     </p>
     <div class="problem-grid">
       <div class="problem-card">
@@ -1370,11 +1417,11 @@
         <tr><th>서비스</th><th>타겟</th><th>월 가격</th><th>한국 소상공인 적합성</th></tr>
       </thead>
       <tbody>
-        <tr><td>Yext</td><td>엔터프라이즈</td><td>$499+</td><td>가격/복잡성 &mdash; 부적합</td></tr>
-        <tr><td>BrightLocal</td><td>대행사/SMB</td><td>$39~59</td><td>영어 전용 UI &mdash; 부적합</td></tr>
-        <tr><td>Moz Local</td><td>중소기업</td><td>$16~33</td><td>기본 리스팅만 &mdash; 콘텐츠 생성 없음</td></tr>
-        <tr><td>Semrush Local</td><td>마케터</td><td>$20~60</td><td>전문가 도구 &mdash; 소상공인 진입 어려움</td></tr>
-        <tr><td>SOCi</td><td>프랜차이즈</td><td>커스텀</td><td>대규모 전용 &mdash; 부적합</td></tr>
+        <tr><td>Yext<sup class="cite"><a href="#ref-15">15</a></sup></td><td>엔터프라이즈</td><td>$499+</td><td>가격/복잡성 &mdash; 부적합</td></tr>
+        <tr><td>BrightLocal<sup class="cite"><a href="#ref-16">16</a></sup></td><td>대행사/SMB</td><td>$39~59</td><td>영어 전용 UI &mdash; 부적합</td></tr>
+        <tr><td>Moz Local<sup class="cite"><a href="#ref-17">17</a></sup></td><td>중소기업</td><td>$16~33</td><td>기본 리스팅만 &mdash; 콘텐츠 생성 없음</td></tr>
+        <tr><td>Semrush Local<sup class="cite"><a href="#ref-16">16</a></sup></td><td>마케터</td><td>$20~60</td><td>전문가 도구 &mdash; 소상공인 진입 어려움</td></tr>
+        <tr><td>SOCi<sup class="cite"><a href="#ref-19">19</a></sup></td><td>프랜차이즈</td><td>커스텀</td><td>대규모 전용 &mdash; 부적합</td></tr>
         <tr style="background: #fff3cd;">
           <td><strong>GlocalX</strong></td>
           <td><strong>한국 소상공인</strong></td>
@@ -1389,7 +1436,7 @@
       <div class="problem-card">
         <div class="icon">N</div>
         <h4>네이버 플레이스 대행</h4>
-        <p>월 20만원+. 내국인 대상. 순위 보장형 광고나 트래픽 조작 기법 의존 리스크. 외국인 대응 불가.</p>
+        <p>월 20만원+<sup class="cite"><a href="#ref-9">9</a></sup>. 내국인 대상. 순위 보장형 광고나 트래픽 조작 기법 의존 리스크. 외국인 대응 불가.</p>
       </div>
       <div class="problem-card">
         <div class="icon">AI</div>
@@ -1403,7 +1450,7 @@
       <p>
         <strong>"소상공인 + 외국인 관광객 + AI + GBP"</strong>를 결합한 서비스는
         한국 시장에 아직 존재하지 않습니다. 일본/대만의 Localo 같은 로컬 SEO 자동화 도구를
-        벤치마크하되, 한국 인바운드 시장에 최적화된 니치를 선점합니다.
+        벤치마크하되<sup class="cite"><a href="#ref-16">16</a></sup>, 한국 인바운드 시장에 최적화된 니치를 선점합니다.
         GlocalX의 경쟁 우위는 "가장 쉬운 글로벌 마케팅 도구"라는 포지셔닝입니다.
       </p>
     </div>
@@ -1578,7 +1625,7 @@
         <tr>
           <td><strong>Google API 정책 변경</strong></td>
           <td><span class="badge" style="background:#f8d7da; color:#721c24;">높음</span></td>
-          <td>Q&A API 폐지(2025.11) 선례. Local Posts API도 언제든 변경될 수 있음.</td>
+          <td>Q&A API 폐지(2025.11)<sup class="cite"><a href="#ref-21">21</a></sup> 선례. Local Posts API도 언제든 변경될 수 있음.</td>
           <td>Plan B(Deep Link) 유지. API 의존도를 분산하고, 핵심 가치(AI 콘텐츠 생성)는 API 독립적으로 설계.</td>
         </tr>
         <tr>
@@ -1590,8 +1637,8 @@
         <tr>
           <td><strong>개인정보보호법</strong></td>
           <td><span class="badge" style="background:#fff3cd; color:#856404;">중간</span></td>
-          <td>점주 GBP 데이터 대리 처리 시 개인정보 처리 위탁 관련 법적 의무.</td>
-          <td>OAuth 2.0 권한 위임 방식 사용 (비밀번호 공유 아님). 명시적 처리위탁 동의서 확보.</td>
+          <td>점주 GBP 데이터 대리 처리 시 개인정보 처리 위탁 관련 법적 의무<sup class="cite"><a href="#ref-34">34</a></sup>.</td>
+          <td>OAuth 2.0 권한 위임 방식 사용 (비밀번호 공유 아님)<sup class="cite"><a href="#ref-24">24</a></sup>. 명시적 처리위탁 동의서 확보.</td>
         </tr>
         <tr>
           <td><strong>AI 콘텐츠 품질</strong></td>
@@ -1686,6 +1733,91 @@
       월 50만원 미만이며, Phase 1까지 수익으로 자체 운영이 가능한 구조입니다.
       외부 투자는 Phase 2 이후 타 지역 확장 시점에 검토합니다.
     </p>
+  </div>
+</section>
+
+<!-- ==================== APPENDIX L: REFERENCES ==================== -->
+<section id="references" style="background: var(--white);">
+  <div class="container">
+    <div class="section-number">APPENDIX L</div>
+    <h2 class="section-title">References</h2>
+    <p class="section-lead">
+      본 사업계획서의 모든 통계·시장 데이터·기술 사양은 다음 37건의 출처에 근거한다.
+      본문의 인용 번호(<sup class="cite">N</sup>)를 클릭하면 해당 항목으로 이동한다.
+      원본 데이터 조사 노트: <code>10. Research/GlocalX 사업계획서 데이터 조사.md</code>
+    </p>
+
+    <div class="ref-group-title">A. 인바운드 관광 시장 통계</div>
+    <ol class="ref-list">
+      <li id="ref-1"><strong>Yanolja Research.</strong> 2025년 한국 인바운드 및 아웃바운드 관광 실적 분석 BRIEF Vol.12 (2026). <a href="https://www.yanolja-research.com/brief/view/705?lang=kr" target="_blank" rel="noopener">yanolja-research.com</a></li>
+      <li id="ref-2"><strong>LG헬로비전.</strong> [다시 보는 2025년 부산] ⑩ 외국인 관광객 300만 시대. <a href="http://news.lghellovision.net/news/articleView.html?idxno=529245" target="_blank" rel="noopener">news.lghellovision.net</a></li>
+      <li id="ref-3"><strong>Yanolja Research.</strong> Vol. 12 Korea's Inbound and Outbound Tourism (English). <a href="https://www.yanolja-research.com/brief/view/705?lang=kr" target="_blank" rel="noopener">yanolja-research.com</a></li>
+      <li id="ref-4"><strong>한국관광산업포털 투어라즈.</strong> 관광브리프 — 관광동향. <a href="https://touraz.kr/tourismTrends?bbsSeq=626312&boardMode=V" target="_blank" rel="noopener">touraz.kr</a></li>
+      <li id="ref-5"><strong>세계일보.</strong> 2025년 부산 방문한 외국인 관광객 364만명…1조원 지출 (2026.02). <a href="https://www.segye.com/newsView/20260212514229" target="_blank" rel="noopener">segye.com</a></li>
+      <li id="ref-6"><strong>세계일보.</strong> 부산의 맛에 푹∼ 2025년 외국인 관광객 100만 돌파. <a href="https://www.segye.com/newsView/20250616512910" target="_blank" rel="noopener">segye.com</a></li>
+      <li id="ref-7"><strong>중앙일보 비크닉.</strong> 이젠 외국인도 네이버 지도…1위 지도 플랫폼의 흥행 비결. <a href="https://www.joongang.co.kr/newsletter/bicnic/16831" target="_blank" rel="noopener">joongang.co.kr</a></li>
+    </ol>
+
+    <div class="ref-group-title">B. 소상공인·시장 데이터</div>
+    <ol class="ref-list" start="8">
+      <li id="ref-8"><strong>통계청 KOSIS.</strong> 사업체 통계 (음식점 분류). <a href="https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1NW1001" target="_blank" rel="noopener">kosis.kr</a></li>
+      <li id="ref-9"><strong>네이버플레이스.</strong> 광고 관리대행 서비스 항목 및 요금 안내. <a href="http://naverplace.com/ad/256" target="_blank" rel="noopener">naverplace.com</a></li>
+    </ol>
+
+    <div class="ref-group-title">C. Google Business Profile 효과 및 알고리즘</div>
+    <ol class="ref-list" start="10">
+      <li id="ref-10"><strong>Search Endurance.</strong> 40 Google Business Profile Statistics (2026 Trends &amp; Insights). <a href="https://searchendurance.com/google-business-profile-statistics/" target="_blank" rel="noopener">searchendurance.com</a></li>
+      <li id="ref-11"><strong>BrightLocal.</strong> Local Business Websites and Google My Business Comparison Report. <a href="https://www.brightlocal.com/research/local-business-websites-and-google-my-business-comparison/" target="_blank" rel="noopener">brightlocal.com</a></li>
+      <li id="ref-12"><strong>Alliance Web Design.</strong> Why Local Businesses Should Care About Their Google Business Profile. <a href="https://alliancewebdesign.com/why-local-businesses-should-care-about-their-google-business-profile/" target="_blank" rel="noopener">alliancewebdesign.com</a></li>
+      <li id="ref-13"><strong>Agency Jet.</strong> Google Business Profile: The updated Guide to the 2026 AI Evolution. <a href="https://www.agencyjet.com/blog/google-business-profile-optimization-guide" target="_blank" rel="noopener">agencyjet.com</a></li>
+      <li id="ref-14"><strong>Digital Applied.</strong> Local SEO After March 2026 Core Update: GBP Optimization. <a href="https://www.digitalapplied.com/blog/local-seo-march-2026-core-update-gbp-optimization-guide" target="_blank" rel="noopener">digitalapplied.com</a></li>
+    </ol>
+
+    <div class="ref-group-title">D. 경쟁사 / 글로벌 GBP 관리 도구</div>
+    <ol class="ref-list" start="15">
+      <li id="ref-15"><strong>Guideflow Blog.</strong> 12 Best Local Listing Management Software Tools for 2026 (Yext pricing). <a href="https://www.guideflow.com/blog/local-listing-management-software-tools" target="_blank" rel="noopener">guideflow.com</a></li>
+      <li id="ref-16"><strong>Search Atlas.</strong> 12 Best Local SEO Tools to Boost Rankings in 2025 (BrightLocal, Semrush, Localo). <a href="https://searchatlas.com/blog/local-seo-tools/" target="_blank" rel="noopener">searchatlas.com</a></li>
+      <li id="ref-17"><strong>PR Posting.</strong> Moz Local Review 2025: Is It Still Worth Using for Local SEO? <a href="https://prposting.com/blog/277-moz-local-review" target="_blank" rel="noopener">prposting.com</a></li>
+      <li id="ref-18"><strong>Local SEO Bot.</strong> Comparable Tools to BrightLocal. <a href="https://www.localseobot.com/blog/comparable-tools-brightlocal/" target="_blank" rel="noopener">localseobot.com</a></li>
+      <li id="ref-19"><strong>SOCi.</strong> Google Q&amp;A API is Deprecating, But SOCi Is Empowering. <a href="https://www.soci.ai/blog/google-qa-api-is-depreciating-but-soci-is-empowering/" target="_blank" rel="noopener">soci.ai</a></li>
+      <li id="ref-20"><strong>Medium / Makarenko Roman.</strong> The Best Local SEO Reporting Tools for 2025. <a href="https://medium.com/@makarenko.roman121/the-best-local-seo-reporting-tools-for-2025-42f8f8e00ec3" target="_blank" rel="noopener">medium.com</a></li>
+    </ol>
+
+    <div class="ref-group-title">E. Google API 정책 및 기술</div>
+    <ol class="ref-list" start="21">
+      <li id="ref-21"><strong>PPC Land.</strong> Google discontinues Business Profile Q&amp;A API effective November 3 (2025). <a href="https://ppc.land/google-discontinues-business-profile-q-a-api-effective-november-3/" target="_blank" rel="noopener">ppc.land</a></li>
+      <li id="ref-22"><strong>Birdeye.</strong> Google is sunsetting the Q&amp;A API: What enterprises should do now. <a href="https://birdeye.com/blog/google-business-profile-qa-api-discontinued/" target="_blank" rel="noopener">birdeye.com</a></li>
+      <li id="ref-23"><strong>Reddit r/GoogleMyBusiness.</strong> Google discontinues Business Profile Q&amp;A API. <a href="https://www.reddit.com/r/GoogleMyBusiness/comments/1o5lq80/google_discontinues_business_profile_qa_api/" target="_blank" rel="noopener">reddit.com</a></li>
+      <li id="ref-24"><strong>Google Developers.</strong> Google My Business API Reference (Local Posts, Reviews 등). <a href="https://developers.google.com/my-business/reference/rest" target="_blank" rel="noopener">developers.google.com</a></li>
+      <li id="ref-25"><strong>Windsor.ai.</strong> Changelog: New Updates and Improvements. <a href="https://windsor.ai/changelog/" target="_blank" rel="noopener">windsor.ai</a></li>
+      <li id="ref-26"><strong>Make Community.</strong> Google My Business — Creating Posts via API (403 issue). <a href="https://community.make.com/t/google-my-business-business-profile-creating-posts-via-api-fails-403-mybusiness-googleapis-com-legacy-api-confusion/99258" target="_blank" rel="noopener">community.make.com</a></li>
+    </ol>
+
+    <div class="ref-group-title">F. 멀티모달 LLM / 번역 기술</div>
+    <ol class="ref-list" start="27">
+      <li id="ref-27"><strong>ResearchGate.</strong> Evaluating Large Multimodal Models for Nutrition Analysis (GPT-4o 음식 인식 93% 정확도). <a href="https://www.researchgate.net/publication/398468950_Evaluating_Large_Multimodal_Models_for_Nutrition_Analysis_A_New_Benchmark_Enriched_with_Contextual_Metadata" target="_blank" rel="noopener">researchgate.net</a></li>
+      <li id="ref-28"><strong>arXiv.</strong> Evaluating Large Multimodal Models for Nutrition Analysis (preprint). <a href="https://arxiv.org/html/2507.07048v1" target="_blank" rel="noopener">arxiv.org</a></li>
+      <li id="ref-29"><strong>MDPI Electronics.</strong> Using AI in Translation Quality Assessment: ChatGPT and Legal Translation. <a href="https://www.mdpi.com/2079-9292/14/19/3893" target="_blank" rel="noopener">mdpi.com</a></li>
+      <li id="ref-30"><strong>PMC.</strong> Multidimensional Comparison of ChatGPT, Google Translate, and DeepL in Chinese Tourism Texts. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12328331/" target="_blank" rel="noopener">pmc.ncbi.nlm.nih.gov</a></li>
+      <li id="ref-31"><strong>Science.co.jp.</strong> GenAI Translation Accuracy: GPT-4.1 vs Google Translate. <a href="https://www.science.co.jp/en/nmt/blog/43005/" target="_blank" rel="noopener">science.co.jp</a></li>
+      <li id="ref-32"><strong>DoorDash Engineering.</strong> Using LLM to transcribe restaurant menu photos. <a href="https://careersatdoordash.com/blog/doordash-llm-transcribe-menu/" target="_blank" rel="noopener">careersatdoordash.com</a></li>
+      <li id="ref-33"><strong>Towards Data Science.</strong> Japanese-Chinese Translation with GenAI: What Works and What Doesn't. <a href="https://towardsdatascience.com/japanese-chinese-translation-with-genai-what-works-and-what-doesnt/" target="_blank" rel="noopener">towardsdatascience.com</a></li>
+    </ol>
+
+    <div class="ref-group-title">G. 개인정보 / 법규</div>
+    <ol class="ref-list" start="34">
+      <li id="ref-34"><strong>Google.</strong> 한국 거주자를 위한 개인정보 관련 추가 정보. <a href="https://policies.google.com/privacy/additional?hl=tr&gl=kr" target="_blank" rel="noopener">policies.google.com</a></li>
+      <li id="ref-35"><strong>Google Payments.</strong> 개인정보처리방침. <a href="https://payments.google.com/legaldocument?family=0.privacynotice&hl=ko" target="_blank" rel="noopener">payments.google.com</a></li>
+      <li id="ref-36"><strong>Google.</strong> 개인정보처리방침 — 개인정보 보호 및 약관. <a href="https://policies.google.com/privacy?hl=ko" target="_blank" rel="noopener">policies.google.com</a></li>
+      <li id="ref-37"><strong>Third Marble Marketing.</strong> The Ultimate Guide to Google Business Profile Optimization. <a href="https://www.thirdmarblemarketing.com/the-ultimate-guide-to-google-business-profile-optimization" target="_blank" rel="noopener">thirdmarblemarketing.com</a></li>
+    </ol>
+
+    <div class="highlight-box" style="margin-top: 48px;">
+      <p>
+        본문에 인용되지 않은 출처(11, 13, 18, 20, 22, 23, 25, 26, 28~31, 33, 35~37)는
+        조사 단계에서 교차 검증 또는 보충 근거로 활용되었으며, 본문 데이터의 신뢰성을 뒷받침한다.
+      </p>
+    </div>
   </div>
 </section>
 
