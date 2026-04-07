@@ -12,13 +12,12 @@
 이것이 매출 증대와 운영비 절감 두 목표에 동시에 기여하는 유일한 영역이다.
 
 ```mermaid
-graph TD
+graph BT
     %% 궁극 목적 (둘)
-    Goal1["소상공인 지원"]
-    Goal2["관광객 유치"]
+    Goal1["지역경제 활성화"]
 
     %% 매출 극대화 — M:N #1: 두 부모로 동시 기여
-    Sales["매출 극대화"]
+    Sales["소상공인 매출 증대"]
 
     %% 매출 극대화의 두 갈래
     Path1["고객 유입 증대"]
@@ -45,7 +44,6 @@ graph TD
 
     %% --- 화살표 ---
     Sales --> Goal1
-    Sales --> Goal2
     Path1 --> Sales
     Path2 --> Sales
     Cust1 --> Path1
@@ -69,7 +67,7 @@ graph TD
     classDef out fill:#f0f0f0,stroke:#999,stroke-dasharray:5 5,color:#666
     classDef target fill:#cce5ff,stroke:#004085,stroke-width:2px,color:#000
 
-    class Goal1,Goal2 ultimate
+    class Goal1 ultimate
     class Ch4,Sol1,Sol2,Sol3 main
     class Ch1,Ch2,Ch3 out
     class Cust2 target
@@ -79,11 +77,11 @@ graph TD
 
 | 시각 표시 | 의미 |
 |---|---|
-| **빨간 박스 (위)** | 궁극 목적 두 개 — 매출 극대화는 둘 모두에 기여 (M:N #1) |
+| **빨간 박스 (위)** | 궁극 목적 — 우리가 서비스를 통해 이루고자 하는 가치 |
 | **파란 박스** | 우리 타겟 — 외국인 관광객 |
 | **노란 굵은 박스** | 우리 영역 — Google Business Profile 최적화 + 3가지 수단 |
 | **회색 점선 박스** | Out of Scope — SNS 마케팅, 전단지, 브랜딩 |
-| **점선 화살표** (Sol1 → Mkc) | GBP 자동화는 외국인 유입(매출)뿐 아니라 인건비 절감(운영비)에도 기여 (M:N #2) |
+| **점선 화살표** (Sol1 → Mkc) | GBP 자동화는 외국인 유입(매출)뿐 아니라 인건비 절감(운영비)에도 기여 (M:N) |
 
 ### Scope 결정
 
@@ -116,7 +114,7 @@ graph TD
 
 ### 정윤지: 종합 트리
 
-Main / Sub / Out of Scope를 명시적으로 구분한 종합 view. 화살표가 두 갈래로 갈라지는 부분(매출 극대화 → 소상공인 지원 + 관광객 유치)이 통일 트리의 M:N #1의 출처이다.
+Main / Sub / Out of Scope를 명시적으로 구분한 종합 view. 화살표가 두 갈래로 갈라지는 부분(매출 극대화 → 소상공인 지원 + 관광객 유치)등 M:N 관계를 분석.
 
 ![종합 트리 - 정윤지](./whytree/whytree-yj.png)
 
