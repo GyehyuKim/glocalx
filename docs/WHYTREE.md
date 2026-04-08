@@ -14,22 +14,23 @@
 ---
 
 ## 다이어그램
+
 ```mermaid
 graph BT
-    Goal1["지역경제 활성화"]
+    Goal1["지역경제 활성화"]:::goal
     Sales["소상공인 매출 증대"]
     Path1["고객 유입 증대"]
     Path2["운영비 최적화"]
     Cust1["기존 고객<br/>(국내)"]
-    Cust2["해외 고객<br/>(외국인 관광객)"]
+    Cust2["해외 고객<br/>(외국인 관광객)"]:::target
     Mkt["외국인 대상<br/>다국어 마케팅 활동"]
-    Ch1["SNS 마케팅"]
-    Ch2["전단지"]
-    Ch3["브랜딩"]
-    Ch4["Google Business Profile<br/>최적화"]
-    Sol1["다국어 콘텐츠<br/>자동 게시"]
-    Sol2["기본정보 / 메뉴 / 사진<br/>다국어화"]
-    Sol3["다국어 리뷰 답변"]
+    Ch1["SNS 마케팅"]:::out
+    Ch2["전단지"]:::out
+    Ch3["브랜딩"]:::out
+    Ch4["Google Business Profile<br/>최적화"]:::main
+    Sol1["다국어 콘텐츠<br/>자동 게시"]:::main
+    Sol2["기본정보/메뉴/사진<br/>다국어화"]:::main
+    Sol3["다국어 리뷰 답변"]:::main
     Mkc["마케팅비 최적화"]
 
     Sales --> Goal1
@@ -37,26 +38,21 @@ graph BT
     Path2 --> Sales
     Cust1 --> Path1
     Cust2 --> Path1
-    Mkt  --> Cust2
-    Ch1  --> Mkt
-    Ch2  --> Mkt
-    Ch3  --> Mkt
-    Ch4  --> Mkt
+    Mkt --> Cust2
+    Ch1 --> Mkt
+    Ch2 --> Mkt
+    Ch3 --> Mkt
+    Ch4 --> Mkt
     Sol1 --> Ch4
     Sol2 --> Ch4
     Sol3 --> Ch4
-    Mkc  --> Path2
-    Sol1 -.->|"자동화로<br/>인건비 절감"| Mkc
+    Mkc --> Path2
+    Sol1 -.->|"자동화로 인건비 절감"| Mkc
 
-    classDef ultimate fill:#ffe0e0,stroke:#c00,stroke-width:2px,color:#600
-    classDef main    fill:#fff9c4,stroke:#f9a825,stroke-width:3px,color:#333
-    classDef out     fill:#f5f5f5,stroke:#999,stroke-dasharray:5 5,color:#999
-    classDef target  fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1
-
-    class Goal1              ultimate
-    class Ch4,Sol1,Sol2,Sol3 main
-    class Ch1,Ch2,Ch3        out
-    class Cust2              target
+    classDef goal fill:#ffe0e0,stroke:#c00,color:#600
+    classDef main fill:#fff9c4,stroke:#f9a825,color:#333
+    classDef out fill:#f5f5f5,stroke:#999,color:#999
+    classDef target fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
 ```
 
 ---
