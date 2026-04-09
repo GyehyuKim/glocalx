@@ -125,7 +125,7 @@ PoC의 임무 = 이 셋을 함께 증명하는 것.
 - `docs/WHYTREE.md` — 단일 결론, Mermaid 다이어그램, 도출 과정
 - `docs/PREMORTEM.md` — 9개 실패 시나리오 + 대응
 - `30. Deliverables/business-plan.html` — 본 문서의 모든 디테일 + 37개 출처 (Appendix L)
-- `docs/CHEATSHEET.md` — 이 파일
+- `90. Internal/CHEATSHEET.md` — 이 파일 (내부 발표 보조 자료)
 
 ---
 
