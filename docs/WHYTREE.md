@@ -1,8 +1,6 @@
 # WHY Tree: GlocalX
 
-> **2026-04-08 스냅샷**  
-> 작업 캔버스: [Google Slides](https://docs.google.com/presentation/d/1zBm7PjXDZDwU_0oT4J0spxcBD0ifmWeKUGXMplyrKpo/edit?usp=drive_link)  
-> 작성: 정윤지·이승원의 독립 작업을 통일 트리로 통합
+> 출처: [Google Slides](https://docs.google.com/presentation/d/1zBm7PjXDZDwU_0oT4J0spxcBD0ifmWeKUGXMplyrKpo/edit?usp=drive_link)
 
 ---
 
