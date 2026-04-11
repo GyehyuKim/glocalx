@@ -18,5 +18,15 @@ __pycache__/
 *.pyc
 .env
 
+# GlocalX AI pipeline
+40. Development/outputs/
+40. Development/sample_photos/*.jpg
+40. Development/sample_photos/*.jpeg
+40. Development/sample_photos/*.png
+!40. Development/sample_photos/.gitkeep
+
 # Node
 node_modules/
+
+# Personal notices
+notice-*.txt
