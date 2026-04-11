@@ -13,15 +13,15 @@
     font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
     background: #F7F8FA;
     color: #1A1A2E;
-    line-height: 1.75;
-    font-size: 15px;
+    line-height: 1.5;
+    font-size: 13px;
   }
 
   /* ── Header ── */
   .hero {
     background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
     color: #fff;
-    padding: 56px 24px 48px;
+    padding: 36px 24px 32px;
     text-align: center;
   }
   .hero .badge {
@@ -36,7 +36,7 @@
     margin-bottom: 18px;
   }
   .hero h1 {
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 900;
     margin-bottom: 12px;
     letter-spacing: -0.5px;
@@ -112,12 +112,12 @@
   section {
     background: #fff;
     border-radius: 16px;
-    padding: 40px 36px;
-    margin-bottom: 28px;
+    padding: 28px 28px;
+    margin-bottom: 20px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.04);
   }
   section h2 {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 900;
     color: #0F3460;
     margin-bottom: 8px;
@@ -144,7 +144,7 @@
   }
 
   h3 {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     color: #1A1A2E;
     margin: 32px 0 16px;
@@ -156,9 +156,9 @@
     background: #EEF2FF;
     border-left: 4px solid #0F3460;
     border-radius: 0 10px 10px 0;
-    padding: 16px 20px;
-    margin: 20px 0;
-    font-size: 14px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 12px;
   }
   .info-box.warning {
     background: #FFF8E1;
@@ -194,37 +194,37 @@
   .steps { counter-reset: step; margin: 20px 0; }
   .step {
     display: flex;
-    gap: 16px;
-    padding: 18px 0;
+    gap: 12px;
+    padding: 10px 0;
     border-bottom: 1px solid #F0F2F5;
     counter-increment: step;
   }
   .step:last-child { border-bottom: none; }
   .step-num {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     background: linear-gradient(135deg, #0F3460, #1A5276);
     color: #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    margin-top: 2px;
+    margin-top: 1px;
   }
   .step-content { flex: 1; }
   .step-content > strong:first-child {
     display: block;
-    font-size: 15px;
+    font-size: 13px;
     margin-bottom: 4px;
   }
   .step-content p strong {
     display: inline;
   }
   .step-content p {
-    font-size: 14px;
+    font-size: 12px;
     color: #555;
     margin: 0;
   }
@@ -260,14 +260,14 @@
   .role-table thead th {
     background: #0F3460;
     color: #fff;
-    padding: 12px 16px;
+    padding: 8px 12px;
     text-align: left;
     font-weight: 600;
   }
   .role-table thead th:first-child { border-radius: 10px 0 0 0; }
   .role-table thead th:last-child { border-radius: 0 10px 0 0; }
   .role-table tbody td {
-    padding: 11px 16px;
+    padding: 7px 12px;
     border-bottom: 1px solid #F0F2F5;
   }
   .role-table tbody tr:last-child td:first-child { border-radius: 0 0 0 10px; }
@@ -305,18 +305,18 @@
 
   /* ── FAQ ── */
   .faq-item {
-    padding: 20px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #F0F2F5;
   }
   .faq-item:last-child { border-bottom: none; }
   .faq-q {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 13px;
     margin-bottom: 8px;
     color: #0F3460;
   }
   .faq-a {
-    font-size: 14px;
+    font-size: 12px;
     color: #555;
   }
   .faq-a strong {
@@ -412,6 +412,22 @@
     section { padding: 28px 20px; }
     .toc-grid { grid-template-columns: 1fr; }
     .verify-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Print / PDF ── */
+  @media print {
+    body { background: #fff; }
+    .hero { break-after: page; }
+    section { break-before: page; break-inside: avoid; }
+    .step { break-inside: avoid; }
+    .info-box { break-inside: avoid; }
+    .verify-card { break-inside: avoid; }
+    .verify-grid { break-inside: avoid; }
+    .faq-item { break-inside: avoid; }
+    .role-table { break-inside: avoid; }
+    .toc { break-inside: avoid; }
+    .official-link { break-inside: avoid; }
+    h3 { break-after: avoid; }
   }
 </style>
 </head>
