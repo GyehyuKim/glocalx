@@ -44,13 +44,23 @@ LANG_LABELS = {
 }
 LANG_KEYS = list(LANG_LABELS.keys())
 
+# 포스팅 테마 레이블 (한국어)
+THEME_LABELS: dict[str, str] = {
+    "seasonal": "시즌 이벤트",
+    "signature_dish": "시그니처 메뉴",
+    "signature": "시그니처 메뉴",
+    "event": "이벤트",
+    "invitation": "방문 초대",
+    "visit": "방문 초대",
+    "atmosphere": "분위기 소개",
+}
+
 # GBP 이름 필드 위반 감지 패턴
 _SLASH_RE = re.compile(r"[/／]")
 _HIRAGANA_RE = re.compile(r"[\u3040-\u309F]")
 _KATAKANA_RE = re.compile(r"[\u30A0-\u30FF]")
 _HANGUL_RE = re.compile(r"[\uAC00-\uD7AF]")
 _LATIN_RE = re.compile(r"[A-Za-z]")
-# CJK Unified Ideographs (Chinese characters / Kanji)
 _CJK_RE = re.compile(r"[\u4E00-\u9FFF]")
 
 
@@ -64,22 +74,37 @@ def detect_name_violation(name: str) -> tuple[bool, str]:
         return False, ""
 
     if _SLASH_RE.search(name):
-        return True, "이름에 슬래시(/)가 포함되어 있습니다. GBP는 이름 필드에 여러 언어를 슬래시로 구분하는 것을 금지합니다."
+        return True, "슬래시(/) 구분 다국어 혼재"
 
     has_hangul = bool(_HANGUL_RE.search(name))
     has_japanese = bool(_HIRAGANA_RE.search(name) or _KATAKANA_RE.search(name))
     has_latin = bool(_LATIN_RE.search(name))
     has_cjk = bool(_CJK_RE.search(name))
 
-    # 한글 + 일본어 가나 → 다국어 혼재
     if has_hangul and has_japanese:
-        return True, "이름에 한글과 일본어가 함께 포함되어 있습니다. GBP 이름 필드는 하나의 언어로만 작성해야 합니다."
+        return True, "한글 + 일본어 혼재"
 
-    # 한글 + 라틴 + CJK (세 가지 문자 체계) → 다국어 혼재
     if has_hangul and has_latin and has_cjk:
-        return True, "이름에 한글·영문·중문이 모두 포함되어 있습니다. GBP 이름 필드는 하나의 언어로만 작성해야 합니다."
+        return True, "한글 + 영문 + 중문 혼재"
 
     return False, ""
+
+
+def _classify_error(e: Exception) -> str:
+    """RuntimeError를 사용자 친화적 한국어 메시지로 변환."""
+    msg = str(e)
+    if "GOOGLE_API_KEY" in msg or "api_key" in msg.lower():
+        return (
+            "API 키가 설정되지 않았습니다. "
+            ".env 파일에 GOOGLE_API_KEY=your_key 를 입력하고 앱을 재시작해주세요."
+        )
+    if "quota" in msg.lower() or "rate" in msg.lower() or "429" in msg:
+        return "Gemini API 요청 한도에 도달했습니다. 잠시 후(1~2분) 다시 시도해주세요."
+    if "timeout" in msg.lower() or "deadline" in msg.lower():
+        return "Gemini 응답 시간이 초과되었습니다. 다시 시도해주세요."
+    if "invalid output" in msg.lower() or "validation" in msg.lower():
+        return "Gemini가 예상치 못한 형식으로 응답했습니다. 다시 시도해주세요."
+    return "콘텐츠 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
 
 
 def run_wizard(
@@ -90,11 +115,7 @@ def run_wizard(
 ) -> WizardOutput:
     """Gemini 호출 → WizardOutput 반환."""
     if not config.GEMINI_API_KEY:
-        raise RuntimeError(
-            "GOOGLE_API_KEY가 설정되지 않았습니다.\n"
-            ".env 파일을 생성하고 GOOGLE_API_KEY=your_key 를 입력하세요.\n"
-            "API 키 발급: https://aistudio.google.com/apikey"
-        )
+        raise RuntimeError("GOOGLE_API_KEY_MISSING")
 
     client = genai.Client(api_key=config.GEMINI_API_KEY)
     user_prompt = build_wizard_user_prompt(store_name, korean_desc, selected_langs)
@@ -117,62 +138,39 @@ def run_wizard(
             data = json.loads(raw)
             return WizardOutput.model_validate(data)
         except (json.JSONDecodeError, ValidationError) as e:
-            raise RuntimeError(
-                f"Gemini가 유효하지 않은 출력을 반환했습니다.\n원문: {raw[:500]}\n오류: {e}"
-            )
+            raise RuntimeError(f"invalid output: {raw[:200]}") from e
     return parsed
-
-
-def copy_button(label: str, text: str, key: str) -> None:
-    """클립보드 복사 버튼 (st.code + 접기/펼치기)."""
-    st.code(text, language=None)
 
 
 def render_lang_tab(bundle, lang_key: str) -> None:
     """언어별 탭 콘텐츠 렌더링."""
     # ── 비즈니스 설명 ─────────────────────────────────────────────────────
-    st.subheader("📝 비즈니스 설명")
     desc_text = bundle.description.text
     char_count = len(desc_text)
-    status = "✅" if char_count <= 750 else "⚠️ 750자 초과"
-    st.caption(f"{char_count}/750자 {status}")
-    st.text_area(
-        label="description",
-        value=desc_text,
-        height=120,
-        key=f"desc_{lang_key}",
-        label_visibility="collapsed",
+    char_status = "✅" if char_count <= 750 else "⚠️ 750자 초과"
+
+    st.subheader("📝 비즈니스 설명")
+    st.caption(
+        f"{char_count}/750자 {char_status} — 복사 아이콘(📋)을 눌러 GBP에 붙여넣으세요."
     )
+    st.code(desc_text, language=None)
 
     # ── Google Posts ──────────────────────────────────────────────────────
     st.subheader("📣 Google 포스팅 (3개)")
     for i, post in enumerate(bundle.posts, start=1):
-        with st.expander(f"Post {i} — {post.theme}", expanded=(i == 1)):
+        theme_label = THEME_LABELS.get(post.theme.lower(), post.theme)
+        with st.expander(f"포스팅 {i} — {theme_label}", expanded=(i == 1)):
             col_title, col_cta = st.columns([3, 1])
             with col_title:
                 st.caption(f"제목 ({len(post.title)}/58자)")
-                st.text_input(
-                    label="title",
-                    value=post.title,
-                    key=f"title_{lang_key}_{i}",
-                    label_visibility="collapsed",
-                )
+                st.code(post.title, language=None)
             with col_cta:
                 st.caption(f"CTA ({len(post.cta)}/58자)")
-                st.text_input(
-                    label="cta",
-                    value=post.cta,
-                    key=f"cta_{lang_key}_{i}",
-                    label_visibility="collapsed",
-                )
-            st.caption(f"본문 ({len(post.body)}/1500자)")
-            st.text_area(
-                label="body",
-                value=post.body,
-                height=160,
-                key=f"body_{lang_key}_{i}",
-                label_visibility="collapsed",
+                st.code(post.cta, language=None)
+            st.caption(
+                f"본문 ({len(post.body)}/1500자) — 복사 아이콘(📋)을 눌러 GBP 포스팅에 붙여넣으세요."
             )
+            st.code(post.body, language=None)
 
 
 def render_qa(qa_items) -> None:
@@ -200,15 +198,13 @@ with st.sidebar:
         help="Google 비즈니스 프로필에 등록된 가게 이름을 그대로 입력하세요.",
     )
 
-    # 이름 필드 위반 감지 — 입력 즉시 경고
+    # 이름 형식 상태 — 간략한 시각 표시만 (상세 경고는 생성 후 메인 영역에 표시)
     if store_name:
-        violated, violation_reason = detect_name_violation(store_name)
+        violated, _ = detect_name_violation(store_name)
         if violated:
-            st.warning(f"⚠️ **GBP 이름 위반 감지**\n\n{violation_reason}\n\n"
-                       "이름 필드는 단일 언어로만 등록해야 합니다. "
-                       "GlocalX가 올바른 다국어 콘텐츠를 별도 필드에 생성해드립니다.")
+            st.caption("⚠️ 이름 필드 위반 감지됨 — 생성 후 상세 안내를 확인하세요.")
         else:
-            st.success("✅ 이름 형식 정상")
+            st.caption("✅ 이름 형식 정상")
 
     korean_desc = st.text_area(
         "한국어 설명 (1~2문장) *",
@@ -220,7 +216,7 @@ with st.sidebar:
     uploaded_file = st.file_uploader(
         "대표 사진 업로드 *",
         type=["jpg", "jpeg", "png", "webp"],
-        help="음식 사진 또는 가게 분위기 사진 1장. 선명한 사진일수록 결과물이 좋습니다.",
+        help="음식 또는 가게 분위기 사진 1장. 선명할수록 결과물이 좋습니다.",
     )
     if uploaded_file:
         st.image(uploaded_file, caption="업로드된 사진", use_container_width=True)
@@ -256,12 +252,11 @@ if generate_btn:
         st.error("가게 이름, 한국어 설명, 사진을 모두 입력해주세요.")
         st.stop()
 
-    # PIL Image 로드
     image_bytes = uploaded_file.read()
     image = Image.open(io.BytesIO(image_bytes))
     image.load()
 
-    with st.spinner("Gemini가 콘텐츠를 생성하고 있습니다... (10-30초)"):
+    with st.spinner("Gemini가 콘텐츠를 생성하고 있습니다... (10~30초)"):
         try:
             result: WizardOutput = run_wizard(
                 store_name=store_name,
@@ -270,32 +265,32 @@ if generate_btn:
                 selected_langs=selected_langs,
             )
         except RuntimeError as e:
-            st.error(f"오류: {e}")
+            korean_msg = _classify_error(e)
+            st.error(f"❌ {korean_msg}")
+            st.markdown("왼쪽 **✨ 콘텐츠 생성** 버튼을 눌러 다시 시도해주세요.")
             st.stop()
 
-    st.success("생성 완료! 아래 탭에서 언어별 콘텐츠를 확인하세요.")
+    st.success("✅ 생성 완료! 각 탭에서 언어별 콘텐츠를 확인하고, 📋 복사 아이콘으로 GBP에 붙여넣으세요.")
 
-    # 이름 위반 배너 (생성 결과 위에 한 번 더 표시)
-    if store_name:
-        violated, violation_reason = detect_name_violation(store_name)
-        if violated:
-            st.warning(
-                f"⚠️ **GBP 이름 필드 위반 감지:** {violation_reason}\n\n"
-                "아래 생성된 콘텐츠를 활용하면 이름 필드를 단순화하고 "
-                "각 언어 설명을 올바른 GBP 필드(설명, 포스팅)에 배치할 수 있습니다."
-            )
+    # ── 이름 위반 경고 (생성 후 결과 최상단, 구조화된 형식) ─────────────────
+    violated, violation_reason = detect_name_violation(store_name)
+    if violated:
+        st.warning(
+            f"⚠️ **GBP 이름 필드 위반 감지**\n\n"
+            f"**현재 이름:** `{store_name}`\n\n"
+            f"**문제:** {violation_reason} — Google 가이드라인 위반으로 프로필 정지 위험이 있습니다.\n\n"
+            f"**해결:** 이름 필드는 단일 언어(예: `두플릿 광안점`)로만 유지하고, "
+            f"아래 생성된 콘텐츠를 올바른 GBP 필드(비즈니스 설명, 포스팅)에 입력하세요."
+        )
 
-    # 언어 탭
-    active_tabs = [(k, LANG_LABELS[k]) for k in LANG_KEYS if k in [l.replace("-", "_") for l in selected_langs] or k in selected_langs]
-
-    # lang key 정규화 (zh-TW → zh_tw)
+    # ── 언어 탭 ───────────────────────────────────────────────────────────
     result_map = {
         "ko": result.ko,
         "en": result.en,
         "ja": result.ja,
         "zh_tw": result.zh_tw,
     }
-    selected_normalized = [l.replace("-", "_") for l in selected_langs]
+    selected_normalized = [lang.replace("-", "_") for lang in selected_langs]
 
     if selected_normalized:
         tab_labels = [LANG_LABELS[k] for k in LANG_KEYS if k in selected_normalized]
@@ -305,13 +300,13 @@ if generate_btn:
             with tab:
                 render_lang_tab(result_map[lang_key], lang_key)
 
-    # Q&A 섹션 (언어 탭 밖, 영문 공통)
+    # ── Q&A ───────────────────────────────────────────────────────────────
     st.divider()
     render_qa(result.qa)
 
-    # JSON 다운로드 버튼
+    # ── JSON (개발자용, 기본 접힘) ────────────────────────────────────────
     st.divider()
-    with st.expander("🔧 원본 JSON 보기 / 다운로드"):
+    with st.expander("🔧 원본 JSON (개발자용)", expanded=False):
         json_str = result.model_dump_json(indent=2, by_alias=False)
         st.download_button(
             label="📥 JSON 다운로드",
@@ -322,16 +317,12 @@ if generate_btn:
         st.code(json_str, language="json")
 
 else:
-    # 초기 상태 — 안내 메시지
+    # ── 초기 상태 ─────────────────────────────────────────────────────────
     st.info(
-        "👈 왼쪽 사이드바에 가게 정보를 입력하고 **✨ 콘텐츠 생성** 버튼을 클릭하세요.\n\n"
-        "**생성되는 콘텐츠:**\n"
-        "- Google 비즈니스 프로필 **비즈니스 설명** (각 언어, 750자 이내)\n"
-        "- **Google 포스팅 3개** (계절/시그니처/초대 테마)\n"
-        "- **Q&A 3세트** (외국인 관광객 예상 질문)\n"
-        "- ⚠️ **GBP 이름 필드 위반 자동 감지**"
+        "👈 왼쪽에 가게 이름, 설명, 사진을 입력하면 "
+        "KO/EN/JA/ZH-TW 4개 언어 GBP 콘텐츠가 즉시 생성됩니다."
     )
-    with st.expander("ℹ️ GlocalX란?"):
+    with st.expander("ℹ️ GlocalX란?", expanded=False):
         st.markdown(
             """
             **GlocalX**는 부산 관광 상권 식당·카페 사장님을 위한
@@ -342,5 +333,11 @@ else:
 
             **해결:** 한국어 설명 1줄 + 사진 1장만 입력하면
             KO/EN/JA/ZH-TW 4개 언어 GBP 콘텐츠 패키지를 즉시 생성합니다.
+
+            생성되는 콘텐츠:
+            - 비즈니스 설명 (각 언어, 750자 이내)
+            - Google 포스팅 3개 (시즌/시그니처/방문 초대 테마)
+            - Q&A 3세트 (외국인 관광객 예상 질문)
+            - ⚠️ GBP 이름 필드 위반 자동 감지
             """
         )
