@@ -252,6 +252,7 @@ if generate_btn:
         st.error("가게 이름, 한국어 설명, 사진을 모두 입력해주세요.")
         st.stop()
 
+    uploaded_file.seek(0)
     image_bytes = uploaded_file.read()
     image = Image.open(io.BytesIO(image_bytes))
     image.load()
@@ -264,7 +265,7 @@ if generate_btn:
                 image=image,
                 selected_langs=selected_langs,
             )
-        except RuntimeError as e:
+        except Exception as e:
             korean_msg = _classify_error(e)
             st.error(f"❌ {korean_msg}")
             st.markdown("왼쪽 **✨ 콘텐츠 생성** 버튼을 눌러 다시 시도해주세요.")

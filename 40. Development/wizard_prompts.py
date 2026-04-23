@@ -3,6 +3,7 @@
 Distinct from prompts.py (food photo PoC).
 The wizard takes: store name + Korean description + photo → 4-language GBP package.
 """
+import datetime
 
 WIZARD_SYSTEM_PROMPT = """You are a multilingual Google Business Profile (GBP) marketing expert
 specializing in Korean restaurants targeting foreign tourists.
@@ -72,17 +73,20 @@ def build_wizard_user_prompt(
     """
     langs_hint = ", ".join(selected_langs) if selected_langs else "ko, en, ja, zh-TW"
 
+    today = datetime.date.today()
+
     return f"""Please create a complete GBP content package for this Korean restaurant.
 
 STORE NAME: {store_name}
 KOREAN DESCRIPTION: {korean_description}
 TARGET LANGUAGES: {langs_hint}
+TODAY'S DATE: {today}
 
 Using the photo and the information above:
 
 1. Write a GBP business description for each language (max 750 chars each).
 2. Write 3 GBP Local Posts for each language with varied themes.
-   Today's date hint: use the current season to inform seasonal post angles.
+   Use TODAY'S DATE ({today}) to determine the current season and tailor the seasonal post angle.
 3. Write 3 Q&A pairs in English.
 
 Return valid JSON matching the required schema.
