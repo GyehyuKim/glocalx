@@ -1,31 +1,15 @@
-"""Pydantic output schema for the GlocalX Streamlit wizard.
+"""Pydantic output schema for the GlocalX post adaptation wizard (v2).
 
-Distinct from output_schema.py (food photo PoC).
-This schema covers GBP descriptions + 3 posts + Q&A in 4 languages.
+v1 (WizardOutput): AI가 4개 언어 콘텐츠를 처음부터 생성.
+v2 (PostAdaptation): 점주 한국어 원문을 GBP용으로 보정 + 3개 언어 문화 어댑테이션.
 """
 from __future__ import annotations
-
-from typing import List
 
 from pydantic import BaseModel, Field
 
 
-class GBPDescription(BaseModel):
-    """GBP business description for one language. Max 750 chars (Google official limit)."""
-
-    text: str = Field(
-        ...,
-        description=(
-            "Google Business Profile business description. "
-            "Max 750 characters. Natural, engaging, no keyword stuffing. "
-            "Describe the restaurant's character, signature dishes, and atmosphere."
-        ),
-        max_length=750,
-    )
-
-
-class GBPPost(BaseModel):
-    """One Google Business Profile Local Post."""
+class AdaptedPost(BaseModel):
+    """GBP Local Post for one language."""
 
     title: str = Field(
         ...,
@@ -36,8 +20,8 @@ class GBPPost(BaseModel):
         ...,
         description=(
             "Post body. Max 1500 characters. "
-            "Announce an event, seasonal menu, or dish highlight. "
-            "Culturally adapted — not a literal translation."
+            "Culturally adapted for the target audience. "
+            "Not a literal translation."
         ),
         max_length=1500,
     )
@@ -46,54 +30,37 @@ class GBPPost(BaseModel):
         description="CTA button label. Max 58 characters. e.g., 'Visit Us Today'.",
         max_length=58,
     )
-    theme: str = Field(
+
+
+class PostAdaptation(BaseModel):
+    """Adaptation of a single Korean post into 4 languages."""
+
+    refined_ko: AdaptedPost = Field(
         ...,
         description=(
-            "One-word post theme used internally. "
-            "e.g., 'seasonal', 'signature_dish', 'event'."
+            "Korean refined version. Polish the owner's original text "
+            "into a GBP-ready post. Keep the original intent and facts."
         ),
     )
-
-
-class LangBundle(BaseModel):
-    """All GBP content for a single language."""
-
-    description: GBPDescription = Field(..., description="GBP business description.")
-    posts: List[GBPPost] = Field(
+    en: AdaptedPost = Field(
         ...,
         description=(
-            "Exactly 3 GBP Local Posts. "
-            "Vary the themes: e.g., seasonal, signature dish, visit invitation."
+            "English cultural adaptation. Storytelling tone for Western tourists. "
+            "Not a translation of the Korean version."
         ),
-        min_length=3,
-        max_length=3,
     )
-
-
-class QAItem(BaseModel):
-    """One Q&A pair for GBP Q&A section (in English)."""
-
-    question: str = Field(
+    ja: AdaptedPost = Field(
         ...,
-        description="A question a foreign tourist might ask about the restaurant.",
+        description=(
+            "Japanese cultural adaptation. Polite register (ます/です体). "
+            "Emphasize quality and care. Restrained, not pushy."
+        ),
     )
-    answer: str = Field(
+    zh_tw: AdaptedPost = Field(
         ...,
-        description="Helpful, concise answer in English. Max 200 characters.",
-        max_length=200,
-    )
-
-
-class WizardOutput(BaseModel):
-    """Complete GBP content package from the wizard."""
-
-    ko: LangBundle = Field(..., description="Korean (한국어) GBP content.")
-    en: LangBundle = Field(..., description="English GBP content.")
-    ja: LangBundle = Field(..., description="Japanese (日本語) GBP content.")
-    zh_tw: LangBundle = Field(..., description="Traditional Chinese (繁體中文, zh-TW) GBP content.")
-    qa: List[QAItem] = Field(
-        ...,
-        description="3 Q&A pairs in English for the GBP Q&A section.",
-        min_length=3,
-        max_length=3,
+        description=(
+            "Traditional Chinese (zh-TW) cultural adaptation. "
+            "Practical, positive tone for Taiwanese/HK tourists. "
+            "Emphasize value and trending appeal."
+        ),
     )
