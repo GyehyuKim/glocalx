@@ -221,6 +221,8 @@ if generate_btn:
         except Exception as e:
             korean_msg = _classify_error(e)
             st.error(f"❌ {korean_msg}")
+            with st.expander("🔧 에러 상세 (디버깅용)", expanded=False):
+                st.code(f"{type(e).__name__}: {e}", language=None)
             st.markdown("왼쪽 **✨ 어댑테이션 생성** 버튼을 눌러 다시 시도해주세요.")
             st.stop()
 
