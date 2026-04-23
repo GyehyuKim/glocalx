@@ -1,0 +1,66 @@
+# TODOS — GlocalX 위자드 (40. Development)
+
+이 파일은 `/plan-eng-review` + `/plan-design-review` 리뷰 중 발견된
+MVP 이후 개선 항목을 추적합니다.
+마감(HW6, 2026-04-30) 이후 우선순위에 따라 처리하세요.
+
+---
+
+## P1 — 즉각 처리 필요 (이미 완료)
+
+- [x] `app.py:255` — `uploaded_file.seek(0)` 추가 (retry 시 빈 bytes 버그)
+- [x] `app.py:268` — `except RuntimeError` → `except Exception` (Gemini SDK 예외 누락)
+- [x] `wizard_prompts.py:86` — `datetime.date.today()` 날짜 주입 (계절 추론 개선)
+
+---
+
+## P2 — HW6 이후 빠른 처리 권장
+
+- [ ] **프롬프트 인젝션 방어** (`wizard_prompts.py:76-90`)
+  - `store_name`, `korean_description`이 f-string으로 직접 주입됨
+  - 조치: 입력 최대 길이 제한 + 제어문자 스트립 (`re.sub(r'[\x00-\x1F]', '', input)`)
+  - 현재 파트너 3곳 데모 환경이라 위험 낮음; 온보딩 확장 전 적용할 것
+
+- [ ] **응답 타임아웃 설정** (`app.py:123`)
+  - `GenerateContentConfig`에 `timeout=60` 추가
+  - Gemini 서버 지연 시 무한 spinner 방지
+
+- [ ] **테스트 파일 생성** (`test_detect_name_violation.py`)
+  - `detect_name_violation()` 파트너 스토어 실명 6케이스 테스트
+  - `_classify_error()` 에러 타입별 분기 테스트
+  - 파트너 데모 전에 GBP 감지 정확도 100% 확인 필요
+
+---
+
+## P3 — 프로덕션 전 처리
+
+- [ ] **이미지 리사이즈** (`app.py:257`)
+  - Gemini 전송 전 `image.thumbnail((1024, 1024), Image.LANCZOS)` 추가
+  - 현재: 원본 해상도 그대로 업로드 (Gemini 서버측 처리로 커버 중)
+
+- [ ] **Gemini 클라이언트 캐싱** (`app.py:120`)
+  - `@st.cache_resource` 데코레이터로 per-session 재사용
+  - 데모 1회 호출 환경에서는 불필요
+
+- [ ] **`render_lang_tab` 타입 힌트** (`app.py:145`)
+  - `bundle` 파라미터에 `LangBundle` 타입 힌트 추가
+
+---
+
+## 아키텍처 개선 (MVP 이후)
+
+- [ ] **GBP API 직접 푸시** (현재 클립보드 복사 방식)
+  - GBP API 얼로우리스트 승인 대기 중 (case 5-1216000041298)
+  - 승인 후 `app.py`에 push 버튼 추가
+
+- [ ] **Streamlit Cloud 배포**
+  - 파트너 스토어 원격 시연용
+  - `requirements.txt` 기반으로 배포 가능한 상태
+
+- [ ] **다중 사진 지원**
+  - 현재: 1장 고정
+  - 향후: 메뉴판, 인테리어, 대표 메뉴 등 최대 5장 → 더 풍부한 콘텐츠
+
+---
+
+_마지막 업데이트: 2026-04-23 (plan-eng-review 완료 후)_
