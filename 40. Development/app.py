@@ -242,7 +242,7 @@ with st.sidebar:
     generate_btn = st.button(
         "✨ 콘텐츠 생성",
         type="primary",
-        disabled=not (store_name and korean_desc and uploaded_file),
+        disabled=not (store_name and korean_desc and uploaded_file and selected_langs),
         use_container_width=True,
     )
 

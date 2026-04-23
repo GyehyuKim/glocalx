@@ -28,5 +28,8 @@ __pycache__/
 # Node
 node_modules/
 
+# gstack local data (security reports, analytics)
+.gstack/
+
 # Personal notices
 notice-*.txt
