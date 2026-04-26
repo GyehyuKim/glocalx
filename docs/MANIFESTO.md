@@ -1,4 +1,4 @@
-# MANIFEST: GlocalX
+# MANIFESTO: GlocalX
 
 > 외국인 관광객은 Google Maps로 한국 식당을 찾는다.
 > 한국 소상공인은 거기에 없거나, 한국어로만 있다.
