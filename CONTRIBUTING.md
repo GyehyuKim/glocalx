@@ -11,7 +11,7 @@
 
 형식: **`<owner>/<topic-slug>`**
 
-정규식: `^(gyehyu|gyeongmun|seungwon|yoonji)/[a-z0-9]+(-[a-z0-9]+)*$`
+정규식: `^(gyehyu|gyeongmun|seungwon|yunji)/[a-z0-9]+(-[a-z0-9]+)*$`
 
 - `owner` — 작업자의 고정 slug. 4명 외 금지.
   | 사람 | slug |
@@ -19,14 +19,14 @@
   | 김계휴 | `gyehyu` |
   | 김경문 | `gyeongmun` |
   | 이승원 | `seungwon` |
-  | 정윤지 | `yoonji` |
+  | 정윤지 | `yunji` |
 - `topic-slug` — kebab-case, 3~40자, 무슨 일인지 한눈에 보이게.
 
 **좋은 예**
 - `gyehyu/ai-pipeline-fix`
 - `gyeongmun/interview-screening-criteria`
 - `seungwon/whytree-marketing-refresh`
-- `yoonji/premortem-ax-risks`
+- `yunji/premortem-ax-risks`
 
 **나쁜 예 (금지)**
 - `patch-1`, `jerome3354-patch-9`, `update` — 의미 없음
