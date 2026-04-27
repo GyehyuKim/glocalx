@@ -5,7 +5,7 @@
 
 ---
 
-## 진행 현황 요약 (2026-04-22 기준)
+## 진행 현황 요약 (2026-04-27 기준)
 
 | 단계 | 상태 | 비고 |
 |------|------|------|
@@ -15,8 +15,9 @@
 | AI 파이프라인 PoC (Gemini 멀티모달) | ✅ 완료 | `40. Development/` |
 | 거버넌스 (CONTRIBUTING.md / AGENTS.md) | ✅ 완료 | PR #37 |
 | 파트너 매장 GBP 관리자 권한 확보 | ✅ 완료 | 3곳 (아래 참조) |
-| GBP API 액세스 심사 신청 | ✅ 신청 완료 | **승인 대기 중** |
-| AI 파이프라인 실매장 테스트 | ⏳ 대기 | API 승인 후 착수 |
+| GBP API 액세스 심사 | ✅ **승인 완료** | 2026-04-27 확인, OAuth Playground로 검증 |
+| Streamlit wizard 데모 배포 | ✅ 완료 | HF Spaces: huggingface.co/spaces/Gyehyu2726/glocalx-demo |
+| AI 파이프라인 실매장 테스트 | ⏳ 대기 | API 승인됨, Build Sprint에서 착수 |
 | MVP 실제 게시 | ⏳ 대기 | Build Sprint (5/16~) |
 
 ---
@@ -41,19 +42,46 @@
 | 케이스 ID | **5-1216000041298** |
 | Google Cloud 프로젝트 | `glocalx-492416` (번호: `446892137706`) |
 | 예상 검토 기간 | 7~10 영업일 |
-| 예상 승인 시점 | 2026-05-06 전후 |
-| 상태 | ⏳ 검토 중 |
+| **승인 확인일** | **2026-04-27** |
+| 상태 | ✅ **승인 완료** |
 
-> 승인 메일 수신 후 이 파일의 상태를 ✅ 완료로 업데이트할 것.
+### 승인 확인 과정 (2026-04-27)
+
+Google에서 별도 알림 없이 승인 처리함. 아래 방법으로 직접 확인:
+
+1. Google Cloud Console → APIs & Services → Enabled APIs에서 GBP 관련 API 4종 활성화 확인:
+   - My Business Account Management API
+   - My Business Business Information API
+   - My Business Notifications API
+   - My Business Q&A API
+
+2. OAuth 2.0 Playground (developers.google.com/oauthplayground)에서 실제 API 호출 검증:
+   - Scope: `https://www.googleapis.com/auth/business.manage`
+   - GET `https://mybusinessaccountmanagement.googleapis.com/v1/accounts`
+   - HTTP 200 + 계정 정보 반환 확인
+
+   ```json
+   {
+     "accounts": [{
+       "name": "accounts/105174839765206787627",
+       "accountName": "Gyehyu Kim",
+       "type": "PERSONAL"
+     }]
+   }
+   ```
+
+> 참고: gcloud CLI의 ADC(Application Default Credentials)로는 `business.manage` scope 획득 불가.
+> GBP API 테스트 시 OAuth Playground 또는 직접 OAuth2 Client ID 사용 필요.
 
 ---
 
-## Plan B — API 승인 전 병렬 진행
+## Plan B — Deep Link 폴백 (API 장애 시)
 
-API 미승인 시 Deep Link 방식으로 Demo Day 시연 가능 (PREMORTEM #1 대응).
+GBP API 승인 완료(2026-04-27)로 Plan B 필요성은 크게 감소.
+단, API 장애 또는 rate limit 시 Deep Link 방식으로 폴백 가능:
 
 - AI 파이프라인이 콘텐츠 생성 → 점주가 Deep Link로 GBP 게시 화면 진입 → 복붙 게시
-- `40. Development/analyze_photo.py` 는 API 독립적으로 동작 — 지금 바로 테스트 가능
+- `40. Development/analyze_photo.py` 는 API 독립적으로 동작
 
 ---
 
