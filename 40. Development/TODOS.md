@@ -16,10 +16,11 @@ MVP 이후 개선 항목을 추적합니다.
 
 ## P2 — HW6 이후 빠른 처리 권장
 
-- [ ] **프롬프트 인젝션 방어** (`wizard_prompts.py:76-90`)
-  - `store_name`, `korean_description`이 f-string으로 직접 주입됨
-  - 조치: 입력 최대 길이 제한 + 제어문자 스트립 (`re.sub(r'[\x00-\x1F]', '', input)`)
-  - 현재 파트너 3곳 데모 환경이라 위험 낮음; 온보딩 확장 전 적용할 것
+- [x] **프롬프트 인젝션 방어** (`wizard_prompts.py`)
+  - sanitize_input() + STORE_NAME_MAX_LEN/ORIGINAL_TEXT_MAX_LEN 상수 + XML delimiter 적용
+  - Unicode Cf 방향 제어 문자 + < > 제거 포함 (adversarial review 반영)
+  - post_type 서버사이드 allowlist 검증 추가
+  - 완료: 2026-04-27 (gyehyu/prompt-injection-guard)
 
 - [ ] **응답 타임아웃 설정** (`app.py:123`)
   - `GenerateContentConfig`에 `timeout=60` 추가
@@ -49,13 +50,19 @@ MVP 이후 개선 항목을 추적합니다.
 
 ## 아키텍처 개선 (MVP 이후)
 
-- [ ] **GBP API 직접 푸시** (현재 클립보드 복사 방식)
-  - GBP API 얼로우리스트 승인 대기 중 (case 5-1216000041298)
-  - 승인 후 `app.py`에 push 버튼 추가
+- [ ] **GBP API 직접 푸시** (현재 클립보드 복사 방식) ← **핵심 기능**
+  - ~~GBP API 얼로우리스트 승인 대기 중~~ → **2026-04-27 승인 완료 확인**
+  - OAuth2 인증 구현 + `app.py`에 push 버튼 추가
+  - 참고: gcloud ADC로는 business.manage scope 불가, OAuth2 Client ID 직접 사용 필요
 
-- [ ] **Streamlit Cloud 배포**
-  - 파트너 스토어 원격 시연용
-  - `requirements.txt` 기반으로 배포 가능한 상태
+- [ ] **테스트용 GBP 프로필 생성** ← GBP API 푸시 선행 조건
+  - API로 unverified location 생성 → 실매장 건드리지 않고 API 연동 테스트 가능
+  - 인증(우편엽서/전화) 불필요, API CRUD 동작 확인용
+  - 테스트 완료 후 삭제
+  - Build Sprint(5/16~) 착수 시 가장 먼저 처리할 것
+
+- [x] ~~**Streamlit Cloud 배포**~~ → **HF Spaces로 대체 완료** (2026-04-27)
+  - https://huggingface.co/spaces/Gyehyu2726/glocalx-demo
 
 - [ ] **다중 사진 지원**
   - 현재: 1장 고정
@@ -63,4 +70,4 @@ MVP 이후 개선 항목을 추적합니다.
 
 ---
 
-_마지막 업데이트: 2026-04-23 (plan-eng-review 완료 후)_
+_마지막 업데이트: 2026-04-27 (GBP API 승인 확인, HF Spaces 배포)_

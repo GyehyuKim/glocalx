@@ -6,8 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API
+# API — .env (로컬) 또는 st.secrets (Streamlit Cloud) 모두 지원
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+if not GEMINI_API_KEY:
+    try:
+        import streamlit as st
+        GEMINI_API_KEY = st.secrets.get("GOOGLE_API_KEY", "")
+    except Exception:
+        pass
 # gemini-2.5-flash: current stable, multimodal, has free tier quota
 # gemini-2.0-flash had 0 free-tier quota as of our test (2026-04)
 MODEL_NAME = "gemini-2.5-flash"

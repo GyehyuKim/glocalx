@@ -4,6 +4,34 @@ v1: 1줄 설명 + 사진 → AI가 4개 언어 콘텐츠 생성.
 v2: 점주 카톡 원문 → KO 보정 + EN/JA/ZH-TW 문화 어댑테이션.
 """
 import datetime
+import re
+
+# 입력 길이 제한 — UI(max_chars)와 백엔드(sanitize_input) 양쪽에서 동일한 값 사용
+STORE_NAME_MAX_LEN = 100
+ORIGINAL_TEXT_MAX_LEN = 2000
+
+
+def sanitize_input(text: str, max_length: int) -> str:
+    """제어문자 + XML breakout 문자 제거(줄바꿈/탭 보존) + 길이 제한.
+
+    제거 대상:
+      \\x00-\\x08: NULL, SOH, STX, ETX, EOT, ENQ, ACK, BEL, BS
+      \\x0B-\\x0C: VT, FF
+      \\x0E-\\x1F: SO-US
+      \\x7F: DEL
+      \\u200B-\\u200F: 제로폭 공백/방향 마크 (보이지 않는 유니코드)
+      \\u202A-\\u202E: 방향 제어 문자 LRE/RLE/PDF/LRO/RLO
+      \\u2066-\\u206F: 방향 격리 문자 (Unicode Cf 카테고리)
+      \\uFEFF: BOM / ZWNBSP
+      <, >: XML delimiter 탈출 방지
+    보존 대상: \\x09 (탭), \\x0A (줄바꿈 LF), \\x0D (줄바꿈 CR)
+    """
+    text = re.sub(
+        r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\u200B-\u200F\u202A-\u202E\u2066-\u206F\uFEFF<>]',
+        '', text,
+    )
+    return text[:max_length]
+
 
 ADAPT_SYSTEM_PROMPT = """You are a multilingual Google Business Profile (GBP) post adaptation expert
 specializing in Korean restaurants targeting foreign tourists in Busan.
@@ -75,6 +103,12 @@ def build_adapt_user_prompt(
         post_type: Post category selected by the operator.
         has_photo: Whether a photo is attached.
     """
+    # 백엔드 정규 방어선 — UI 우회 시에도 동작
+    if post_type not in POST_TYPES:
+        raise ValueError(f"Invalid post_type: {post_type!r}")
+    store_name = sanitize_input(store_name, STORE_NAME_MAX_LEN)
+    original_text = sanitize_input(original_text, ORIGINAL_TEXT_MAX_LEN)
+
     today = datetime.date.today()
 
     photo_instruction = ""
@@ -86,14 +120,14 @@ def build_adapt_user_prompt(
 
     return f"""Adapt this Korean restaurant owner's message into 4 GBP-ready posts.
 
-STORE NAME: {store_name}
+STORE NAME: <store_name>{store_name}</store_name>
 POST TYPE: {post_type}
 TODAY'S DATE: {today}
 
 OWNER'S ORIGINAL MESSAGE (Korean):
----
+<user_input>
 {original_text}
----
+</user_input>
 {photo_instruction}
 Tasks:
 1. refined_ko: Polish the owner's message into a GBP-ready Korean post.
