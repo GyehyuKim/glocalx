@@ -43,6 +43,29 @@ LANG_LABELS = {
     "zh_tw": "🇹🇼 繁體中文",
 }
 
+# ─── 데모용 샘플 데이터 ──────────────────────────────────────────────────────
+DEMO_SAMPLES = {
+    "-- 직접 입력 --": {"store_name": "", "post_type": "신메뉴", "original_text": "", "photo": None},
+    "두플릿 광안점 — 신메뉴": {
+        "store_name": "두플릿 광안점",
+        "post_type": "신메뉴",
+        "original_text": "새로운 메뉴 나왔어요~ 매콤달콤 양념치킨에 모짜렐라 치즈 듬뿍 올린 치즈폭포치킨!! 치즈가 쭈욱 늘어나서 사진 찍기도 좋아요ㅋㅋ 2인분부터 주문 가능하고 가격은 28,000원입니다. 맥주랑 같이 드시면 진짜 꿀조합이에요!",
+        "photo": "korean_fried_chicken.jpg",
+    },
+    "캐버린하우스 — 이벤트": {
+        "store_name": "캐버린하우스",
+        "post_type": "이벤트",
+        "original_text": "5월 가정의달 이벤트합니다! 가족 4인 이상 방문시 디저트 서비스로 드려요~ 기간은 5/1~5/31까지고요. 인스타 팔로우하시면 음료 한잔 추가 서비스! 많이 와주세요^^",
+        "photo": None,
+    },
+    "듀플릿 해운대 — 시즌": {
+        "store_name": "듀플릿 해운대",
+        "post_type": "시즌",
+        "original_text": "여름 시즌 메뉴 시작합니다~ 시원한 냉모밀이랑 비빔국수 준비했어요. 해운대 바다 보면서 시원하게 한 그릇 하세요! 날씨 더운날 에어컨 빵빵하게 틀어놨습니다ㅎㅎ",
+        "photo": "bibimbap.jpg",
+    },
+}
+
 # GBP 이름 필드 위반 감지 패턴
 _SLASH_RE = re.compile(r"[/／]")
 _HIRAGANA_RE = re.compile(r"[\u3040-\u309F]")
@@ -154,8 +177,20 @@ st.divider()
 with st.sidebar:
     st.header("입력 정보")
 
+    # 데모 샘플 선택
+    demo_choice = st.selectbox(
+        "🧪 데모 샘플",
+        options=list(DEMO_SAMPLES.keys()),
+        help="샘플을 선택하면 입력이 자동으로 채워집니다.",
+    )
+    sample = DEMO_SAMPLES[demo_choice]
+    use_sample = demo_choice != "-- 직접 입력 --"
+
+    st.divider()
+
     store_name = st.text_input(
         "가게 이름 *",
+        value=sample["store_name"] if use_sample else "",
         placeholder="예: 두플릿 광안점",
         help="Google 비즈니스 프로필에 등록된 가게 이름.",
     )
@@ -167,33 +202,49 @@ with st.sidebar:
         else:
             st.caption("✅ 이름 형식 정상")
 
+    post_type_options = POST_TYPES
+    post_type_index = (
+        POST_TYPES.index(sample["post_type"])
+        if use_sample and sample["post_type"] in POST_TYPES
+        else 0
+    )
     post_type = st.selectbox(
         "포스팅 유형 *",
-        options=POST_TYPES,
+        options=post_type_options,
+        index=post_type_index,
         help="점주가 보낸 카톡의 내용 유형을 선택하세요.",
     )
 
     original_text = st.text_area(
         "점주 카톡 원문 *",
+        value=sample["original_text"] if use_sample else "",
         placeholder="예: 봄 한정 딸기 라떼 출시했어요! 생딸기 듬뿍 들어가서 진짜 맛있어요. 4월까지만 판매합니다~",
         height=200,
         help="점주가 카톡으로 보낸 원문을 그대로 붙여넣으세요.",
     )
 
+    # 샘플 사진 자동 로드 또는 직접 업로드
     uploaded_file = st.file_uploader(
         "사진 (선택)",
         type=["jpg", "jpeg", "png", "webp"],
         help="포스팅에 첨부할 사진. 없어도 됩니다.",
     )
+
+    sample_photo_path = None
+    if use_sample and sample["photo"] and not uploaded_file:
+        sample_photo_path = config.SAMPLE_PHOTOS_DIR / sample["photo"]
+        if sample_photo_path.exists():
+            st.image(str(sample_photo_path), caption=f"샘플 사진: {sample['photo']}", use_container_width=True)
+
     if uploaded_file:
-        st.image(uploaded_file, caption="첨부 사진", width="stretch")
+        st.image(uploaded_file, caption="첨부 사진", use_container_width=True)
 
     st.divider()
     generate_btn = st.button(
         "✨ 어댑테이션 생성",
         type="primary",
         disabled=not (store_name and original_text),
-        width="stretch",
+        use_container_width=True,
     )
 
 # ── 출력 패널 ─────────────────────────────────────────────────────────────────
@@ -202,12 +253,15 @@ if generate_btn:
         st.error("가게 이름과 점주 카톡 원문을 입력해주세요.")
         st.stop()
 
-    # 이미지 처리 (선택 사항)
+    # 이미지 처리 (업로드 우선, 없으면 샘플 사진)
     image = None
     if uploaded_file:
         uploaded_file.seek(0)
         image_bytes = uploaded_file.read()
         image = Image.open(io.BytesIO(image_bytes))
+        image.load()
+    elif sample_photo_path and sample_photo_path.exists():
+        image = Image.open(sample_photo_path)
         image.load()
 
     with st.spinner("Gemini가 어댑테이션을 생성하고 있습니다... (10~30초)"):
