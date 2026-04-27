@@ -16,10 +16,11 @@ MVP 이후 개선 항목을 추적합니다.
 
 ## P2 — HW6 이후 빠른 처리 권장
 
-- [ ] **프롬프트 인젝션 방어** (`wizard_prompts.py:76-90`)
-  - `store_name`, `korean_description`이 f-string으로 직접 주입됨
-  - 조치: 입력 최대 길이 제한 + 제어문자 스트립 (`re.sub(r'[\x00-\x1F]', '', input)`)
-  - 현재 파트너 3곳 데모 환경이라 위험 낮음; 온보딩 확장 전 적용할 것
+- [x] **프롬프트 인젝션 방어** (`wizard_prompts.py`)
+  - sanitize_input() + STORE_NAME_MAX_LEN/ORIGINAL_TEXT_MAX_LEN 상수 + XML delimiter 적용
+  - Unicode Cf 방향 제어 문자 + < > 제거 포함 (adversarial review 반영)
+  - post_type 서버사이드 allowlist 검증 추가
+  - 완료: 2026-04-27 (gyehyu/prompt-injection-guard)
 
 - [ ] **응답 타임아웃 설정** (`app.py:123`)
   - `GenerateContentConfig`에 `timeout=60` 추가

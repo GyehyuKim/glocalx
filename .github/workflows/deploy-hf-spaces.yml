@@ -1,0 +1,57 @@
+name: Deploy to HF Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '40. Development/**'
+      - '.github/workflows/deploy-hf-spaces.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install huggingface_hub
+        run: pip install "huggingface_hub>=0.23"
+
+      - name: Deploy to HF Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          sha_short = os.environ.get("GITHUB_SHA", "unknown")[:7]
+
+          api.upload_folder(
+              folder_path="40. Development",
+              repo_id="Gyehyu2726/glocalx-demo",
+              repo_type="space",
+              ignore_patterns=[
+                  "*.pyc",
+                  "__pycache__/**",
+                  ".env",
+                  ".env.*",
+                  ".env.example",
+                  "sample_photos/**",
+                  "outputs/**",
+                  ".DS_Store",
+                  "TODOS.md",
+              ],
+              commit_message=f"deploy: sync from GitHub {sha_short}",
+          )
+          print(f"Deployed {sha_short} to HF Spaces successfully.")
+          EOF

@@ -82,3 +82,12 @@ Key routing rules:
 - Review what gstack has learned → invoke /learn
 - Tune question sensitivity → invoke /plan-tune
 - Code quality dashboard → invoke /health
+
+## Deploy Configuration
+
+Platform: Hugging Face Spaces
+Production URL: https://huggingface.co/spaces/Gyehyu2726/glocalx-demo
+App directory: 40. Development/
+Deploy workflow: .github/workflows/deploy-hf-spaces.yml
+Trigger: push to main (paths: 40. Development/**, workflow file)
+Secret required: HF_TOKEN (GitHub repo secret — HF write token for Gyehyu2726/glocalx-demo)

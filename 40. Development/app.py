@@ -26,7 +26,14 @@ from pydantic import ValidationError
 
 import config
 from wizard_schema import PostAdaptation
-from wizard_prompts import ADAPT_SYSTEM_PROMPT, build_adapt_user_prompt, POST_TYPES
+from wizard_prompts import (
+    ADAPT_SYSTEM_PROMPT,
+    build_adapt_user_prompt,
+    POST_TYPES,
+    sanitize_input,
+    STORE_NAME_MAX_LEN,
+    ORIGINAL_TEXT_MAX_LEN,
+)
 
 # ─── 페이지 설정 ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -193,6 +200,7 @@ with st.sidebar:
         value=sample["store_name"] if use_sample else "",
         placeholder="예: 두플릿 광안점",
         help="Google 비즈니스 프로필에 등록된 가게 이름.",
+        max_chars=STORE_NAME_MAX_LEN,
     )
 
     if store_name:
@@ -221,6 +229,7 @@ with st.sidebar:
         placeholder="예: 봄 한정 딸기 라떼 출시했어요! 생딸기 듬뿍 들어가서 진짜 맛있어요. 4월까지만 판매합니다~",
         height=200,
         help="점주가 카톡으로 보낸 원문을 그대로 붙여넣으세요.",
+        max_chars=ORIGINAL_TEXT_MAX_LEN,
     )
 
     # 샘플 사진 자동 로드 또는 직접 업로드
@@ -252,6 +261,10 @@ if generate_btn:
     if not store_name or not original_text:
         st.error("가게 이름과 점주 카톡 원문을 입력해주세요.")
         st.stop()
+
+    # UI 레이어 belt-and-suspenders sanitize (백엔드 wizard_prompts.py의 중복이지만 명시적)
+    store_name = sanitize_input(store_name, STORE_NAME_MAX_LEN)
+    original_text = sanitize_input(original_text, ORIGINAL_TEXT_MAX_LEN)
 
     # 이미지 처리 (업로드 우선, 없으면 샘플 사진)
     image = None
