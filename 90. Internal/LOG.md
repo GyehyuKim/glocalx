@@ -5,7 +5,7 @@
 
 ---
 
-## 진행 현황 요약 (2026-04-27 기준)
+## 진행 현황 요약 (2026-04-28 기준)
 
 | 단계 | 상태 | 비고 |
 |------|------|------|
@@ -17,6 +17,15 @@
 | 파트너 매장 GBP 관리자 권한 확보 | ✅ 완료 | 3곳 (아래 참조) |
 | GBP API 액세스 심사 | ✅ **승인 완료** | 2026-04-27 확인, OAuth Playground로 검증 |
 | Streamlit wizard 데모 배포 | ✅ 완료 | HF Spaces: huggingface.co/spaces/Gyehyu2726/glocalx-demo |
+| 프롬프트 인젝션 방어 | ✅ 완료 | `wizard_prompts.py`에 `sanitize_input()` 추가 (제어문자·Unicode 방향제어문자·`<>` 제거, 줄바꿈 보존), 입력 길이 상수 STORE_NAME_MAX_LEN=100 / ORIGINAL_TEXT_MAX_LEN=2000, `<store_name>` · `<user_input>` XML delimiter로 AI 프롬프트와 사용자 입력 영역 분리, post_type 서버사이드 allowlist 검증. `app.py`에 UI max_chars 제한 + belt-and-suspenders sanitize 추가. 4개 방어 레이어 구성. (PR #45, 2026-04-27) |
+| CI/CD 자동 배포 파이프라인 | ✅ 완료 | GitHub Actions → HF Spaces, main 머지 시 자동 배포 (2026-04-28) |
+
+### 배포 플랫폼 선택 배경 (HF Spaces)
+
+- GitHub 레포가 private이라 Streamlit Cloud 무료 플랜 사용 불가 (private repo = 유료 플랜 필요)
+- 무료 대안 중 Streamlit 앱을 그대로 올릴 수 있는 플랫폼이 HF Spaces뿐이었음
+- 결과적으로 Streamlit 프레임워크는 유지하면서 HF Spaces에 우회 배포하는 방식 채택
+- CI/CD는 GitHub Actions에서 `huggingface_hub.upload_folder()`로 `40. Development/`를 HF Spaces 레포에 직접 푸시하는 방식으로 구축
 | AI 파이프라인 실매장 테스트 | ⏳ 대기 | API 승인됨, Build Sprint에서 착수 |
 | MVP 실제 게시 | ⏳ 대기 | Build Sprint (5/16~) |
 
