@@ -43,8 +43,8 @@
 
 - **이상**: 24시간 이내 머지
 - **최대**: 72시간. 그 이상 살리려면 PR 설명에 이유를 적는다.
-- **머지 후**: 즉시 삭제. GitHub repo 설정의 `Automatically delete head branches` 활성화로 자동화.
-- **금지**: 오래된 아이디어 브랜치 방치. 버릴 거면 PR 닫고 브랜치 삭제.
+- **머지 후**: 자동 삭제 비활성화. 각 팀원이 브랜치를 보존하거나 수동 삭제.
+- **정리 권장**: 더 이상 필요 없는 브랜치는 PR 닫고 수동 삭제. 과제 기간 중에는 HW 제출 브랜치를 보존 권장.
 
 ---
 
@@ -144,7 +144,7 @@ chore: Move validation screenshots to 90. Internal/etc/
 - [x] Require a pull request before merging
 - [x] Require approvals: 1 (자기 PR 자기 승인 금지는 팀 규모상 제외)
 - [x] **Require branches to be up to date before merging** ← 핵심. 웹 에디터 stale-base 사고 차단.
-- [x] Automatically delete head branches (머지 후 자동 청소)
+- [ ] Automatically delete head branches (비활성화 — 팀원 브랜치 보존)
 - [ ] Require status checks to pass — CI 없음, 미사용
 - [x] Do not allow bypassing the above settings
 
