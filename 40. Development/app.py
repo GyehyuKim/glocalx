@@ -266,6 +266,11 @@ if generate_btn:
     store_name = sanitize_input(store_name, STORE_NAME_MAX_LEN)
     original_text = sanitize_input(original_text, ORIGINAL_TEXT_MAX_LEN)
 
+    # sanitize 후 빈 문자열 체크 (제어문자만 입력된 경우 방어)
+    if not store_name.strip() or not original_text.strip():
+        st.error("입력 내용에 처리 가능한 텍스트가 없습니다. 일반 텍스트를 입력해주세요.")
+        st.stop()
+
     # 이미지 처리 (업로드 우선, 없으면 샘플 사진)
     image = None
     if uploaded_file:
