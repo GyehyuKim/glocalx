@@ -83,6 +83,23 @@ Key routing rules:
 - Tune question sensitivity → invoke /plan-tune
 - Code quality dashboard → invoke /health
 
+## PR 머지 전 체크리스트
+
+PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
+
+1. **브랜치 최신화 확인**: PR 페이지에 "This branch is out-of-date" 메시지가 있으면 머지 전에 반드시 해결.
+   ```bash
+   # 로컬에서 최신화
+   git fetch origin
+   git rebase origin/main
+   git push --force-with-lease
+   ```
+   또는 GitHub PR 페이지 하단의 **`Update branch`** 버튼 클릭 (더 간단).
+
+2. **왜 필요한가**: 다른 팀원의 PR이 먼저 main에 머지되면 내 브랜치가 뒤처진다. 이 상태로 머지하면 충돌이 발생하거나 변경사항이 덮어써질 수 있다. `Require branches to be up to date` 브랜치 보호 규칙이 이를 시스템적으로 강제한다.
+
+3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 수행. LLM이 직접 머지하지 않고 PR 생성까지만 한다.
+
 ## Deploy Configuration
 
 Platform: Hugging Face Spaces
