@@ -119,10 +119,15 @@ original_text = sanitize_input(original_text, ORIGINAL_TEXT_MAX_LEN)
 사용자 입력
      │
      ▼
-[Layer 1] app.py max_chars       ← UX 편의 (브라우저 전용, 보안 방어선 아님)
+[Layer 1] app.py max_chars            ← UX 편의 (브라우저 전용, 보안 방어선 아님)
      │
      ▼
-[Layer 2] app.py sanitize_input  ← belt-and-suspenders (백엔드 중복이지만 명시적)
+[Layer 2] app.py sanitize_input       ← belt-and-suspenders (백엔드 중복이지만 명시적)
+     │
+     ▼
+[Layer 2.5] app.py empty check        ← sanitize 후 빈 문자열 방어
+              if not store_name.strip() or not original_text.strip(): st.stop()
+              (제어문자만 입력된 경우 Gemini 호출 자체를 차단)
      │
      ▼
 [Layer 3] wizard_prompts.py sanitize_input  ← 정규 방어선 (UI 우회 시에도 동작)
@@ -140,17 +145,17 @@ original_text = sanitize_input(original_text, ORIGINAL_TEXT_MAX_LEN)
 
 - XML delimiter는 확률적 방어임. 모델이 `</user_input>` 탈출을 통한 인젝션에
   완전히 면역은 아님.
-- `post_type`은 현재 sanitize 대상에서 제외. UI `st.selectbox` 고정 옵션으로
-  커버되지만, `run_adaptation()` 직접 호출 시 취약점 존재 (저위험, 내부 도구).
+- `post_type` 서버사이드 allowlist 검증 완료 (`wizard_prompts.py:107-108`,
+  `if post_type not in POST_TYPES: raise ValueError`). UI 우회 시에도 차단.
 - `analyze_photo.py`는 동일 패턴 적용 필요하나 이번 스코프 밖 (5월 Build Sprint).
 
 ---
 
 ## 수동 테스트 체크리스트
 
-- [ ] 가게 이름 100자 초과 입력 → UI에서 차단, 백엔드에서 자동 절단
-- [ ] 카톡 원문 2000자 초과 입력 → UI에서 차단, 백엔드에서 자동 절단
-- [ ] `\x00` (NULL) 포함 입력 → 제거 확인
-- [ ] 줄바꿈(`\n`) 포함 입력 → 보존 확인
-- [ ] `"Ignore all previous instructions"` 입력 → `<user_input>` 태그 내 격리 확인
-- [ ] 정상 한국어 입력 → 기존과 동일하게 동작
+- [x] 가게 이름 100자 초과 입력 → UI에서 차단, 백엔드에서 자동 절단
+- [x] 카톡 원문 2000자 초과 입력 → UI에서 차단, 백엔드에서 자동 절단
+- [x] `\x00` (NULL) 포함 입력 → 제거 확인
+- [x] 줄바꿈(`\n`) 포함 입력 → 보존 확인
+- [x] `"Ignore all previous instructions"` 입력 → `<user_input>` 태그 내 격리 확인
+- [x] 정상 한국어 입력 → 기존과 동일하게 동작

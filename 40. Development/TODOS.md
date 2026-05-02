@@ -26,10 +26,10 @@ MVP 이후 개선 항목을 추적합니다.
   - `GenerateContentConfig`에 `timeout=60` 추가
   - Gemini 서버 지연 시 무한 spinner 방지
 
-- [ ] **테스트 파일 생성** (`test_detect_name_violation.py`)
-  - `detect_name_violation()` 파트너 스토어 실명 6케이스 테스트
-  - `_classify_error()` 에러 타입별 분기 테스트
-  - 파트너 데모 전에 GBP 감지 정확도 100% 확인 필요
+- [x] **테스트 파일 생성** (`test_app.py`)
+  - `detect_name_violation()` 파트너 스토어 실명 회귀 포함 12케이스 테스트
+  - `_classify_error()` 테스트는 후속 PR로 분리 (spec-test-suite.md §6)
+  - 완료: 2026-04-28 (seungwon/hw6-mission-d)
 
 ---
 
