@@ -126,12 +126,41 @@ chore: Move validation screenshots to 90. Internal/etc/
 
 ---
 
+## 5.5 작업 우선순위 레이블
+
+TODOS.md 항목, 스펙 문서(`docs/spec-*.md`), PR 설명에 아래 레이블을 명시한다.
+
+| 레이블 | 의미 | 판단 기준 |
+|---|---|---|
+| **P0** | 데모 전 반드시 완료 (ship blocker) | 없으면 데모가 무너지는 것 |
+| **P1** | 시간 허용 시 완료 (nice to have) | 있으면 좋지만 데모는 돌아감 |
+| **P2** | 미래 작업 (post-demo / MVP 이후) | 지금 건드리면 오히려 리스크 |
+
+**사용 예**
+
+```
+## P0 — 데모 전 필수
+- [ ] 파트너 스토어 3곳 실명 거짓 양성 없음 확인
+
+## P1 — 시간 허용 시
+- [ ] 응답 타임아웃 설정 (timeout=60)
+
+## P2 — 미래
+- [ ] GBP API 직접 푸시
+```
+
+레이블 없는 항목은 **P1**으로 간주한다.
+
+---
+
 ## 6. 절대 금지 사항
 
 - `main`에 직접 push. 모든 변경은 PR 경유.
 - `git push --force` (순수 force). `--force-with-lease`만 허용, 그것도 내 브랜치 한정.
 - `git commit --no-verify` — 훅을 스킵하지 않는다. 훅이 실패하면 근본 원인을 고친다.
 - `git rebase -i` 로 이미 원격에 올라간 공유 브랜치 재작성.
+- `git checkout --orphan` — 브랜치 히스토리를 초기화하는 명령. 새 작업은 반드시 `main`에서 새 브랜치를 따는 방식으로 시작한다.
+- **GitHub Fork** — 팀원 4명 모두 `GyehyuKim/glocalx` 원본 repo에 직접 push 권한 보유. Fork 기반 워크플로우 사용 금지. 모든 브랜치는 원본 repo에 직접 생성한다.
 - `.env`, API 키, 비밀번호 커밋. `.gitignore`에 `.env` 등록되어 있으나 복사본도 금지.
 - 실제 점주/고객 개인정보(이름, 연락처, 주소)를 평문으로 저장. 필요 시 익명화.
 
@@ -194,6 +223,9 @@ git fetch --prune
     먼저 확인한다. 충돌 가능성이 보이면 사용자에게 보고.
 12. **과거 사고 패턴**: WHYTREE 메타 헤더·PREMORTEM 정렬은 과거 회귀 사고가 있었던 지점이다.
     이 두 파일을 편집할 때는 편집 전후의 diff를 특히 주의 깊게 검토한다.
+13. **`git checkout --orphan` 절대 금지.** 세션 시작 시 `git log --oneline -1`로 현재 브랜치가
+    정상 커밋을 갖는지 확인한다. 실패하면 즉시 사용자에게 보고하고 임의로 수정하지 않는다.
+14. **Fork 금지.** 모든 브랜치는 `GyehyuKim/glocalx` 원본 repo에 직접 생성한다.
 
 모순이 생기면 **이 `CONTRIBUTING.md` > `CLAUDE.md` > `AGENTS.md` > 기타**의 우선순위를 따른다.
 
