@@ -1,4 +1,4 @@
-# AGENTS.md — AI Agent Instructions for GlocalX
+# AGENTS.md — AI Agent Instructions for Giftaro
 
 이 파일은 **Cursor, Continue, Aider, Windsurf** 등 AGENTS.md 표준을 따르는 코딩 에이전트를 위한
 진입점이다. Claude Code는 `CLAUDE.md`를 우선 로드하지만, 동일 규범을 참조하도록 이 파일도
@@ -23,12 +23,24 @@
 ## 프로젝트 개요 (1분 요약)
 
 - **코스**: KAIST IMMS BIZ.69911 — IT경영 특수논제: AI 기반 비즈니스 진화, 전략 및 실습 (2026 Spring, 이지수 교수)
-- **프로젝트**: **GlocalX** — 한국 소상공인 식당의 Google Business Profile(GBP)을 외국인 관광객용
-  다국어 콘텐츠로 자동 최적화하는 서비스. 사진 한 장 → EN/JA/zh-TW 마케팅 콘텐츠.
+- **프로젝트**: **기프타로** — 회사 동료의 임박한 생일 선물을 5분 안에 의미 있게 고르도록 돕는
+  콘텐츠 큐레이션 서비스. 생년월일·기본 취향 → 올해의 한 줄 카드 → 의미가 맞는 선물 후보.
+- **피벗**: 2026-05-07 기준 기존 **GlocalX** 프로젝트에서 **기프타로** 프로젝트로 전환했다.
 - **팀**: 4명 (김계휴 Dev/Tech, 김경문 GTM, 이승원 Marketing, 정윤지 AX)
-- **주요 산출물**: `30. Deliverables/business-plan.html`, `30. Deliverables/gbp-guide.html`,
-  `docs/MANIFEST.md`, `docs/WHYTREE.md`, `docs/PREMORTEM.md`
+- **주요 산출물**: `00. Project/service-planning.md`, `docs/MANIFEST.md`,
+  `10. Research/source-pdfs/`
+- **피벗 전 자료**: `99. Archive/2026-05-07-glocalx/`
 - **언어**: 모든 커뮤니케이션과 문서는 **한국어**가 기본. 코드 식별자만 영어.
+
+---
+
+## Archive Policy
+
+`99. Archive/`는 피벗 이전 GlocalX 자료 보관용이다. 현재 프로젝트 의사결정, 문서 작성, 코드 구현,
+검색의 기본 참조 대상에서 제외한다.
+
+사용자가 명시적으로 "아카이브를 참고해", "GlocalX 자료를 봐", "피벗 이전 내용을 확인해"라고
+요청한 경우에만 `99. Archive/`를 읽는다.
 
 ---
 
@@ -36,12 +48,12 @@
 
 | 작업 | 시작 파일 |
 |---|---|
-| 사업계획서 편집 | `30. Deliverables/business-plan.html` |
+| 서비스 기획 편집 | `00. Project/service-planning.md` |
 | 원칙/팀 구성 변경 | `docs/MANIFEST.md` |
-| 리스크 관리표 | `docs/PREMORTEM.md` |
-| Why-tree(문제 인과) | `docs/WHYTREE.md` |
-| AI 파이프라인 코드 | `40. Development/analyze_photo.py` 등 |
-| 조사 데이터 | `10. Research/gbp-survey-seomyeon.csv` |
+| 원본 PDF 확인 | `10. Research/source-pdfs/` |
+| 최종 산출물 작성 | `30. Deliverables/` |
+| 개발 작업 | `40. Development/` |
+| 피벗 전 GlocalX 자료 확인 | `99. Archive/2026-05-07-glocalx/` |
 
 ---
 
