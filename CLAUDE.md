@@ -6,7 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a course project folder for **BIZ.69911 — IT경영 특수논제: AI 기반 비즈니스 진화, 전략 및 실습** (KAIST IMMS, Spring 2026, instructor: 이지수).
 
-The project is **GlocalX** — a service that automates multilingual Google Business Profile (GBP) content for Korean SMB restaurants targeting foreign tourists. Primary deliverables live under `30. Deliverables/` (business-plan.html, gbp-guide.html) and `docs/` (MANIFEST, WHYTREE, PREMORTEM).
+As of 2026-05-07, the active project has pivoted from **GlocalX** to **기프타로**. 기프타로 is a content curation service that helps office workers choose a meaningful, lightweight birthday gift for a coworker in about five minutes.
+
+## Current Project Direction
+
+- Active project: **기프타로**
+- Previous project: **GlocalX**
+- Pivot date: 2026-05-07
+- Current source of truth: `docs/MANIFEST.md`, `00. Project/service-planning.md`
+- Source PDFs: `10. Research/source-pdfs/`
+- Pre-pivot materials: `99. Archive/2026-05-07-glocalx/`
+
+## Archive Policy
+
+`99. Archive/` stores pre-pivot GlocalX materials. Do not read or use it for active project decisions, document drafting, code implementation, or broad search by default.
+
+Only inspect `99. Archive/` when the user explicitly asks to review archive, GlocalX, or pre-pivot materials.
 
 ## Governance — MANDATORY
 
@@ -100,7 +115,9 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 
 3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 수행. LLM이 직접 머지하지 않고 PR 생성까지만 한다.
 
-## Deploy Configuration
+## Archived Deploy Configuration
+
+The following deployment configuration belongs to the pre-pivot GlocalX project and is inactive for 기프타로 unless explicitly re-enabled.
 
 Platform: Hugging Face Spaces
 Production URL: https://huggingface.co/spaces/Gyehyu2726/glocalx-demo

@@ -36,3 +36,10 @@ notice-*.txt
 
 # HW6 개인 제출 메모 (커밋 금지)
 90. Internal/hw6/
+
+# Archive local/runtime files
+99. Archive/**/.env
+99. Archive/**/.venv/
+99. Archive/**/__pycache__/
+99. Archive/**/outputs/
+99. Archive/**/desktop.ini
