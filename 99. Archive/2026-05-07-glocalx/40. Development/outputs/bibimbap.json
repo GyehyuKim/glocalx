@@ -1,0 +1,35 @@
+{
+  "detected_food": "Bibimbap",
+  "food_category": "rice bowl",
+  "ingredients_visible": [
+    "carrots",
+    "zucchini",
+    "mushrooms",
+    "bean sprouts",
+    "spinach",
+    "raw egg yolk",
+    "gochujang",
+    "sesame seeds"
+  ],
+  "visual_quality": "high",
+  "confidence": 1.0,
+  "warnings": [],
+  "content_en": {
+    "title": "Experience Dolsot Bibimbap: A Korean Classic!",
+    "body": "Dive into the vibrant world of Dolsot Bibimbap! Our sizzling stone bowl arrives packed with a rainbow of fresh, crisp vegetables like julienned carrots, tender spinach, crunchy bean sprouts, savory mushrooms, and refreshing zucchini. Crowned with a perfectly golden raw egg yolk and a dollop of spicy gochujang, every ingredient is carefully arranged for a feast for your eyes. Mix it all together to create a warm, comforting, and utterly delicious harmony of flavors and textures. It's an authentic Korean experience, perfect for sharing and incredibly Instagrammable! Come taste a true classic.",
+    "cta_text": "Discover Your Favorite Dish",
+    "cultural_hook": "Emphasized the visual appeal, authentic experience, and \"Instagrammable\" quality for Western tourists."
+  },
+  "content_ja": {
+    "title": "石焼ビビンバ: 彩り豊かな韓国の味をご堪能ください",
+    "body": "熱々の石鍋で提供される、彩り豊かなビビンバはいかがでしょうか。新鮮な人参、ほうれん草、もやし、ズッキーニ、そして風味豊かなきのこなど、厳選された旬の野菜がたっぷりと盛り付けられています。中央には新鮮な卵黄と特製コチュジャン。お客様ご自身で混ぜ合わせることで、熱々のご飯と具材が一体となり、奥深い味わいと食感のハーモニーをお楽しみいただけます。丁寧に作られた本場の味を、ぜひこの機会にご体験ください。",
+    "cta_text": "詳細を見る",
+    "cultural_hook": "Focused on quality ingredients, careful preparation, and the warmth of the stone pot, using polite language for a Japanese audience."
+  },
+  "content_zh_tw": {
+    "title": "石鍋拌飯：鮮蔬滿滿，暖心又飽足！",
+    "body": "想吃得豐盛又滿足嗎？來試試我們的石鍋拌飯吧！熱騰騰的石鍋裡，鋪滿了新鮮多樣的蔬菜，像是脆甜的紅蘿蔔絲、嫩綠的菠菜、爽口豆芽、清新的櫛瓜和香菇。再放上一顆金黃的生蛋黃和特製辣醬，料多實在，視覺效果也超棒！自己動手攪拌，讓飯粒、蛋黃和醬料完美融合，每一口都是溫暖又豐富的滋味。絕對是您來韓國必吃的經典美食，CP值超高，適合家人朋友一起享用！",
+    "cta_text": "立即品嚐",
+    "cultural_hook": "Highlighted value for money, generous portions, and the interactive/satisfying aspect of the dish, appealing to Taiwanese/HK tourists."
+  }
+}

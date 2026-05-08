@@ -1,0 +1,30 @@
+{
+  "detected_food": "Tteokbokki",
+  "food_category": "street food",
+  "ingredients_visible": [
+    "rice cakes",
+    "green onions",
+    "spicy red sauce"
+  ],
+  "visual_quality": "high",
+  "confidence": 1.0,
+  "warnings": [],
+  "content_en": {
+    "title": "Experience the Zesty Kick of Authentic Tteokbokki!",
+    "body": "Dive into the heart of Korean street food with our vibrant Tteokbokki! These chewy rice cakes, bathed in a rich, fiery gochujang sauce, offer an unforgettable explosion of sweet and spicy flavors. Topped with fresh green onions, each bite is a perfect blend of texture and zest. It's a quintessential Korean comfort food, perfect for sharing or enjoying on your own. Come taste the authentic flavors that locals adore and see why Tteokbokki is a must-try for any food adventurer in Korea. Get ready for a truly delicious experience that will awaken your senses!",
+    "cta_text": "Taste the Spice!",
+    "cultural_hook": "Emphasized the authentic street food experience, vibrant flavors, and 'must-try' aspect for adventurous Western tourists."
+  },
+  "content_ja": {
+    "title": "本場の味！もちもちトッポッキをぜひご賞味ください",
+    "body": "韓国の代表的なストリートフード、トッポッキはいかがでしょうか。もちもちとした食感の餅と、旨辛いコチュジャンソースが絶妙に絡み合い、一度食べたら忘れられない味わいです。新鮮な長ネギが彩りと風味を添え、一口ごとに異なるハーモニーをお楽しみいただけます。丁寧に作られた本場の味は、辛さの中にも奥深い旨味が感じられ、幅広いお客様にお喜びいただいております。韓国旅行の思い出に、ぜひ当店自慢のトッポッキをお試しくださいませ。",
+    "cta_text": "詳細を見る",
+    "cultural_hook": "Focused on quality, careful preparation, pleasant texture, and a polite, inviting tone suitable for Japanese tourists."
+  },
+  "content_zh_tw": {
+    "title": "超人氣韓式辣炒年糕！Q彈美味，保證回味無窮",
+    "body": "來韓國必吃的街頭小吃——辣炒年糕！我們家的辣炒年糕口感Q彈，搭配獨家秘製的香辣醬汁，每一口都是滿滿的幸福感。新鮮青蔥的點綴，讓整體風味更上一層樓。這道國民美食不僅好吃，份量也十足，非常適合與家人朋友一同分享。無論是想嚐鮮還是尋找道地韓國味，我們的辣炒年糕絕對是您的最佳選擇。快來品嚐這道CP值超高的韓式經典美味吧！",
+    "cta_text": "立即品嚐",
+    "cultural_hook": "Highlighted popularity, shareable portions, value for money, and a practical, appealing tone for Taiwanese/Hong Kong tourists."
+  }
+}

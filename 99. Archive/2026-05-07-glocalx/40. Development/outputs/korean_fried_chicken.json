@@ -1,0 +1,37 @@
+{
+  "detected_food": "Korean Fried Chicken (Chimaek Set)",
+  "food_category": "Fried Chicken",
+  "ingredients_visible": [
+    "fried chicken pieces (plain)",
+    "fried chicken pieces (soy-garlic sauce)",
+    "fried chicken pieces (spicy gochujang sauce)",
+    "garlic slices",
+    "green chili slices",
+    "sesame seeds",
+    "pickled radish cubes",
+    "shredded cabbage",
+    "creamy dressing",
+    "beer"
+  ],
+  "visual_quality": "high",
+  "confidence": 1.0,
+  "warnings": [],
+  "content_en": {
+    "title": "Crispy Korean Fried Chicken & Ice-Cold Beer!",
+    "body": "Experience the ultimate \"Chimaek\" (Chicken & Beer) pairing that Koreans adore! Our platter features three mouth-watering styles: classic crispy fried, savory soy-garlic with fresh garlic and chili, and a vibrant, sweet-spicy gochujang glaze topped with sesame seeds. Each bite offers a satisfying crunch, perfectly complemented by a refreshing mug of beer. Served with crisp pickled radish and a fresh cabbage salad to cleanse your palate. It's the perfect shareable feast for friends, a true taste of Korean nightlife. Come discover your favorite flavor!",
+    "cta_text": "Taste Korea's Best Chimaek!",
+    "cultural_hook": "Emphasized the \"Chimaek\" cultural experience, sensory details, and shareability for Western tourists."
+  },
+  "content_ja": {
+    "title": "絶品！韓国チキン3種盛り合わせとビール",
+    "body": "本場韓国の味をお楽しみいただける、チキン3種盛り合わせと冷たいビールのセットでございます。定番のサクサクフライドチキン、香ばしいニンニクと青唐辛子がアクセントの醤油ガーリック、そして甘辛いコチュジャンソースに白ごまを添えたチキンをご用意しております。丁寧に揚げられたチキンは、どれも外はカリッと、中はジューシーな仕上がりです。さっぱりとした大根のピクルスと新鮮なキャベツサラダが、お口直しにぴったり。韓国の「チメク（チキンとビール）」文化を、ぜひ当店でご体験ください。",
+    "cta_text": "本場の味をご体験ください",
+    "cultural_hook": "Focused on quality, careful preparation, and the authentic \"Chimaek\" experience in a polite tone."
+  },
+  "content_zh_tw": {
+    "title": "韓式炸雞三拼！啤酒絕配，超值分享餐",
+    "body": "來韓國必吃的「炸雞配啤酒」（치맥 Chimaek）就在這裡！我們提供三種風味的炸雞拼盤，讓您一次滿足多種口味。有經典原味炸雞，外皮酥脆、肉質鮮嫩；香氣四溢的蒜香醬油炸雞，搭配蒜片和青辣椒更添風味；還有甜辣夠勁的韓式辣醬炸雞，灑上白芝麻，口感層次豐富。搭配冰涼啤酒，絕對是朋友聚餐或家庭分享的最佳選擇。附贈清爽解膩的醃蘿蔔和高麗菜沙拉，讓您吃得更盡興！CP值超高，快來品嚐最道地的韓式炸雞！",
+    "cta_text": "立即品嚐人氣炸雞！",
+    "cultural_hook": "Highlighted value for money, shareable portions, popularity, and family-friendly aspects for Taiwanese/HK tourists."
+  }
+}

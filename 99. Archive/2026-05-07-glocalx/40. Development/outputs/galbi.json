@@ -1,0 +1,33 @@
+{
+  "detected_food": "Galbi (Korean BBQ Short Ribs)",
+  "food_category": "Grilled meat",
+  "ingredients_visible": [
+    "beef ribs",
+    "beef slices",
+    "button mushrooms",
+    "sliced white vegetables"
+  ],
+  "visual_quality": "medium",
+  "confidence": 0.9,
+  "warnings": [
+    "The purple light source affects color perception slightly."
+  ],
+  "content_en": {
+    "title": "Sizzle into Authentic Korean BBQ Experience!",
+    "body": "Immerse yourself in the sizzling spectacle of Korean BBQ! Our prime beef cuts, including a succulent short rib, are grilled right at your table, creating an unforgettable sensory journey. Watch as the rich marbling renders, releasing incredible aromas. Pair your perfectly cooked meat with tender grilled button mushrooms and fresh sliced vegetables. It's more than a meal; it's an interactive culinary adventure, perfect for sharing and capturing those amazing Instagram moments. Come taste the tradition and the vibrant flavors!",
+    "cta_text": "Experience K-BBQ Now!",
+    "cultural_hook": "Emphasized the interactive, sensory experience and 'instagrammable' aspect for Western tourists."
+  },
+  "content_ja": {
+    "title": "厳選和牛の本格韓国焼肉をご堪能ください",
+    "body": "当店自慢の本格韓国焼肉で、特別なひとときをお過ごしください。丁寧に厳選された牛肉は、お客様ご自身でテーブルのグリルで焼き上げていただけます。美しいサシが入ったカルビ（骨付き肉）や他部位のお肉は、香ばしく焼き上がり、口の中でとろけるような味わいです。新鮮なマッシュルームやスライス野菜もご一緒にどうぞ。素材の味を最大限に引き出す、熟練の技が光る逸品。清潔な空間で、ゆったりと上質な韓国焼肉体験をお楽しみください。",
+    "cta_text": "ご予約はこちら",
+    "cultural_hook": "Focused on quality, careful selection of ingredients, polite tone, and the enjoyable, clean dining experience."
+  },
+  "content_zh_tw": {
+    "title": "韓式烤肉盛宴！大份量牛肉與蔬菜超滿足",
+    "body": "想找CP值高的韓式烤肉嗎？來這裡就對了！我們提供多種優質牛肉部位，包括帶骨牛小排，讓您在桌邊現烤，享受熱騰騰的美味。香氣四溢的烤肉搭配鮮甜的香菇和切片蔬菜，口感豐富，絕對是與親朋好友分享的最佳選擇。份量十足，保證讓您吃得過癮又滿足！快來體驗最受歡迎的韓式烤肉文化，留下美好的用餐回憶！",
+    "cta_text": "立即預約品嚐！",
+    "cultural_hook": "Highlighted value for money, shareable portions, and popularity, aligning with preferences of Taiwanese/HK tourists."
+  }
+}

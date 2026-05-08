@@ -1,0 +1,32 @@
+{
+  "detected_food": "Kimchi Jjigae",
+  "food_category": "stew",
+  "ingredients_visible": [
+    "kimchi",
+    "tofu",
+    "green onions",
+    "red chili flakes",
+    "shredded tuna"
+  ],
+  "visual_quality": "high",
+  "confidence": 0.95,
+  "warnings": [],
+  "content_en": {
+    "title": "Sizzling Tuna Kimchi Jjigae - A Korean Classic!",
+    "body": "Dive into a steaming bowl of authentic Tuna Kimchi Jjigae! This beloved Korean stew is packed with the rich, savory depth of fermented kimchi, soft silken tofu, and tender flaked tuna, all simmered in a vibrant, spicy broth. Topped with fresh green onions and a sprinkle of gochugaru, it's a comforting and flavorful experience that will warm you from the inside out. Perfect for those seeking a true taste of Korea's culinary heart. Share your #KimchiJjigae moment with us!",
+    "cta_text": "Taste Korean Comfort Now",
+    "cultural_hook": "Emphasized the authentic experience, sensory details, and 'instagrammable' appeal for Western tourists."
+  },
+  "content_ja": {
+    "title": "熟成キムチの旨味たっぷり！ツナキムチチゲ",
+    "body": "丁寧に熟成させたキムチの深い旨味が溶け込んだ、心温まるツナキムチチゲでございます。ふっくらとした豆腐と、旨味豊かなツナが、ピリ辛ながらも奥深いスープと絶妙に調和し、一口ごとに幸せを感じる逸品です。新鮮なネギが彩りを添え、食欲をそそります。韓国の家庭料理の温かさと丁寧な味わいを、ぜひ当店でお楽しみください。",
+    "cta_text": "本場の味をご体験ください",
+    "cultural_hook": "Focused on quality, careful preparation, deep umami, and a polite, refined dining experience."
+  },
+  "content_zh_tw": {
+    "title": "暖心又開胃！經典鮪魚泡菜鍋",
+    "body": "想品嚐道地的韓式風味？這鍋熱騰騰的鮪魚泡菜鍋絕對是您的最佳選擇！以發酵完美的泡菜為基底，搭配滑嫩的豆腐與鮮美的鮪魚，燉煮出香辣濃郁、層次豐富的湯頭。每一口都充滿了泡菜的酸辣與鮪魚的鮮甜，份量十足，非常適合與親朋好友一同分享。這是韓國人氣必點的經典菜餚，保證讓您吃得暖呼呼又滿足！",
+    "cta_text": "立即品嚐人氣美食",
+    "cultural_hook": "Highlighted value for money, generous portions, popularity, and suitability for sharing among family/friends."
+  }
+}
