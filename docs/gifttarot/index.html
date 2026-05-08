@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>기프타로 — 5분 데모</title>
+<title>기프타로 — 5분 데모 v3</title>
 <style>
   :root {
     --paper: #F4F2EE;
@@ -16,14 +16,18 @@
     --accent: #B45309;
     --gold: #B8924C;
     --line: #D7D2C8;
+    --line-soft: #E5E1D8;
     --shadow: 0 8px 32px rgba(80, 60, 40, 0.08);
     --shadow-deep: 0 16px 48px rgba(80, 60, 40, 0.14);
+    --w-mok:  #6B8F5B;  /* 木 */
+    --w-hwa:  #C25B4F;  /* 火 */
+    --w-to:   #C8A153;  /* 土 */
+    --w-geum: #9CA3AF;  /* 金 */
+    --w-su:   #4F6F8F;  /* 水 */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; letter-spacing: -0.015em; }
   html, body {
-    height: 100%;
-    background: var(--paper);
-    color: var(--ink);
+    height: 100%; background: var(--paper); color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
                  "Apple SD Gothic Neo", "Pretendard", "Helvetica Neue", system-ui, sans-serif;
     font-feature-settings: "ss01", "cv11", "tnum";
@@ -32,9 +36,6 @@
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
-  .serif {
-    font-family: "Apple SD Gothic Neo", "Noto Serif KR", "Nanum Myeongjo", serif;
-  }
   body {
     background-image:
       radial-gradient(circle at 12% 18%, rgba(180,150,110,0.07) 0, transparent 40%),
@@ -42,95 +43,46 @@
       linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
     min-height: 100vh;
   }
-
   .stage {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 56px 28px 96px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    max-width: 720px; margin: 0 auto; padding: 48px 24px 96px;
+    min-height: 100vh; display: flex; flex-direction: column;
   }
-
   .brand {
-    font-size: 11px;
-    letter-spacing: 0.22em;
-    color: var(--ink-faint);
-    text-align: center;
-    margin-bottom: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.22em; color: var(--ink-faint);
+    text-align: center; margin-bottom: 14px; font-weight: 600; text-transform: uppercase;
   }
   .brand b { color: var(--primary); letter-spacing: 0.04em; font-weight: 700; }
-
   .progress-bar {
-    height: 2px;
-    background: rgba(192, 0, 80, 0.1);
-    border-radius: 1px;
-    margin: 18px auto 36px;
-    max-width: 480px;
-    overflow: hidden;
+    height: 2px; background: rgba(192, 0, 80, 0.1); border-radius: 1px;
+    margin: 18px auto 32px; max-width: 480px; overflow: hidden;
   }
-  .progress-bar > div {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 1px;
-    transition: width 0.6s ease;
-  }
+  .progress-bar > div { height: 100%; background: var(--primary); border-radius: 1px; transition: width 0.6s ease; }
 
-  .screen {
-    display: none;
-    animation: fadeUp 0.5s ease;
-  }
+  .screen { display: none; animation: fadeUp 0.5s ease; }
   .screen.active { display: block; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-  h1 {
-    font-size: 40px;
-    line-height: 1.18;
-    color: var(--ink);
-    font-weight: 700;
-    margin-bottom: 18px;
-    letter-spacing: -0.028em;
-  }
+  h1 { font-size: 38px; line-height: 1.18; color: var(--ink); font-weight: 700; margin-bottom: 18px; letter-spacing: -0.028em; }
   h1 .accent { color: var(--primary); }
-  h2 {
-    font-size: 24px;
-    line-height: 1.32;
-    margin-bottom: 10px;
-    color: var(--ink);
-    font-weight: 600;
-    letter-spacing: -0.022em;
+  h2 { font-size: 22px; line-height: 1.32; margin-bottom: 10px; color: var(--ink); font-weight: 700; letter-spacing: -0.022em; }
+  h3 { font-size: 11px; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 14px; font-weight: 700; }
+  p { font-size: 15px; line-height: 1.62; color: var(--ink-soft); margin-bottom: 14px; letter-spacing: -0.012em; }
+  .lead { font-size: 17px; line-height: 1.55; color: var(--ink); letter-spacing: -0.018em; }
+  .small { font-size: 13px; color: var(--ink-faint); letter-spacing: -0.005em; }
+  .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    background: var(--paper-deep); color: var(--ink-soft);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
   }
-  h3 {
-    font-size: 12px;
-    letter-spacing: 0.18em;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    margin-bottom: 14px;
-    font-weight: 600;
-  }
-  p { font-size: 16px; line-height: 1.62; color: var(--ink-soft); margin-bottom: 14px; letter-spacing: -0.012em; }
-  .lead { font-size: 18px; line-height: 1.55; color: var(--ink); letter-spacing: -0.018em; }
+  .badge.primary { background: rgba(192,0,80,0.08); color: var(--primary); }
 
   .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 14px 28px;
-    background: var(--ink);
-    color: var(--paper);
-    border: none;
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 14px 24px; background: var(--ink); color: var(--paper);
+    border: none; border-radius: 12px; font-family: inherit;
+    font-size: 16px; font-weight: 600; letter-spacing: -0.015em;
+    cursor: pointer; transition: all 0.2s ease; text-decoration: none;
   }
   .btn:hover { background: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow); }
   .btn.primary { background: var(--primary); }
@@ -139,170 +91,128 @@
   .btn.ghost:hover { background: var(--paper-deep); color: var(--ink); }
   .btn.full { width: 100%; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-sm { padding: 10px 18px; font-size: 14px; border-radius: 10px; }
 
   .row { display: flex; gap: 12px; flex-wrap: wrap; }
   .row > * { flex: 1; min-width: 160px; }
 
   .card {
-    background: #FBFAF6;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 26px 24px;
-    margin-bottom: 18px;
+    background: #FBFAF6; border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px 22px; margin-bottom: 16px;
     box-shadow: var(--shadow);
   }
-  .card-emph {
-    border-left: 3px solid var(--primary);
-    background: linear-gradient(180deg, #FBFAF6 0%, #F4F0E8 100%);
-  }
+  .card-emph { border-left: 3px solid var(--primary); background: linear-gradient(180deg, #FBFAF6 0%, #F4F0E8 100%); }
 
-  .field { margin-bottom: 22px; }
-  label {
-    display: block;
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
-    font-weight: 600;
-  }
+  .field { margin-bottom: 20px; }
+  label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; letter-spacing: -0.01em; font-weight: 600; }
   label .hint { color: var(--ink-faint); font-weight: 400; font-size: 12px; }
-  input[type=text], input[type=date] {
-    width: 100%;
-    padding: 13px 16px;
-    background: var(--paper-deep);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 16px;
-    color: var(--ink);
-    letter-spacing: -0.012em;
-    transition: all 0.2s ease;
+  input[type=text], input[type=date], textarea {
+    width: 100%; padding: 13px 16px; background: var(--paper-deep);
+    border: 1px solid var(--line); border-radius: 10px;
+    font-family: inherit; font-size: 16px; color: var(--ink);
+    letter-spacing: -0.012em; transition: all 0.2s ease;
+    resize: none;
   }
-  input:focus { outline: none; border-color: var(--primary); background: #FBFAF6; }
+  input:focus, textarea:focus { outline: none; border-color: var(--primary); background: #FBFAF6; }
 
   .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
-    padding: 9px 16px;
-    background: var(--paper-deep);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--ink-soft);
-    letter-spacing: -0.012em;
-    transition: all 0.2s ease;
-    user-select: none;
+    padding: 9px 16px; background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: 999px; cursor: pointer; font-family: inherit;
+    font-size: 14px; font-weight: 500; color: var(--ink-soft);
+    letter-spacing: -0.012em; transition: all 0.2s ease; user-select: none;
   }
   .chip:hover { border-color: var(--primary); color: var(--ink); }
   .chip.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip-icon { display: inline-block; margin-right: 4px; }
 
-  /* 모드 선택 */
+  /* Mode select */
   .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
   .mode-card {
-    aspect-ratio: 3/4;
-    border-radius: 18px;
-    padding: 28px 22px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    position: relative;
-    overflow: hidden;
+    aspect-ratio: 3/4; border-radius: 18px; padding: 26px 22px; cursor: pointer;
+    display: flex; flex-direction: column; justify-content: space-between;
+    transition: all 0.3s ease; border: 2px solid transparent;
+    position: relative; overflow: hidden;
   }
-  .mode-east {
-    background: linear-gradient(135deg, #F0EBE0 0%, #E1D9C8 100%);
-    color: var(--ink);
-  }
-  .mode-east::before {
-    content: ""; position: absolute; inset: 0;
-    background: radial-gradient(circle at 70% 20%, rgba(184,146,76,0.18), transparent 50%);
-  }
-  .mode-west {
-    background: linear-gradient(135deg, #2A2440 0%, #1A1530 100%);
-    color: #E8DDF0;
-  }
-  .mode-west::before {
-    content: ""; position: absolute; inset: 0;
-    background:
-      radial-gradient(circle at 30% 70%, rgba(180,140,220,0.25), transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(255,220,150,0.15), transparent 40%);
-  }
+  .mode-east { background: linear-gradient(135deg, #F0EBE0 0%, #E1D9C8 100%); color: var(--ink); }
+  .mode-east::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(184,146,76,0.18), transparent 50%); }
+  .mode-tarot { background: linear-gradient(135deg, #2A1F35 0%, #4A2C5C 100%); color: #F0E8F5; }
+  .mode-tarot::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 70%, rgba(220,180,255,0.18), transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,220,150,0.12), transparent 40%); }
   .mode-card > * { position: relative; z-index: 1; }
   .mode-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-deep); }
   .mode-card.selected { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(192,0,80,0.12); }
-  .mode-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.9; }
+  .mode-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.95; }
   .mode-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.022em; }
-  .mode-sub { font-size: 13px; opacity: 0.75; line-height: 1.55; letter-spacing: -0.01em; }
+  .mode-sub { font-size: 13px; opacity: 0.78; line-height: 1.55; letter-spacing: -0.01em; }
+  .mode-desc {
+    margin-top: 16px; padding: 14px;
+    background: var(--paper-deep);
+    border-radius: 12px; font-size: 13px; color: var(--ink-soft);
+    line-height: 1.6;
+    display: none;
+  }
+  .mode-desc.show { display: block; animation: fadeUp 0.3s ease; }
 
-  /* 카드 reveal */
-  .reveal-stage {
-    text-align: center;
-    padding: 48px 0;
-    min-height: 380px;
-  }
-  .reveal-progress { color: var(--ink-faint); font-size: 14px; letter-spacing: 0.2em; margin-bottom: 24px; }
-  .saju-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    max-width: 360px;
-    margin: 0 auto 36px;
-  }
+  /* 사주 명식 */
+  .reveal-stage { text-align: center; padding: 32px 0; min-height: 320px; }
+  .reveal-progress { color: var(--ink-faint); font-size: 12px; letter-spacing: 0.18em; margin-bottom: 22px; font-weight: 600; }
+  .saju-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 320px; margin: 0 auto 28px; }
   .saju-cell {
-    aspect-ratio: 1;
-    border: 1px solid var(--line);
-    background: #FBFAF6;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.6s ease;
+    aspect-ratio: 1; border: 1px solid var(--line); background: #FBFAF6;
+    border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 8px;
+    opacity: 0; transform: translateY(8px); transition: all 0.6s ease;
   }
   .saju-cell.show { opacity: 1; transform: translateY(0); }
   .saju-cell .label { font-size: 10px; color: var(--ink-faint); margin-bottom: 4px; letter-spacing: 0.18em; font-weight: 600; }
   .saju-cell .ch {
-    font-size: 28px; font-weight: 500; color: var(--ink); line-height: 1;
+    font-size: 26px; font-weight: 500; color: var(--ink); line-height: 1;
     font-family: "PingFang SC", "Apple SD Gothic Neo", "Noto Serif KR", "Nanum Myeongjo", serif;
     letter-spacing: 0;
   }
   .saju-cell.day .ch { color: var(--primary); }
   .saju-cell .yo { font-size: 10px; color: var(--ink-soft); margin-top: 4px; letter-spacing: 0; font-weight: 500; }
 
-  .character-reveal {
-    text-align: center;
-    margin: 40px auto;
+  /* 오행 분포 */
+  .wuxing-section {
+    margin: 28px auto;
     max-width: 480px;
+    padding: 24px;
+    background: #FBFAF6;
+    border: 1px solid var(--line);
+    border-radius: 18px;
     opacity: 0;
-    transition: opacity 0.8s ease;
+    transform: translateY(12px);
+    transition: all 0.7s ease;
+    text-align: left;
   }
-  .character-reveal.show { opacity: 1; }
-  .char-illust {
-    width: 132px; height: 132px;
-    margin: 0 auto 18px;
-    background: linear-gradient(135deg, #F4E8C8 0%, #E8C887 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 56px;
-    box-shadow: var(--shadow);
-    border: 3px solid #FBFAF6;
+  .wuxing-section.show { opacity: 1; transform: translateY(0); }
+  .wuxing-title { font-size: 11px; color: var(--primary); letter-spacing: 0.18em; font-weight: 700; margin-bottom: 16px; text-align: center; }
+  .wuxing-bars { display: flex; gap: 8px; align-items: flex-end; height: 100px; margin: 16px 0 14px; }
+  .wuxing-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .wuxing-fill {
+    width: 100%;
+    border-radius: 8px 8px 4px 4px;
+    transition: height 0.8s ease;
+    min-height: 4px;
   }
-  .char-name { font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.024em; }
-  .char-no { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.18em; margin-bottom: 14px; font-weight: 600; }
-  .char-sub { font-size: 15px; color: var(--ink-soft); line-height: 1.55; letter-spacing: -0.012em; }
+  .wuxing-fill.mok  { background: linear-gradient(180deg, #92B47B 0%, var(--w-mok)  100%); }
+  .wuxing-fill.hwa  { background: linear-gradient(180deg, #E2806E 0%, var(--w-hwa)  100%); }
+  .wuxing-fill.to   { background: linear-gradient(180deg, #DEB870 0%, var(--w-to)   100%); }
+  .wuxing-fill.geum { background: linear-gradient(180deg, #C0C5CC 0%, var(--w-geum) 100%); }
+  .wuxing-fill.su   { background: linear-gradient(180deg, #6F8FAE 0%, var(--w-su)   100%); }
+  .wuxing-label-row { display: flex; gap: 8px; }
+  .wuxing-label-row > div { flex: 1; text-align: center; font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .wuxing-summary {
+    margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line);
+    font-size: 14px; line-height: 1.6; color: var(--ink-soft);
+  }
+  .wuxing-summary b { color: var(--ink); font-weight: 700; }
 
+  /* 메시지 카드 */
   .meaning-card {
-    margin: 30px 0;
-    padding: 28px 26px;
+    margin: 24px 0;
+    padding: 26px 24px;
     background: linear-gradient(180deg, #FBFAF6 0%, #F4F0E8 100%);
     border-radius: 18px;
     border-left: 3px solid var(--primary);
@@ -314,31 +224,86 @@
   }
   .meaning-card.show { opacity: 1; transform: translateY(0); }
   .meaning-eyebrow { font-size: 11px; color: var(--primary); letter-spacing: 0.18em; margin-bottom: 12px; font-weight: 700; }
-  .meaning-headline { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 14px; line-height: 1.42; letter-spacing: -0.022em; }
+  .meaning-headline { font-size: 19px; font-weight: 700; color: var(--ink); margin-bottom: 14px; line-height: 1.42; letter-spacing: -0.022em; }
   .meaning-body { font-size: 15px; color: var(--ink-soft); line-height: 1.72; letter-spacing: -0.012em; }
-  .meaning-tail {
-    margin-top: 20px; padding-top: 18px;
+  .meaning-from {
+    margin-top: 16px; padding-top: 14px;
     border-top: 1px dashed var(--line);
-    font-size: 13px; color: var(--ink-soft); letter-spacing: -0.01em;
+    font-size: 13px; color: var(--ink-faint); letter-spacing: -0.005em; font-style: italic;
   }
-  .meaning-tail strong { color: var(--primary); font-weight: 600; }
+
+  /* 럭키 아이템 */
+  .lucky-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 4px; }
+  .lucky-item {
+    padding: 16px 10px; text-align: center;
+    background: linear-gradient(135deg, #FBFAF6 0%, #F4ECDC 100%);
+    border: 1px solid var(--line); border-radius: 14px;
+  }
+  .lucky-icon { font-size: 28px; margin-bottom: 6px; }
+  .lucky-label { font-size: 10px; color: var(--ink-faint); letter-spacing: 0.15em; margin-bottom: 4px; font-weight: 700; }
+  .lucky-value { font-size: 14px; color: var(--ink); font-weight: 600; line-height: 1.35; letter-spacing: -0.012em; }
+
+  /* Tarot 카드 */
+  .tarot-stage { text-align: center; padding: 24px 0; }
+  .tarot-deck {
+    display: flex; gap: 14px; justify-content: center;
+    margin: 32px 0; perspective: 1000px;
+    flex-wrap: wrap;
+  }
+  .tarot-card {
+    width: 110px; height: 170px; cursor: pointer;
+    position: relative; transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  .tarot-card.flipped { transform: rotateY(180deg); }
+  .tarot-card.flipped:not(.locked) { cursor: default; }
+  .tarot-face {
+    position: absolute; width: 100%; height: 100%;
+    border-radius: 12px; backface-visibility: hidden;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 16px 12px; text-align: center;
+  }
+  .tarot-back {
+    background: linear-gradient(135deg, #2A1F35 0%, #4A2C5C 100%);
+    color: #F0E8F5;
+    border: 1px solid #5A3C6C;
+  }
+  .tarot-back::before {
+    content: "✦"; position: absolute; font-size: 30px;
+    color: #B89AD0; opacity: 0.7;
+  }
+  .tarot-back::after {
+    content: ""; position: absolute; inset: 8px;
+    border: 1px solid rgba(220,180,255,0.3); border-radius: 8px;
+  }
+  .tarot-front {
+    background: linear-gradient(180deg, #FBFAF6 0%, #F4ECDC 100%);
+    transform: rotateY(180deg);
+    border: 2px solid var(--gold);
+  }
+  .tarot-emoji { font-size: 40px; margin-bottom: 6px; }
+  .tarot-name {
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    margin-bottom: 4px; letter-spacing: -0.018em;
+  }
+  .tarot-keyword {
+    font-size: 10px; color: var(--primary); letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .tarot-hint { color: var(--ink-faint); font-size: 13px; margin-top: 16px; animation: pulse 2s ease infinite; }
 
   /* 상품 */
-  .product-list { display: grid; gap: 14px; margin-bottom: 24px; }
+  .product-list { display: grid; gap: 14px; margin-bottom: 22px; }
   .product {
-    display: grid;
-    grid-template-columns: 76px 1fr auto;
-    gap: 14px;
-    align-items: center;
-    padding: 14px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: #FBFAF6;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: #FBFAF6; cursor: pointer; transition: all 0.2s ease;
+    overflow: hidden;
   }
   .product:hover { border-color: var(--primary); }
   .product.selected { border-color: var(--primary); background: linear-gradient(90deg, #FFF7FA 0%, #FBFAF6 100%); box-shadow: var(--shadow); }
+  .product-row { display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; padding: 14px; align-items: center; }
   .product-img {
     width: 76px; height: 76px;
     background: linear-gradient(135deg, #F4E8C8 0%, #DDC795 100%);
@@ -347,185 +312,168 @@
     font-size: 30px;
   }
   .product-info { min-width: 0; }
-  .product-name { font-size: 15px; color: var(--ink); margin-bottom: 3px; font-weight: 600; letter-spacing: -0.018em; line-height: 1.35; }
-  .product-desc { font-size: 13px; color: var(--ink-faint); margin-bottom: 5px; letter-spacing: -0.01em; }
-  .product-meta { font-size: 11px; color: var(--ink-soft); letter-spacing: 0; font-weight: 500; }
+  .product-name { font-size: 15px; color: var(--ink); margin-bottom: 3px; font-weight: 700; letter-spacing: -0.018em; line-height: 1.35; }
+  .product-desc { font-size: 12px; color: var(--ink-faint); margin-bottom: 4px; letter-spacing: -0.01em; }
   .product-price { font-size: 16px; color: var(--primary); font-weight: 700; letter-spacing: -0.018em; font-variant-numeric: tabular-nums; }
+  .product-meaning {
+    padding: 14px 16px; background: rgba(192,0,80,0.04);
+    border-top: 1px dashed var(--line);
+    font-size: 13px; line-height: 1.65; color: var(--ink-soft);
+    letter-spacing: -0.01em; font-style: italic;
+  }
+  .product-meaning b { color: var(--primary); font-style: normal; font-weight: 700; }
 
   .package-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .package {
-    padding: 16px 12px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: #FBFAF6;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s ease;
+    padding: 16px 12px; border: 1px solid var(--line); border-radius: 14px;
+    background: #FBFAF6; cursor: pointer; text-align: center; transition: all 0.2s ease;
   }
   .package:hover { border-color: var(--primary); }
   .package.selected { border-color: var(--primary); background: linear-gradient(180deg, #FFF7FA 0%, #FBFAF6 100%); box-shadow: var(--shadow); }
-  .pkg-name { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.16em; margin-bottom: 8px; text-transform: uppercase; font-weight: 600; }
-  .pkg-price { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.022em; font-variant-numeric: tabular-nums; }
+  .pkg-name { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.16em; margin-bottom: 8px; text-transform: uppercase; font-weight: 700; }
+  .pkg-price { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.022em; font-variant-numeric: tabular-nums; }
   .pkg-detail { font-size: 11px; color: var(--ink-soft); line-height: 1.5; letter-spacing: -0.005em; }
 
-  .summary {
-    padding: 20px 22px;
-    background: var(--paper-deep);
-    border-radius: 14px;
-    margin-bottom: 20px;
-  }
+  .summary { padding: 20px 22px; background: var(--paper-deep); border-radius: 14px; margin-bottom: 18px; }
   .summary-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: var(--ink-soft); letter-spacing: -0.01em; }
   .summary-row span:last-child { font-variant-numeric: tabular-nums; }
   .summary-row.total {
-    border-top: 1px solid var(--line);
-    margin-top: 6px;
-    padding-top: 14px;
-    font-size: 18px;
-    color: var(--ink);
-    font-weight: 700;
-    letter-spacing: -0.022em;
+    border-top: 1px solid var(--line); margin-top: 6px; padding-top: 14px;
+    font-size: 18px; color: var(--ink); font-weight: 700; letter-spacing: -0.022em;
   }
   .summary-row.total span:last-child { color: var(--primary); }
 
   /* Done */
-  .done {
-    text-align: center;
-    padding: 56px 0;
+  .done { text-align: center; padding: 40px 0 24px; }
+  .done-icon { font-size: 56px; margin-bottom: 16px; }
+  .send-options {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin: 24px auto; max-width: 380px;
   }
-  .done-icon {
-    font-size: 56px;
-    margin-bottom: 16px;
+  .send-options .btn { padding: 14px 16px; font-size: 14px; }
+  .send-options .btn-kakao {
+    background: #FEE500; color: #3C1E1E;
   }
+  .send-options .btn-kakao:hover { background: #FFD700; }
   .dogam-card {
-    margin: 32px auto 24px;
-    max-width: 360px;
-    padding: 22px;
+    margin: 28px auto 20px; max-width: 360px; padding: 22px;
     border: 1px solid var(--line);
     background: linear-gradient(135deg, #FBFAF6 0%, #F4F0E8 100%);
-    border-radius: 18px;
-    box-shadow: var(--shadow);
+    border-radius: 18px; box-shadow: var(--shadow);
   }
-  .dogam-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin: 14px 0;
-  }
+  .dogam-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
   .dogam-slot {
-    aspect-ratio: 1;
-    border-radius: 10px;
-    background: var(--paper-deep);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    border: 1px solid var(--line);
-    color: var(--ink-faint);
+    aspect-ratio: 1; border-radius: 10px; background: var(--paper-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; border: 1px solid var(--line); color: var(--ink-faint);
   }
   .dogam-slot.filled { background: linear-gradient(135deg, #F4E8C8 0%, #E8C887 100%); color: var(--ink); border-color: var(--gold); }
   .dogam-status { font-size: 13px; color: var(--ink-soft); letter-spacing: -0.012em; }
-  .dogam-status b { color: var(--primary); font-weight: 600; }
+  .dogam-status b { color: var(--primary); font-weight: 700; }
+
+  .viral-cta {
+    margin: 32px auto;
+    max-width: 420px;
+    padding: 22px 20px;
+    background: linear-gradient(135deg, #FFF7FA 0%, #FBFAF6 100%);
+    border: 1.5px dashed var(--primary);
+    border-radius: 18px;
+    text-align: center;
+  }
+  .viral-cta-emoji { font-size: 28px; margin-bottom: 8px; }
+  .viral-cta-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.018em; }
+  .viral-cta-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; line-height: 1.5; letter-spacing: -0.012em; }
 
   .nav { display: flex; gap: 10px; margin-top: 12px; }
   .footer-meta {
-    text-align: center;
-    margin-top: 48px;
-    color: var(--ink-faint);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    font-weight: 500;
+    text-align: center; margin-top: 36px; color: var(--ink-faint);
+    font-size: 11px; letter-spacing: 0.06em; font-weight: 500;
   }
 
-  /* 모드 indicator */
-  .mode-indicator {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    background: var(--ink);
-    color: var(--paper);
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-    z-index: 100;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+  .step-counter {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px; font-size: 11px; color: var(--ink-faint);
+    letter-spacing: 0.18em; font-weight: 700; text-transform: uppercase;
   }
-  .mode-indicator.show { opacity: 1; }
+  .step-counter::before {
+    content: ""; display: block;
+    width: 24px; height: 1px; background: var(--ink-faint);
+  }
 
-  /* responsive */
   @media (max-width: 540px) {
-    .stage { padding: 36px 18px 72px; }
-    h1 { font-size: 32px; }
+    .stage { padding: 32px 18px 72px; }
+    h1 { font-size: 30px; }
+    h2 { font-size: 20px; }
     .saju-grid { max-width: 280px; }
     .package-grid { grid-template-columns: 1fr; }
-    .product { grid-template-columns: 60px 1fr; gap: 12px; padding: 12px; }
+    .lucky-grid { grid-template-columns: 1fr; }
+    .product-row { grid-template-columns: 60px 1fr; gap: 12px; padding: 12px; }
     .product-img { width: 60px; height: 60px; font-size: 24px; }
     .product-price { grid-column: 2; text-align: right; padding-top: 4px; }
+    .send-options { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
-<div class="mode-indicator" id="modeIndicator">🀄 동양식</div>
 
 <div class="stage">
-  <div class="brand"><b>기프타로</b> · GIFTTAROT 5분 데모</div>
+  <div class="brand"><b>기프타로</b> · GIFTTAROT 5분 데모 v3</div>
   <div class="progress-bar"><div id="progress" style="width: 0%"></div></div>
 
-  <!-- ========== Screen 1: Landing ========== -->
+  <!-- ======== S1. Landing ======== -->
   <section class="screen active" data-screen="1">
     <h1>회사 동료 생일이 모레다.<br /><span class="accent">5분이면 됩니다.</span></h1>
-    <p class="lead" style="margin-top: 12px;">
-      스벅 쿠폰 또 보내기엔 영혼 없고, 5만 원짜리는 부담스러운 사이.<br />
-      받는 사람의 올해 흐름을 한 줄로 풀어, 어울리는 한 가지를 보냅니다.
-    </p>
+    <p class="lead">스벅 쿠폰 또 보내기엔 영혼 없고, 5만 원짜리는 부담스러운 사이.<br />받는 사람의 사주를 풀어, 마음이 담긴 한 가지를 보냅니다.</p>
 
-    <div class="card" style="margin-top: 36px;">
-      <h3>시연 시나리오</h3>
-      <p style="margin-bottom: 8px;"><strong style="color: var(--ink);">이지윤 (네이버 PM 6년차)</strong>이 같은 팀 시니어 개발자 <strong style="color: var(--ink);">김지훈 님 (38세)</strong>의 모레 생일을 위해, 점심 시간 5분 안에 의미 있는 선물을 결정합니다.</p>
-      <p style="font-size: 14px; color: var(--ink-faint); margin-top: 12px; margin-bottom: 0;">※ 이 데모는 가상 사주 데이터로 시연됩니다. 실제 서비스에서는 만세력 라이브러리로 정확히 계산됩니다.</p>
+    <div class="card" style="margin-top: 28px;">
+      <h3>오늘 시연 시나리오</h3>
+      <p style="margin-bottom: 8px;">네이버 PM 6년차 <b style="color: var(--ink);">이지윤 님</b>이 같은 팀 시니어 개발자 <b style="color: var(--ink);">김지훈 님 (38세)</b>의 모레 생일을 위해 점심 시간 5분 안에 의미 있는 선물을 결정합니다.</p>
+      <p class="small" style="margin-top: 12px;">※ 데모는 가공 사주 데이터로 시연됩니다. 실제 서비스는 만세력 라이브러리로 정확히 계산.</p>
     </div>
 
-    <button class="btn primary full" onclick="goTo(2)" style="margin-top: 20px;">시작하기 →</button>
+    <button class="btn primary full" onclick="goTo(2)">시작하기 →</button>
   </section>
 
-  <!-- ========== Screen 2: Mode Select ========== -->
+  <!-- ======== S2. Mode Select ======== -->
   <section class="screen" data-screen="2">
-    <h3>STEP 01 / 06</h3>
-    <h2>마음에 드는 분위기를 골라주세요</h2>
-    <p>오늘은 어떤 결을 따라 김지훈 님의 사주를 풀까요?</p>
+    <div class="step-counter">STEP 01 / 09</div>
+    <h2>어떤 방식으로 마음을 담을까요?</h2>
+    <p>두 길이 있어요. 받는 사람을 더 알고 싶다면 사주, 마음을 직접 담고 싶다면 타로.</p>
 
     <div class="mode-grid">
-      <div class="mode-card mode-east selected" onclick="selectMode('east', this)">
+      <div class="mode-card mode-east selected" onclick="selectMode('saju', this)">
         <div>
           <div class="mode-icon">🀄</div>
-          <div class="mode-title">동양식</div>
-          <div class="mode-sub">한지 위에 묵으로,<br />사주 카페의 무게감</div>
+          <div class="mode-title">사주</div>
+          <div class="mode-sub">받는 사람의 흐름을<br />분석해서 선물을 골라요</div>
         </div>
-        <div style="font-size: 12px; opacity: 0.7;">한지 · 묵 · 명조</div>
+        <div style="font-size: 12px; opacity: 0.78;">생년월일 입력 → 분석</div>
       </div>
-      <div class="mode-card mode-west" onclick="selectMode('west', this)">
+      <div class="mode-card mode-tarot" onclick="selectMode('tarot', this)">
         <div>
-          <div class="mode-icon">✨</div>
-          <div class="mode-title">서양식</div>
-          <div class="mode-sub">별이 비추는,<br />천체 관측소의 황홀</div>
+          <div class="mode-icon">🔮</div>
+          <div class="mode-title">타로</div>
+          <div class="mode-sub">내가 직접 카드를 뽑아<br />마음을 담아요</div>
         </div>
-        <div style="font-size: 12px; opacity: 0.7;">우주 · 별 · harp</div>
+        <div style="font-size: 12px; opacity: 0.78;">카드 1~3장 직접 뒤집기</div>
       </div>
     </div>
 
-    <div class="nav" style="margin-top: 36px;">
+    <div class="mode-desc show" id="modeDesc">
+      <b style="color: var(--ink); font-weight: 700;">사주 모드</b>: 받는 사람의 생년월일로 일간(日干)·오행 분포를 분석해서 그 사람에게 어울리는 선물 카테고리·럭키 아이템을 도출합니다. 시(時)는 받지 않습니다 — 일간 중심으로 충분합니다.
+    </div>
+
+    <div class="nav" style="margin-top: 28px;">
       <button class="btn ghost" onclick="goTo(1)">← 이전</button>
       <button class="btn primary" style="flex: 2;" onclick="goTo(3)">다음 →</button>
     </div>
   </section>
 
-  <!-- ========== Screen 3: Recipient Input ========== -->
+  <!-- ======== S3. Recipient Info ======== -->
   <section class="screen" data-screen="3">
-    <h3>STEP 02 / 06</h3>
-    <h2>받는 사람을 알려주세요</h2>
-    <p>생년월일과 취향 몇 가지면 충분합니다. 시(時)는 모르셔도 괜찮아요.</p>
+    <div class="step-counter">STEP 02 / 09</div>
+    <h2>받는 분을 알려주세요</h2>
+    <p id="recipInfoLead">이름·성별·생년월일이면 충분합니다. 시(時)는 몰라도 괜찮아요.</p>
 
     <div class="card">
       <div class="field">
@@ -533,92 +481,275 @@
         <input type="text" id="recipientName" value="김지훈" />
       </div>
       <div class="field">
-        <label>생년월일 <span class="hint">양력</span></label>
+        <label>성별</label>
+        <div class="chip-group" id="genderChips">
+          <div class="chip selected" data-val="m">남성</div>
+          <div class="chip" data-val="f">여성</div>
+          <div class="chip" data-val="x">선택 안 함</div>
+        </div>
+      </div>
+      <div class="field" id="birthField">
+        <label>생년월일 <span class="hint">양력 · 시(時) 입력 안 받음</span></label>
         <input type="date" id="recipientBirth" value="1989-07-15" />
-      </div>
-      <div class="field">
-        <label>관계 거리</label>
-        <div class="chip-group" id="relationChips">
-          <div class="chip selected" data-val="same-team">같은 팀</div>
-          <div class="chip" data-val="adjacent">인접 팀</div>
-          <div class="chip" data-val="rare">거의 안 마주침</div>
-        </div>
-      </div>
-      <div class="field">
-        <label>받는 분의 알 만한 취향 <span class="hint">(2~3개 선택)</span></label>
-        <div class="chip-group" id="prefChips">
-          <div class="chip selected" data-val="coffee">☕ 커피·차</div>
-          <div class="chip" data-val="book">📖 책·문구</div>
-          <div class="chip selected" data-val="wellness">🌿 향·웰니스</div>
-          <div class="chip" data-val="food">🍱 음식</div>
-          <div class="chip" data-val="design">🎨 디자인 소품</div>
-          <div class="chip" data-val="craft">🍷 술·장인</div>
-        </div>
       </div>
     </div>
 
     <div class="nav">
       <button class="btn ghost" onclick="goTo(2)">← 이전</button>
-      <button class="btn primary" style="flex: 2;" onclick="goTo(4)">사주 풀어보기 →</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(4)">다음 →</button>
     </div>
   </section>
 
-  <!-- ========== Screen 4: Card Reveal ========== -->
+  <!-- ======== S4. Relation·Budget·Purpose ======== -->
   <section class="screen" data-screen="4">
-    <h3>STEP 03 / 06</h3>
+    <div class="step-counter">STEP 03 / 09</div>
+    <h2>어떤 사이에서, 어떤 자리에 보내나요?</h2>
 
-    <div class="reveal-stage">
-      <div class="reveal-progress" id="revealStatus">사주를 풀고 있습니다…</div>
-
-      <div class="saju-grid" id="sajuGrid">
-        <div class="saju-cell"><span class="label">時</span><span class="ch">─</span></div>
-        <div class="saju-cell day"><span class="label">日</span><span class="ch">─</span></div>
-        <div class="saju-cell"><span class="label">月</span><span class="ch">─</span></div>
-        <div class="saju-cell"><span class="label">年</span><span class="ch">─</span></div>
-        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
-        <div class="saju-cell day"><span class="ch">─</span><span class="yo">일간</span></div>
-        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
-        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+    <div class="card">
+      <div class="field">
+        <label>관계</label>
+        <div class="chip-group" id="relationChips">
+          <div class="chip selected" data-val="same-team">같은 팀 동료</div>
+          <div class="chip" data-val="adjacent">인접 팀</div>
+          <div class="chip" data-val="rare">거의 안 마주침</div>
+          <div class="chip" data-val="friend">친구</div>
+          <div class="chip" data-val="family">가족</div>
+        </div>
       </div>
-
-      <div class="character-reveal" id="characterReveal">
-        <div class="char-illust" id="charIllust">🛠️</div>
-        <div class="char-no" id="charNo">CHARACTER #07 / 32</div>
-        <div class="char-name" id="charName">디버깅 마스터 PM</div>
-        <div class="char-sub" id="charSub">산처럼 안정적이지만, 결과를 끊임없이 뽑는 시니어</div>
+      <div class="field">
+        <label>가격대</label>
+        <div class="chip-group" id="budgetChips">
+          <div class="chip" data-val="10000">~ 1만 원</div>
+          <div class="chip selected" data-val="20000">~ 2만 원</div>
+          <div class="chip" data-val="30000">~ 3만 원</div>
+          <div class="chip" data-val="50000">~ 5만 원</div>
+          <div class="chip" data-val="100000">5만 원 이상</div>
+        </div>
       </div>
+      <div class="field">
+        <label>선물 목적</label>
+        <div class="chip-group" id="purposeChips">
+          <div class="chip selected" data-val="birthday">🎂 생일</div>
+          <div class="chip" data-val="promotion">🎉 승진</div>
+          <div class="chip" data-val="comfort">🌿 위로</div>
+          <div class="chip" data-val="health">💪 건강 기원</div>
+          <div class="chip" data-val="wedding">💍 결혼</div>
+          <div class="chip" data-val="farewell">👋 환송·이직</div>
+          <div class="chip" data-val="thanks">🙏 감사</div>
+        </div>
+      </div>
+    </div>
 
-      <div class="meaning-card" id="meaningCard">
-        <div class="meaning-eyebrow">올해 김지훈 님의 한 줄</div>
-        <div class="meaning-headline" id="meaningHeadline">
-          올해 지훈 님 안에서 ‘한 박자 쉬고 싶은 마음’과 ‘새로 피우고 싶은 마음’이 같이 자랍니다.
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(3)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(5)">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ======== S5. Mode-specific input ======== -->
+  <!-- S5-A. 사주 모드: 빌어주고 싶은 운 + 평소 분위기 -->
+  <section class="screen" data-screen="5">
+    <div class="step-counter">STEP 04 / 09</div>
+
+    <!-- 사주 모드 input -->
+    <div id="sajuInput">
+      <h2>이 분께 빌어주고 싶은 운은?</h2>
+      <p>사주 위에 어떤 결을 더 강조해서 풀어드릴까요.</p>
+
+      <div class="card">
+        <div class="field">
+          <label>빌어주고 싶은 운</label>
+          <div class="chip-group" id="wishChips">
+            <div class="chip selected" data-val="rest">🌿 쉼·회복</div>
+            <div class="chip" data-val="wealth">💰 재물운</div>
+            <div class="chip" data-val="health">🌱 건강운</div>
+            <div class="chip" data-val="honor">🎖️ 명예·승진</div>
+            <div class="chip" data-val="relation">🤝 인간관계</div>
+            <div class="chip" data-val="growth">✨ 자기성장</div>
+          </div>
         </div>
-        <div class="meaning-body" id="meaningBody">
-          오랜 시간 같은 자리에서 단단하게 쌓아 올린 사람의 사주에, 올해는 ‘물(水)’이 들어와 잠시 흐를 시간이 필요한 운입니다. 큰 결정을 서두를 때가 아니라, 차 한 잔 같이 마실 수 있는 사람과 잠깐 멈출 시기예요.
+        <div class="field">
+          <label>받는 분의 평소 분위기 <span class="hint">사주↔실제의 간극을 메우는 정보</span></label>
+          <div class="chip-group" id="vibeChips">
+            <div class="chip selected" data-val="calm">차분함</div>
+            <div class="chip" data-val="passionate">열정적</div>
+            <div class="chip" data-val="sensitive">예민함</div>
+            <div class="chip" data-val="social">사교적</div>
+            <div class="chip" data-val="reserved">무뚝뚝</div>
+          </div>
         </div>
-        <div class="meaning-tail" id="meaningTail">
-          이 흐름에 어울리는 선물 카테고리: <strong>차·티 세트 · 디퓨저 · 향수</strong>
+      </div>
+    </div>
+
+    <!-- 타로 모드 input -->
+    <div id="tarotInput" style="display: none;">
+      <h2>어떤 마음으로 카드를 뽑으실 건가요?</h2>
+      <p>당신이 그 사람을 떠올리는 마음이 카드에 투영됩니다.</p>
+
+      <div class="card">
+        <div class="field">
+          <label>마음가짐 (Intent)</label>
+          <div class="chip-group" id="intentChips">
+            <div class="chip selected" data-val="cheer">🌟 응원</div>
+            <div class="chip" data-val="thanks">🙏 고마움</div>
+            <div class="chip" data-val="apology">🌧️ 사과</div>
+            <div class="chip" data-val="celebrate">🎉 축하</div>
+            <div class="chip" data-val="comfort">🌿 위로</div>
+            <div class="chip" data-val="miss">💌 그리움</div>
+          </div>
         </div>
+        <div class="field">
+          <label>마음 속에 던지는 질문</label>
+          <div class="chip-group" id="questionChips">
+            <div class="chip selected" data-val="energy">그 사람에게 지금 필요한 기운은?</div>
+            <div class="chip" data-val="relation">우리 관계의 모습은?</div>
+            <div class="chip" data-val="next">그 사람의 다음 한 걸음은?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(4)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(6)">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ======== S6. Sender's Heart ======== -->
+  <section class="screen" data-screen="6">
+    <div class="step-counter">STEP 05 / 09</div>
+    <h2>전하고 싶은 한 줄이 있다면?</h2>
+    <p>건너뛰셔도 됩니다. 적으시면 카드 메시지에 자연스럽게 녹습니다.</p>
+
+    <div class="card">
+      <div class="field">
+        <label>마음 한 줄 <span class="hint">선택 · 비공개</span></label>
+        <textarea id="senderHeart" rows="3" placeholder="예: 올해 너무 고생 많았어요"></textarea>
+      </div>
+      <p class="small" style="margin: 0;">받는 분께 그대로 보이지 않고, 카드 메시지의 톤·강조점에 반영됩니다.</p>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(5)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(7)" id="proceedFromHeart">사주 풀어보기 →</button>
+    </div>
+  </section>
+
+  <!-- ======== S7. Reveal (Saju OR Tarot) ======== -->
+  <section class="screen" data-screen="7">
+    <div class="step-counter">STEP 06 / 09</div>
+
+    <!-- 사주 reveal -->
+    <div id="sajuReveal">
+      <div class="reveal-stage">
+        <div class="reveal-progress" id="revealStatus">사주를 풀고 있습니다…</div>
+
+        <div class="saju-grid" id="sajuGrid">
+          <div class="saju-cell"><span class="label">年</span><span class="ch">─</span><span class="yo">─</span></div>
+          <div class="saju-cell"><span class="label">月</span><span class="ch">─</span><span class="yo">─</span></div>
+          <div class="saju-cell day"><span class="label">日</span><span class="ch">─</span><span class="yo">일간</span></div>
+          <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+          <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+          <div class="saju-cell day"><span class="ch">─</span><span class="yo">일지</span></div>
+        </div>
+
+        <div class="wuxing-section" id="wuxingSection">
+          <div class="wuxing-title">오행 분포</div>
+          <div class="wuxing-bars" id="wuxingBars">
+            <div class="wuxing-item"><div class="wuxing-fill mok"  style="height: 0%;"></div></div>
+            <div class="wuxing-item"><div class="wuxing-fill hwa"  style="height: 0%;"></div></div>
+            <div class="wuxing-item"><div class="wuxing-fill to"   style="height: 0%;"></div></div>
+            <div class="wuxing-item"><div class="wuxing-fill geum" style="height: 0%;"></div></div>
+            <div class="wuxing-item"><div class="wuxing-fill su"   style="height: 0%;"></div></div>
+          </div>
+          <div class="wuxing-label-row">
+            <div style="color: var(--w-mok);">木</div>
+            <div style="color: var(--w-hwa);">火</div>
+            <div style="color: var(--w-to);">土</div>
+            <div style="color: var(--w-geum);">金</div>
+            <div style="color: var(--w-su);">水</div>
+          </div>
+          <div class="wuxing-summary" id="wuxingSummary">
+            근본 기운: <b id="rootKi">물의 흐름을 가진 사람</b><br>
+            보완 필요: <b id="needKi">올해는 ‘목(木)’이 들어와야 하는 흐름</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 타로 reveal -->
+    <div id="tarotReveal" style="display: none;">
+      <div class="tarot-stage">
+        <h2>카드를 뒤집어주세요</h2>
+        <p id="tarotPrompt">"그 사람에게 지금 필요한 기운은?"이라고 마음으로 한 번 더 물으면서, 한 장씩 가볍게.</p>
+        <div class="tarot-deck" id="tarotDeck">
+          <!-- cards inserted by JS -->
+        </div>
+        <div class="tarot-hint" id="tarotHint">↑ 카드를 클릭하세요 (3장 中 0장 뒤집힘)</div>
       </div>
     </div>
 
     <div class="nav" id="revealNav" style="display: none;">
-      <button class="btn ghost" onclick="goTo(3)">← 다시 입력</button>
-      <button class="btn primary" style="flex: 2;" onclick="goTo(5)">어울리는 선물 보기 →</button>
+      <button class="btn ghost" onclick="goTo(6)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(8)">메시지 보기 →</button>
     </div>
   </section>
 
-  <!-- ========== Screen 5: Product Selection ========== -->
-  <section class="screen" data-screen="5">
-    <h3>STEP 04 / 06</h3>
-    <h2 id="productHead">차·티 세트 카테고리에서 골라드렸어요</h2>
-    <p id="productLead">‘잠시 멈춰 차 한 잔’이라는 의미와 자연스러운 3가지. 가격대는 1만 원대 후반~3만 원으로 잡았습니다.</p>
+  <!-- ======== S8. Meaning Card + Lucky Item ======== -->
+  <section class="screen" data-screen="8">
+    <div class="step-counter">STEP 07 / 09</div>
 
-    <div class="product-list" id="productList">
-      <!-- products inserted by JS -->
+    <div class="meaning-card show" id="meaningCard">
+      <div class="meaning-eyebrow" id="meaningEyebrow">올해 김지훈 님의 한 줄</div>
+      <div class="meaning-headline" id="meaningHeadline">
+        올해 지훈 님 안에서 ‘한 박자 쉬고 싶은 마음’이 자랍니다.
+      </div>
+      <div class="meaning-body" id="meaningBody">
+        오랜 시간 같은 자리에서 단단하게 쌓아 올린 사람의 사주에, 올해는 ‘물(水)’이 들어와 잠시 흐를 시간이 필요한 운입니다. 평소 차분한 결과 잘 어우러져, 큰 결정을 서두르기보단 차 한 잔 같이 마실 시간이 필요한 시기예요.
+      </div>
+      <div class="meaning-from" id="meaningFrom">
+        — 이지윤 님이 김지훈 님을 떠올리며 뽑은 카드입니다.
+      </div>
     </div>
 
-    <h3 style="margin-top: 32px;">패키지 선택</h3>
+    <div class="card" id="luckySection">
+      <h3 style="text-align: center;">럭키 아이템 — 올해의 결</h3>
+      <div class="lucky-grid">
+        <div class="lucky-item">
+          <div class="lucky-icon" id="lucky1Icon">🌿</div>
+          <div class="lucky-label">색</div>
+          <div class="lucky-value" id="lucky1Value">청록 · 깊은 그린</div>
+        </div>
+        <div class="lucky-item">
+          <div class="lucky-icon" id="lucky2Icon">🪵</div>
+          <div class="lucky-label">소재</div>
+          <div class="lucky-value" id="lucky2Value">나무 · 잎차</div>
+        </div>
+        <div class="lucky-item">
+          <div class="lucky-icon" id="lucky3Icon">☕</div>
+          <div class="lucky-label">아이템</div>
+          <div class="lucky-value" id="lucky3Value">차·티 / 향</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(7)">← 카드 다시 보기</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(9)">선물 추천 보기 →</button>
+    </div>
+  </section>
+
+  <!-- ======== S9. Product Selection ======== -->
+  <section class="screen" data-screen="9">
+    <div class="step-counter">STEP 08 / 09</div>
+    <h2 id="productHead">차·티 카테고리에서 골라드렸어요</h2>
+    <p id="productLead">‘잠시 멈춰 차 한 잔’의 의미와 자연스러운 3가지. 가격대는 입력하신 ~2만 원에 맞췄습니다.</p>
+
+    <div class="product-list" id="productList">
+      <!-- inserted by JS -->
+    </div>
+
+    <h3 style="margin-top: 28px;">패키지 선택</h3>
     <div class="package-grid" id="packageGrid">
       <div class="package" data-pkg="light" onclick="selectPackage('light')">
         <div class="pkg-name">LIGHT</div>
@@ -638,26 +769,26 @@
     </div>
 
     <div class="nav">
-      <button class="btn ghost" onclick="goTo(4)">← 카드 다시 보기</button>
-      <button class="btn primary" style="flex: 2;" onclick="goTo(6)">결제하기 →</button>
+      <button class="btn ghost" onclick="goTo(8)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(10)">결제 →</button>
     </div>
   </section>
 
-  <!-- ========== Screen 6: Checkout ========== -->
-  <section class="screen" data-screen="6">
-    <h3>STEP 05 / 06</h3>
-    <h2>결제 확인</h2>
-    <p>김지훈 님에게 의미 있는 한 가지를 보내기 직전입니다.</p>
+  <!-- ======== S10. Checkout ======== -->
+  <section class="screen" data-screen="10">
+    <div class="step-counter">STEP 09 / 09</div>
+    <h2>결제 직전입니다</h2>
+    <p>김지훈 님에게 의미 있는 한 가지를 보내기 직전.</p>
 
     <div class="card card-emph">
       <h3>받는 분</h3>
-      <p style="font-size: 17px; color: var(--ink); margin-bottom: 18px;"><strong id="checkoutRecipient">김지훈 (같은 팀)</strong> · 모레 도착</p>
+      <p style="font-size: 16px; color: var(--ink); margin-bottom: 18px;"><b id="checkoutRecipient">김지훈 (같은 팀 동료)</b> · 모레 도착</p>
 
       <h3>의미 카드 한 줄</h3>
-      <p style="font-size: 16px; font-style: italic; color: var(--ink); margin-bottom: 18px;" id="checkoutMeaning">"올해 지훈 님은 잠시 흐를 시간이 필요한 운입니다."</p>
+      <p style="font-size: 15px; font-style: italic; color: var(--ink); margin-bottom: 18px;" id="checkoutMeaning">"올해 지훈 님은 잠시 흐를 시간이 필요한 운입니다."</p>
 
       <h3>선물</h3>
-      <p style="font-size: 17px; color: var(--ink); margin-bottom: 0;" id="checkoutProduct">다즐링 우롱 4종 시그니처 세트</p>
+      <p style="font-size: 16px; color: var(--ink); margin-bottom: 0;" id="checkoutProduct">다즐링 우롱 4종 시그니처 세트</p>
     </div>
 
     <div class="summary">
@@ -668,25 +799,30 @@
     </div>
 
     <div class="nav">
-      <button class="btn ghost" onclick="goTo(5)">← 이전</button>
-      <button class="btn primary" style="flex: 2;" onclick="completePay()">Toss로 결제하기 →</button>
+      <button class="btn ghost" onclick="goTo(9)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="completePay()">Toss로 결제 →</button>
     </div>
   </section>
 
-  <!-- ========== Screen 7: Done + Dogam ========== -->
-  <section class="screen" data-screen="7">
-    <h3>STEP 06 / 06 · DONE</h3>
-
+  <!-- ======== S11. Done + Send + Viral ======== -->
+  <section class="screen" data-screen="11">
     <div class="done">
       <div class="done-icon">🎁</div>
-      <h1 style="font-size: 32px;">발송됐어요.</h1>
-      <p class="lead">김지훈 님이 모레 오전, 의미 카드와 선물을 함께 받게 됩니다.</p>
+      <h1 style="font-size: 30px;">결제 완료.</h1>
+      <p class="lead">의미 카드와 선물이 김지훈 님께 모레 도착합니다.</p>
+
+      <h3 style="margin-top: 28px;">친구에게 어떻게 보낼까요?</h3>
+      <div class="send-options">
+        <button class="btn btn-kakao" onclick="alert('카톡 공유 시뮬레이션 — 실제 서비스에선 카카오 SDK가 친구 선택 화면을 띄워요')">💬 카톡으로 보내기</button>
+        <button class="btn ghost" onclick="copyShareLink()" id="copyBtn">🔗 링크 복사</button>
+      </div>
+      <p class="small" style="max-width: 420px; margin: 0 auto;">받는 분이 링크를 클릭하면 카드 reveal 시퀀스를 보고, 선물을 받아갑니다.</p>
 
       <div class="dogam-card">
         <h3 style="margin-bottom: 4px;">친구 도감</h3>
-        <p style="font-size: 13px; color: var(--ink-faint); margin-bottom: 12px;">선물할수록 동료들의 캐릭터가 모입니다.</p>
+        <p style="font-size: 12px; color: var(--ink-faint); margin-bottom: 12px;">선물할수록 동료들의 캐릭터가 모입니다.</p>
         <div class="dogam-grid">
-          <div class="dogam-slot filled">🛠️</div>
+          <div class="dogam-slot filled">🌊</div>
           <div class="dogam-slot">?</div>
           <div class="dogam-slot">?</div>
           <div class="dogam-slot">?</div>
@@ -698,18 +834,19 @@
         <p class="dogam-status">현재 <b>1 / 32</b> · 다음 <b>3명</b> 더 모으면 Bronze 보상이 unlock됩니다.</p>
       </div>
 
-      <p style="font-size: 14px; color: var(--ink-faint); max-width: 420px; margin: 0 auto;">
-        💡 다음에 또 보낼 동료가 생각나시나요?<br />아직 도감에 없는 캐릭터의 동료를 떠올려보세요.
-      </p>
+      <div class="viral-cta">
+        <div class="viral-cta-emoji">🪞</div>
+        <div class="viral-cta-title">나도 내 운세, 한 번 봐볼까?</div>
+        <div class="viral-cta-sub">받는 분께 풀어드린 사주처럼,<br>당신의 올해 흐름도 한 줄로 정리해드릴게요. 무료.</div>
+        <button class="btn btn-sm primary" onclick="alert('보낸 사람 본인 사주 무료 풀이 화면으로 이동 — viral loop의 핵심 장치')">나도 내 운세 보기 →</button>
+      </div>
     </div>
 
     <div class="nav">
       <button class="btn ghost full" onclick="resetDemo()">처음부터 다시 보기 ↻</button>
     </div>
 
-    <div class="footer-meta">
-      기프타로 데모 · 회사 동료 D-2 시나리오 · 동양식 모드 first
-    </div>
+    <div class="footer-meta">기프타로 데모 v3 · 사주/타로 dual mode · 회사 동료 D-2 시나리오</div>
   </section>
 
 </div>
@@ -718,88 +855,141 @@
   /* ============================
      상태
      ============================ */
-  let currentScreen = 1;
-  let selectedMode = 'east';
-  let selectedRelation = 'same-team';
-  let selectedPackage = 'standard';
-  let selectedProductIdx = 0;
-  let currentReading = null;
+  let state = {
+    screen: 1,
+    mode: 'saju',
+    gender: 'm',
+    relation: 'same-team',
+    budget: 20000,
+    purpose: 'birthday',
+    wish: 'rest',
+    vibe: 'calm',
+    intent: 'cheer',
+    question: 'energy',
+    pkg: 'standard',
+    productIdx: 0,
+    senderHeart: '',
+    tarotFlipped: 0,
+    reading: null,
+  };
 
   /* ============================
-     5행 매핑 (간단 버전 — 실제는 만세력 라이브러리)
+     5행 매핑
      ============================ */
   const READINGS = {
     '水': {
-      char: { name: '잔잔한 흐름의 PM', illust: '💧', no: '#11 / 32', sub: '깊이 가라앉히고 멀리 보는 시니어' },
+      rootKi: '물의 흐름을 가진 사람',
+      needKi: '올해는 ‘목(木)’이 들어와야 하는 흐름',
       headline: '올해 ${name} 님 안에서 ‘잠시 흐를 시간’이 자라고 있어요.',
-      body: '단단하게 쌓아온 사람의 사주에, 올해는 비가 한 번 깊게 들어오는 운입니다. 큰 결정을 서두를 때가 아니라, 평소 가까웠지만 한동안 못 본 사람과 차 한 잔 마실 시기예요.',
-      cat: '차·티 세트 · 디퓨저 · 향수',
-      headTitle: '차·티 세트 카테고리',
+      body: '단단하게 쌓아온 사람의 사주에, 올해는 비가 한 번 깊게 들어오는 운입니다. ${vibeLine} 큰 결정을 서두를 때가 아니라, 평소 가까웠지만 한동안 못 본 사람과 차 한 잔 마실 시기예요.',
+      cat: '차·티 · 향수 · 디퓨저',
+      headTitle: '차·티 카테고리에서 골라드렸어요',
       lead: '‘잠시 멈춰 차 한 잔’의 의미와 자연스러운 3가지.',
+      lucky: { color: { ic: '💧', v: '깊은 청·블루 그레이' }, mat: { ic: '🍃', v: '잎차 · 유리' }, item: { ic: '🍵', v: '차 · 디퓨저' } },
       products: [
-        { emoji: '🍵', name: '다즐링 우롱 4종 시그니처 세트', desc: '봄·여름·가을·겨울 차 4종', meta: '발송 1일 · 만족도 4.7', price: 22000 },
-        { emoji: '🌿', name: '쟈딘드빠리 머스크 디퓨저 100ml', desc: '잔잔하고 클린한 우드 노트', meta: '발송 1일 · 만족도 4.6', price: 28000 },
-        { emoji: '🫖', name: '오설록 한라산 녹차 선물세트', desc: '국내산 우전 차 + 다구', meta: '발송 1일 · 만족도 4.8', price: 24000 },
+        { emoji: '🍵', name: '다즐링 우롱 4종 시그니처 세트', desc: '계절 차 4종', price: 22000, meaning: '${name} 님 안에 들어와야 할 ‘물(水)’의 흐름을, 직접 끓여 우려내는 차의 시간으로 보냅니다. 한 모금 입에 머금는 그 시간이 ${sender}의 ‘한 박자 쉬어가요’의 번역이에요.' },
+        { emoji: '🌿', name: '쟈딘드빠리 머스크 디퓨저 100ml', desc: '잔잔한 우드 노트', price: 28000, meaning: '깊은 향이 방을 천천히 채우듯, ${name} 님의 올해 흐름이 무겁지 않게 자리 잡기를 바라는 마음으로.' },
+        { emoji: '🫖', name: '오설록 한라산 녹차 선물세트', desc: '국내산 우전 + 다구', price: 24000, meaning: '한국의 차 한 잔이 가진 정적이 ${name} 님의 결과 잘 어울립니다.' },
       ]
     },
     '木': {
-      char: { name: '봄나무 디자이너', illust: '🌱', no: '#04 / 32', sub: '안에서 무언가 자라나기를 기다리는 시니어' },
+      rootKi: '봄나무처럼 자라는 사람',
+      needKi: '올해는 ‘금(金)’으로 단단함을 더할 시기',
       headline: '올해 ${name} 님 안에서 ‘새 가지’가 자라기 시작합니다.',
-      body: '안에 잠재된 표현이 봄볕에 닿아 자라나는 운입니다. 큰 무언가 한 번이 아니라, 매일 손에 쥘 수 있는 작고 단단한 도구가 그 표현을 도와줍니다.',
-      cat: '만년필 · 가죽 노트 · 식물 · 향',
-      headTitle: '문구·식물 카테고리',
-      lead: '‘작지만 매일 손에 쥐는 도구’ 컨셉으로 3가지.',
+      body: '안에 잠재된 표현이 봄볕에 닿아 자라나는 운입니다. ${vibeLine} 큰 무언가 한 번보다, 매일 손에 쥘 수 있는 작고 단단한 도구가 그 표현을 도와줍니다.',
+      cat: '문구 · 식물 · 디자인 소품',
+      headTitle: '문구·식물 카테고리에서 골라드렸어요',
+      lead: '‘작고 매일 손에 쥐는 도구’ 컨셉으로 3가지.',
+      lucky: { color: { ic: '🌱', v: '연두·민트' }, mat: { ic: '🪵', v: '원목 · 종이' }, item: { ic: '✒️', v: '문구 · 식물' } },
       products: [
-        { emoji: '✒️', name: '라미 사파리 만년필 + 가죽 노트', desc: '독일 디자인 클래식', meta: '발송 1일 · 만족도 4.8', price: 24800 },
-        { emoji: '🪴', name: '미니 올리브 분재 + 도자기 화분', desc: '책상 위에 어울리는 사이즈', meta: '발송 2일 · 만족도 4.5', price: 19800 },
-        { emoji: '🕯️', name: '조 말론 우드세이지 캔들', desc: '맑고 청량한 시그니처', meta: '발송 1일 · 만족도 4.7', price: 32000 },
+        { emoji: '✒️', name: '라미 사파리 만년필 + 가죽 노트', desc: '독일 디자인 클래식', price: 24800, meaning: '매일 손에 쥐는 작고 단단한 도구가 ${name} 님 안에서 자라는 표현을 도와줍니다.' },
+        { emoji: '🪴', name: '미니 올리브 분재 + 도자기 화분', desc: '책상 위 작은 정원', price: 19800, meaning: '작은 나무가 천천히 자라듯, ${name} 님의 올해 흐름과 함께 자라기를.' },
+        { emoji: '🕯️', name: '조 말론 우드세이지 캔들', desc: '맑은 시그니처', price: 32000, meaning: '청량한 우드 향이 ${name} 님 결과 잘 어울립니다.' },
       ]
     },
     '火': {
-      char: { name: '불꽃 그로스 사냥꾼', illust: '🔥', no: '#19 / 32', sub: '안에서 새로 표현하고 싶은 에너지가 차오르는 시니어' },
+      rootKi: '안에 불을 가진 사람',
+      needKi: '올해는 ‘수(水)’로 균형을 맞출 시기',
       headline: '올해 ${name} 님 마음에 ‘불이 한 번 더 필요한’ 시기예요.',
-      body: '본인 안에 표현되어야 할 에너지가 잠깐 가라앉아 있던 시간이 길었어요. 따뜻하고 환한 무언가가 옆에 있으면, 다시 자기 색으로 빛나기 좋은 운입니다.',
-      cat: '향초 · 홍삼 · 와인 · 핫팩',
-      headTitle: '따뜻한 활력 카테고리',
+      body: '본인 안에 표현되어야 할 에너지가 잠깐 가라앉아 있던 시간이 길었어요. ${vibeLine} 따뜻하고 환한 무언가가 옆에 있으면 다시 자기 색으로 빛나기 좋은 운입니다.',
+      cat: '향초 · 따뜻한 차 · 활력',
+      headTitle: '따뜻한 활력 카테고리에서 골라드렸어요',
       lead: '‘마음에 한 번 더 불을 지피는’ 의미와 자연스러운 3가지.',
+      lucky: { color: { ic: '🔥', v: '와인 레드 · 버건디' }, mat: { ic: '🕯️', v: '왁스 · 우드' }, item: { ic: '🍷', v: '향초 · 와인' } },
       products: [
-        { emoji: '🕯️', name: '딥티크 베이스 캔들 190g', desc: '따뜻한 우디 노트', meta: '발송 1일 · 만족도 4.9', price: 32000 },
-        { emoji: '🍷', name: '이탈리아 키안티 미니 세트', desc: '375ml 2병 + 글라스', meta: '발송 2일 · 만족도 4.6', price: 28000 },
-        { emoji: '🫖', name: '정관장 홍삼정 에브리타임 30포', desc: '데일리 활력 보완', meta: '발송 1일 · 만족도 4.7', price: 26000 },
+        { emoji: '🕯️', name: '딥티크 베이스 캔들 190g', desc: '따뜻한 우디', price: 32000, meaning: '${name} 님 안에 불이 한 번 더 들어오기를 바라는 마음으로.' },
+        { emoji: '🍷', name: '이탈리아 키안티 미니 세트', desc: '375ml 2병 + 글라스', price: 28000, meaning: '한 잔의 따뜻함이 ${name} 님의 결과 만나는 시간.' },
+        { emoji: '🫖', name: '정관장 홍삼정 에브리타임 30포', desc: '데일리 활력', price: 26000, meaning: '안의 에너지를 다시 일으키는 작은 도움.' },
       ]
     },
     '土': {
-      char: { name: '단단한 산의 EM', illust: '⛰️', no: '#23 / 32', sub: '자기 자리를 뿌리내리는 시니어' },
+      rootKi: '단단한 산처럼 자리잡은 사람',
+      needKi: '올해는 ‘수(水)’의 부드러움이 필요한 시기',
       headline: '올해 ${name} 님은 ‘자기 자리를 단단히 할’ 시기예요.',
-      body: '오래 다져온 흙 위에 무언가 정착시키는 운. 새로운 것을 들이기보다 평소 자리에 따뜻한 무게감을 더해주는 한 가지가 어울립니다.',
-      cat: '도자기·그릇 · 요리책 · 화분',
-      headTitle: '안정·정착 카테고리',
+      body: '오래 다져온 흙 위에 무언가 정착시키는 운. ${vibeLine} 새로운 것을 들이기보다 평소 자리에 따뜻한 무게감을 더해주는 한 가지가 어울립니다.',
+      cat: '도자기 · 그릇 · 안정',
+      headTitle: '안정·정착 카테고리에서 골라드렸어요',
       lead: '‘자리에 따뜻한 무게감을 더하는’ 컨셉으로 3가지.',
+      lucky: { color: { ic: '🟫', v: '카멜 · 따뜻한 베이지' }, mat: { ic: '🪨', v: '도자기 · 흙' }, item: { ic: '🍽️', v: '그릇 · 화분' } },
       products: [
-        { emoji: '🍽️', name: '광주요 한정판 사발 페어', desc: '한국 도예 명가의 시그니처', meta: '발송 2일 · 만족도 4.8', price: 32000 },
-        { emoji: '🪴', name: '폴리쉬 머그 + 화분 세트', desc: '책상 위 작은 정원', meta: '발송 1일 · 만족도 4.6', price: 22000 },
-        { emoji: '📕', name: '이연복 셰프 가정식 레시피북', desc: '저녁 한 끼의 단단함', meta: '발송 1일 · 만족도 4.5', price: 24000 },
+        { emoji: '🍽️', name: '광주요 한정판 사발 페어', desc: '한국 도예 명가', price: 32000, meaning: '${name} 님의 자리에 한 가지를 더 더하는 시간.' },
+        { emoji: '🪴', name: '폴리쉬 머그 + 화분 세트', desc: '책상 위 정원', price: 22000, meaning: '오늘도 같은 자리에서 매일 마시는 한 잔이 풍요로워집니다.' },
+        { emoji: '📕', name: '이연복 셰프 가정식 레시피북', desc: '저녁의 단단함', price: 24000, meaning: '집에서의 시간이 ${name} 님에게 더 깊어지기를.' },
       ]
     },
     '金': {
-      char: { name: '리팩토링 수도승', illust: '✨', no: '#15 / 32', sub: '끊을 것을 끊는 결단의 시니어' },
+      rootKi: '결단의 칼을 가진 사람',
+      needKi: '올해는 ‘수(水)’의 흐름을 더할 시기',
       headline: '올해 ${name} 님은 ‘끊을 것을 끊을’ 시기예요.',
-      body: '오래 미뤄둔 것들을 정리하고 단단한 미감으로 새로 자리를 잡는 운. 작고 예리한 도구가 그 결단을 도와줍니다.',
-      cat: '만년필 · 액세서리 · 핸드드립',
-      headTitle: '결단·미감 카테고리',
+      body: '오래 미뤄둔 것들을 정리하고 단단한 미감으로 새로 자리를 잡는 운. ${vibeLine} 작고 예리한 도구가 그 결단을 도와줍니다.',
+      cat: '문구 · 액세서리 · 미감',
+      headTitle: '결단·미감 카테고리에서 골라드렸어요',
       lead: '‘작고 예리한 도구’ 컨셉으로 3가지.',
+      lucky: { color: { ic: '⚪', v: '실버 · 차콜' }, mat: { ic: '🔩', v: '메탈 · 가죽' }, item: { ic: '✒️', v: '문구 · 액세서리' } },
       products: [
-        { emoji: '✒️', name: '파카 듀오폴드 미니 볼펜', desc: '클래식 미감의 작은 결단', meta: '발송 1일 · 만족도 4.7', price: 32000 },
-        { emoji: '⌚', name: '다니엘 웰링턴 미니멀 시계 스트랩', desc: '교체 가능한 가죽 스트랩', meta: '발송 1일 · 만족도 4.5', price: 22000 },
-        { emoji: '☕', name: '하리오 V60 핸드드립 4종 세트', desc: '아침을 다듬는 도구', meta: '발송 1일 · 만족도 4.8', price: 26000 },
+        { emoji: '✒️', name: '파카 듀오폴드 미니 볼펜', desc: '클래식 미감', price: 32000, meaning: '작은 결단을 매일 손에 쥐는 도구로.' },
+        { emoji: '⌚', name: '다니엘 웰링턴 미니멀 시계 스트랩', desc: '교체 가능 가죽', price: 22000, meaning: '단단한 미감이 ${name} 님의 결을 도와줍니다.' },
+        { emoji: '☕', name: '하리오 V60 핸드드립 4종 세트', desc: '아침을 다듬는 도구', price: 26000, meaning: '하루의 시작에 작은 의식을 더해드립니다.' },
       ]
     },
+  };
+
+  const TAROT_CARDS = {
+    'cheer': [
+      { emoji: '⭐', name: 'The Star', kw: 'HOPE', meaning: '${name} 님 위에 작은 별이 올해 내내 빛나기를 바라는 마음.' },
+      { emoji: '☀️', name: 'The Sun', kw: 'JOY', meaning: '${name} 님의 올해가 따뜻한 햇볕 같기를.' },
+      { emoji: '🦋', name: 'Strength', kw: 'COURAGE', meaning: '${name} 님 안의 부드러운 단단함을 응원합니다.' },
+    ],
+    'thanks': [
+      { emoji: '🌸', name: 'Six of Cups', kw: 'GRATITUDE', meaning: '${name} 님과 함께한 시간들에 깊은 감사가 담겼습니다.' },
+      { emoji: '🌿', name: 'Empress', kw: 'NURTURE', meaning: '${name} 님이 ${sender}에게 자라게 해준 것들이 많아요.' },
+      { emoji: '🕊️', name: 'The World', kw: 'COMPLETION', meaning: '함께 만든 한 시기의 마무리에 고마움을 담아.' },
+    ],
+    'apology': [
+      { emoji: '🌧️', name: 'Five of Cups', kw: 'REGRET', meaning: '지나간 비를 인정하고, 남은 두 잔을 향해.' },
+      { emoji: '🌅', name: 'Judgement', kw: 'AMENDS', meaning: '다시 시작할 자리를 ${sender}이 먼저 만듭니다.' },
+      { emoji: '🪞', name: 'The Hermit', kw: 'REFLECTION', meaning: '돌아본 마음으로 한 걸음 다가갑니다.' },
+    ],
+    'celebrate': [
+      { emoji: '🎉', name: 'Three of Cups', kw: 'CELEBRATION', meaning: '${name} 님의 오늘을 함께 축하합니다.' },
+      { emoji: '👑', name: 'King of Cups', kw: 'TRIUMPH', meaning: '${name} 님이 자기 자리를 잘 만들어가고 있어요.' },
+      { emoji: '🏆', name: 'Six of Wands', kw: 'VICTORY', meaning: '오랜 노력 끝의 작은 깃발을 함께 듭니다.' },
+    ],
+    'comfort': [
+      { emoji: '🌙', name: 'The Moon', kw: 'GENTLE', meaning: '${name} 님의 밤이 너무 길지 않기를.' },
+      { emoji: '🌿', name: 'Four of Swords', kw: 'REST', meaning: '잠시 칼을 내려놓고 쉬어도 괜찮습니다.' },
+      { emoji: '🤍', name: 'Temperance', kw: 'BALANCE', meaning: '천천히 균형을 다시 찾는 시간을 보냅니다.' },
+    ],
+    'miss': [
+      { emoji: '💌', name: 'Eight of Cups', kw: 'YEARNING', meaning: '잠시 떠난 자리에서 ${name} 님을 떠올립니다.' },
+      { emoji: '🌊', name: 'Two of Cups', kw: 'CONNECTION', meaning: '두 잔이 다시 만나는 날을 그리며.' },
+      { emoji: '🕯️', name: 'The High Priestess', kw: 'INNER', meaning: '말하지 못한 마음이 카드를 통해 닿기를.' },
+    ],
   };
 
   function pickWuxing(birthdate) {
     const m = parseInt(birthdate.split('-')[1]);
     const d = parseInt(birthdate.split('-')[2]);
-    // 매우 단순화한 매핑 (실제는 만세력 일주). 시연용.
     if (m === 12 || m === 1) return '水';
     if (m === 2 || m === 3 || m === 4) return '木';
     if (m === 5 || m === 6 || m === 7) return d % 2 === 0 ? '水' : '火';
@@ -809,16 +999,42 @@
   }
 
   function getSajuChars(birthdate) {
-    // 시연용 가공. 실제는 만세력 변환.
     const wuxing = pickWuxing(birthdate);
     const map = {
-      '水': { time: '甲', day: '壬', month: '癸', year: '辛', timeLand: '寅', dayLand: '申', monthLand: '亥', yearLand: '巳' },
-      '木': { time: '丙', day: '甲', month: '丁', year: '戊', timeLand: '寅', dayLand: '午', monthLand: '卯', yearLand: '辰' },
-      '火': { time: '甲', day: '戊', month: '癸', year: '辛', timeLand: '寅', dayLand: '申', monthLand: '巳', yearLand: '未' },
-      '土': { time: '丙', day: '己', month: '癸', year: '庚', timeLand: '寅', dayLand: '丑', monthLand: '未', yearLand: '申' },
-      '金': { time: '甲', day: '庚', month: '己', year: '丁', timeLand: '申', dayLand: '辰', monthLand: '酉', yearLand: '巳' },
+      '水': ['辛', '癸', '壬', '巳', '亥', '申'],
+      '木': ['戊', '丁', '甲', '辰', '卯', '午'],
+      '火': ['辛', '癸', '戊', '未', '巳', '申'],
+      '土': ['庚', '癸', '己', '申', '未', '丑'],
+      '金': ['丁', '己', '庚', '巳', '酉', '辰'],
     };
     return map[wuxing];
+  }
+
+  function getWuxingDistribution(wuxing) {
+    // 간단 시연용: 부족 5행은 낮게, 과한 5행은 높게
+    const base = { '木':40, '火':40, '土':40, '金':40, '水':40 };
+    const high = { '水':[80,30,40,40,90], '木':[90,40,30,80,30], '火':[20,90,40,40,80], '土':[40,40,90,80,30], '金':[40,30,40,90,80] };
+    const order = ['木','火','土','金','水'];
+    const vals = high[wuxing];
+    return order.map((k, i) => vals[i]);
+  }
+
+  function vibeLine(vibe) {
+    const map = {
+      'calm':       '평소 차분한 결과 잘 어우러져,',
+      'passionate': '평소 열정적인 모습 안에 잠시 가라앉을 자리가 필요해,',
+      'sensitive':  '예민하게 흐름을 잘 느끼는 분이라,',
+      'social':     '평소 사람들 사이에서 빛나는 분이라,',
+      'reserved':   '평소 무뚝뚝해 보이는 안에 깊은 결을 지닌 분이라,',
+    };
+    return map[vibe] || '';
+  }
+
+  function purposeLabel(p) {
+    return ({birthday:'생일',promotion:'승진',comfort:'위로',health:'건강 기원',wedding:'결혼',farewell:'환송·이직',thanks:'감사'})[p] || '생일';
+  }
+  function relationLabel(r) {
+    return ({'same-team':'같은 팀 동료','adjacent':'인접 팀','rare':'거의 안 마주침','friend':'친구','family':'가족'})[r];
   }
 
   /* ============================
@@ -827,132 +1043,244 @@
   function goTo(n) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelector('.screen[data-screen="' + n + '"]').classList.add('active');
-    currentScreen = n;
-    const total = 7;
+    state.screen = n;
+    const total = 11;
     document.getElementById('progress').style.width = (((n - 1) / (total - 1)) * 100) + '%';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    if (n === 4) startReveal();
-    if (n === 5) renderProducts();
-    if (n === 6) renderCheckout();
+    if (n === 5) renderModeInput();
+    if (n === 6) updateProceedButton();
+    if (n === 7) startReveal();
+    if (n === 8) renderMeaning();
+    if (n === 9) renderProducts();
+    if (n === 10) renderCheckout();
   }
 
-  /* ============================
-     mode 선택
-     ============================ */
   function selectMode(mode, el) {
-    selectedMode = mode;
+    state.mode = mode;
     document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    const ind = document.getElementById('modeIndicator');
-    ind.textContent = mode === 'east' ? '🀄 동양식' : '✨ 서양식';
-    ind.classList.add('show');
-    setTimeout(() => ind.classList.remove('show'), 1800);
+    const desc = document.getElementById('modeDesc');
+    if (mode === 'saju') {
+      desc.innerHTML = '<b style="color: var(--ink); font-weight: 700;">사주 모드</b>: 받는 사람의 생년월일로 일간(日干)·오행 분포를 분석해서 그 사람에게 어울리는 선물 카테고리·럭키 아이템을 도출합니다. 시(時)는 받지 않습니다 — 일간 중심으로 충분합니다.';
+    } else {
+      desc.innerHTML = '<b style="color: var(--ink); font-weight: 700;">타로 모드</b>: 보낸 사람이 받는 분을 떠올리며 카드를 직접 뒤집습니다. <i>Proxy Projection</i> — 당신의 마음이 카드에 투영되고, 그 카드가 메시지가 됩니다. 생년월일은 받지 않습니다.';
+    }
+    desc.classList.add('show');
+  }
+
+  function renderModeInput() {
+    document.getElementById('sajuInput').style.display  = state.mode === 'saju' ? 'block' : 'none';
+    document.getElementById('tarotInput').style.display = state.mode === 'tarot' ? 'block' : 'none';
+    // hide birth field for tarot
+    document.getElementById('birthField').style.display = state.mode === 'tarot' ? 'none' : 'block';
+    document.getElementById('recipInfoLead').textContent = state.mode === 'tarot'
+      ? '타로는 카드와 마음이 핵심이라, 이름·성별만으로 충분합니다.'
+      : '이름·성별·생년월일이면 충분합니다. 시(時)는 몰라도 괜찮아요.';
+  }
+
+  function updateProceedButton() {
+    const btn = document.getElementById('proceedFromHeart');
+    btn.textContent = state.mode === 'saju' ? '사주 풀어보기 →' : '카드 뽑으러 가기 →';
+    state.senderHeart = document.getElementById('senderHeart').value || '';
   }
 
   /* ============================
-     chip 선택
+     chip handlers
      ============================ */
-  document.getElementById('relationChips').addEventListener('click', (e) => {
-    if (!e.target.classList.contains('chip')) return;
-    document.querySelectorAll('#relationChips .chip').forEach(c => c.classList.remove('selected'));
-    e.target.classList.add('selected');
-    selectedRelation = e.target.dataset.val;
-  });
-  document.getElementById('prefChips').addEventListener('click', (e) => {
-    if (!e.target.classList.contains('chip')) return;
-    e.target.classList.toggle('selected');
-  });
+  function singleChipHandler(groupId, stateKey) {
+    document.getElementById(groupId).addEventListener('click', e => {
+      if (!e.target.classList.contains('chip')) return;
+      document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('selected'));
+      e.target.classList.add('selected');
+      let val = e.target.dataset.val;
+      if (stateKey === 'budget') val = parseInt(val);
+      state[stateKey] = val;
+    });
+  }
+  singleChipHandler('genderChips',   'gender');
+  singleChipHandler('relationChips', 'relation');
+  singleChipHandler('budgetChips',   'budget');
+  singleChipHandler('purposeChips',  'purpose');
+  singleChipHandler('wishChips',     'wish');
+  singleChipHandler('vibeChips',     'vibe');
+  singleChipHandler('intentChips',   'intent');
+  singleChipHandler('questionChips', 'question');
 
   /* ============================
-     카드 reveal 시퀀스
+     Reveal — Saju OR Tarot
      ============================ */
   function startReveal() {
+    document.getElementById('sajuReveal').style.display  = state.mode === 'saju' ? 'block' : 'none';
+    document.getElementById('tarotReveal').style.display = state.mode === 'tarot' ? 'block' : 'none';
+    document.getElementById('revealNav').style.display = 'none';
+
+    if (state.mode === 'saju') startSajuReveal();
+    else startTarotReveal();
+  }
+
+  function startSajuReveal() {
     const name = document.getElementById('recipientName').value || '받는 분';
     const birth = document.getElementById('recipientBirth').value || '1989-07-15';
     const wuxing = pickWuxing(birth);
     const reading = JSON.parse(JSON.stringify(READINGS[wuxing]));
-    reading.headline = reading.headline.replace('${name}', name);
-    reading.body = reading.body.replace('${name}', name);
-    currentReading = { wuxing, name, ...reading };
+    state.reading = { wuxing, name, sender: '이지윤', ...reading };
 
-    // saju 글자 셋업
     const chars = getSajuChars(birth);
     const cells = document.querySelectorAll('#sajuGrid .saju-cell');
     cells.forEach(c => c.classList.remove('show'));
-    const tenLabels = ['편관', '일간', '정재', '상관'];
-    const charSeq = [chars.time, chars.day, chars.month, chars.year, chars.timeLand, chars.dayLand, chars.monthLand, chars.yearLand];
-    const yoSeq = ['편관', '일간', '정재', '상관', '식신', '편인', '비견', '겁재'];
 
     document.getElementById('revealStatus').textContent = name + ' 님의 사주를 풀고 있습니다…';
-
     cells.forEach((cell, i) => {
       const ch = cell.querySelector('.ch');
       ch.textContent = '─';
-      const yo = cell.querySelector('.yo');
-      if (yo) yo.textContent = yoSeq[i] || '';
     });
+    document.getElementById('wuxingSection').classList.remove('show');
 
-    document.getElementById('characterReveal').classList.remove('show');
-    document.getElementById('meaningCard').classList.remove('show');
-    document.getElementById('revealNav').style.display = 'none';
-
-    // 한 글자씩 reveal
     cells.forEach((cell, i) => {
       setTimeout(() => {
-        const ch = cell.querySelector('.ch');
-        ch.textContent = charSeq[i];
+        cell.querySelector('.ch').textContent = chars[i];
         cell.classList.add('show');
-      }, 400 + i * 280);
+      }, 400 + i * 240);
     });
 
-    // 캐릭터 reveal
     setTimeout(() => {
-      document.getElementById('revealStatus').textContent = name + ' 님의 캐릭터가 드러납니다.';
-      document.getElementById('charIllust').textContent = reading.char.illust;
-      document.getElementById('charName').textContent = reading.char.name;
-      document.getElementById('charNo').textContent = 'CHARACTER ' + reading.char.no;
-      document.getElementById('charSub').textContent = reading.char.sub;
-      document.getElementById('characterReveal').classList.add('show');
-    }, 3200);
-
-    // 의미 카드 reveal
-    setTimeout(() => {
-      document.getElementById('revealStatus').textContent = '올해 ' + name + ' 님의 한 줄.';
-      document.getElementById('meaningHeadline').textContent = reading.headline;
-      document.getElementById('meaningBody').textContent = reading.body;
-      document.getElementById('meaningTail').innerHTML = '이 흐름에 어울리는 선물 카테고리: <strong>' + reading.cat + '</strong>';
-      document.getElementById('meaningCard').classList.add('show');
+      document.getElementById('revealStatus').textContent = name + ' 님의 오행 분포';
+      const dist = getWuxingDistribution(wuxing);
+      const fills = document.querySelectorAll('#wuxingBars .wuxing-fill');
+      fills.forEach((f, i) => f.style.height = dist[i] + '%');
+      document.getElementById('rootKi').textContent = reading.rootKi;
+      document.getElementById('needKi').textContent = reading.needKi;
+      document.getElementById('wuxingSection').classList.add('show');
       document.getElementById('revealNav').style.display = 'flex';
-    }, 4600);
+    }, 2400);
+  }
+
+  function startTarotReveal() {
+    state.tarotFlipped = 0;
+    const intent = state.intent;
+    const cards = TAROT_CARDS[intent] || TAROT_CARDS['cheer'];
+    const deck = document.getElementById('tarotDeck');
+    deck.innerHTML = '';
+    cards.forEach((c, i) => {
+      const card = document.createElement('div');
+      card.className = 'tarot-card';
+      card.dataset.idx = i;
+      card.innerHTML = `
+        <div class="tarot-face tarot-back"></div>
+        <div class="tarot-face tarot-front">
+          <div class="tarot-emoji">${c.emoji}</div>
+          <div class="tarot-name">${c.name}</div>
+          <div class="tarot-keyword">${c.kw}</div>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        if (card.classList.contains('flipped')) return;
+        card.classList.add('flipped');
+        state.tarotFlipped++;
+        document.getElementById('tarotHint').textContent = '↑ 카드를 클릭하세요 (3장 中 ' + state.tarotFlipped + '장 뒤집힘)';
+        if (state.tarotFlipped >= 1) {
+          document.getElementById('revealNav').style.display = 'flex';
+        }
+      });
+      deck.appendChild(card);
+    });
+
+    const qPrompt = {
+      'energy': '"그 사람에게 지금 필요한 기운은?"',
+      'relation': '"우리 관계의 모습은?"',
+      'next': '"그 사람의 다음 한 걸음은?"',
+    }[state.question];
+    document.getElementById('tarotPrompt').textContent = qPrompt + '이라고 마음으로 한 번 더 물으면서, 한 장씩 가볍게.';
+    document.getElementById('tarotHint').textContent = '↑ 카드를 클릭하세요 (3장 中 0장 뒤집힘)';
+
+    // tarot has no wuxing-based reading. Set reading minimally for next steps.
+    const name = document.getElementById('recipientName').value || '받는 분';
+    const cardsPicked = TAROT_CARDS[intent][0]; // 첫 카드 기준 메시지
+    const wishMap = {'cheer':'응원','thanks':'고마움','apology':'사과','celebrate':'축하','comfort':'위로','miss':'그리움'};
+    state.reading = {
+      wuxing: 'tarot',
+      name,
+      sender: '이지윤',
+      headline: '${sender}이 ${name} 님을 떠올리며 뽑은 카드 — ' + cardsPicked.name + '.',
+      body: cardsPicked.meaning + ' ' + wishMap[intent] + '의 마음이 이 한 장에 담겼습니다.',
+      cat: '의미가 깊은 작은 한 가지',
+      headTitle: '카드와 어울리는 선물을 골라드렸어요',
+      lead: '‘' + cardsPicked.kw + '’의 키워드를 일상에서 떠올리게 하는 3가지.',
+      lucky: { color: { ic: '🌙', v: '소프트 라벤더' }, mat: { ic: '🪞', v: '실크 · 종이' }, item: { ic: '🕯️', v: '향초 · 노트' } },
+      products: [
+        { emoji: '🕯️', name: '조 말론 라벤더 캔들', desc: '잠들기 전 한 시간', price: 24000, meaning: '카드의 ‘' + cardsPicked.kw + '’ 키워드가 매일 밤 되살아나기를.' },
+        { emoji: '📓', name: '미도리 트래블러스 노트', desc: '가죽 표지 + 리필', price: 28000, meaning: '${name} 님이 카드의 메시지를 매일 한 줄씩 적어가도록.' },
+        { emoji: '🍵', name: '오설록 명상 차 세트', desc: '저녁의 한 잔', price: 22000, meaning: '카드의 정적이 ${name} 님 일상에 조용히 자리 잡기를.' },
+      ]
+    };
   }
 
   /* ============================
-     상품 list 렌더
+     S8. Meaning + Lucky
+     ============================ */
+  function renderMeaning() {
+    const r = state.reading;
+    if (!r) return;
+    const name = r.name;
+    const sender = r.sender;
+    const vibe = vibeLine(state.vibe);
+    const head = (r.headline || '').replace(/\${name}/g, name).replace(/\${sender}/g, sender);
+    const body = (r.body || '').replace(/\${name}/g, name).replace(/\${sender}/g, sender).replace(/\${vibeLine}/g, vibe);
+
+    document.getElementById('meaningEyebrow').textContent =
+      state.mode === 'saju' ? '올해 ' + name + ' 님의 한 줄' : '카드가 전한 ' + name + ' 님의 한 줄';
+    document.getElementById('meaningHeadline').textContent = head;
+    document.getElementById('meaningBody').textContent = body;
+
+    const heart = state.senderHeart;
+    let fromText = '— ' + sender + ' 님이 ' + name + ' 님을 떠올리며 ' + (state.mode === 'saju' ? '풀어낸 사주의 한 줄입니다.' : '뽑은 카드입니다.');
+    if (heart) fromText += '\n전하고 싶은 한 마디: "' + heart + '"';
+    document.getElementById('meaningFrom').textContent = fromText;
+
+    // lucky
+    if (r.lucky) {
+      document.getElementById('lucky1Icon').textContent  = r.lucky.color.ic;
+      document.getElementById('lucky1Value').textContent = r.lucky.color.v;
+      document.getElementById('lucky2Icon').textContent  = r.lucky.mat.ic;
+      document.getElementById('lucky2Value').textContent = r.lucky.mat.v;
+      document.getElementById('lucky3Icon').textContent  = r.lucky.item.ic;
+      document.getElementById('lucky3Value').textContent = r.lucky.item.v;
+    }
+  }
+
+  /* ============================
+     S9. Products
      ============================ */
   function renderProducts() {
-    if (!currentReading) return;
-    document.getElementById('productHead').textContent = currentReading.headTitle;
-    document.getElementById('productLead').textContent = currentReading.lead;
+    const r = state.reading;
+    if (!r) return;
+    document.getElementById('productHead').textContent = r.headTitle;
+    document.getElementById('productLead').textContent = r.lead;
 
+    // budget filter — show all but mark price diff
     const list = document.getElementById('productList');
     list.innerHTML = '';
-    currentReading.products.forEach((p, i) => {
+    r.products.forEach((p, i) => {
+      const meaningText = (p.meaning || '')
+        .replace(/\${name}/g, r.name)
+        .replace(/\${sender}/g, r.sender);
       const div = document.createElement('div');
-      div.className = 'product' + (i === selectedProductIdx ? ' selected' : '');
+      div.className = 'product' + (i === state.productIdx ? ' selected' : '');
       div.innerHTML = `
-        <div class="product-img">${p.emoji}</div>
-        <div class="product-info">
-          <div class="product-name">${p.name}</div>
-          <div class="product-desc">${p.desc}</div>
-          <div class="product-meta">${p.meta}</div>
+        <div class="product-row">
+          <div class="product-img">${p.emoji}</div>
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            <div class="product-desc">${p.desc}</div>
+          </div>
+          <div class="product-price">${p.price.toLocaleString()}원</div>
         </div>
-        <div class="product-price">${p.price.toLocaleString()}원</div>
+        <div class="product-meaning"><b>이 선물의 의미</b> · ${meaningText}</div>
       `;
       div.addEventListener('click', () => {
-        selectedProductIdx = i;
+        state.productIdx = i;
         renderProducts();
-        renderPackagePrices();
       });
       list.appendChild(div);
     });
@@ -960,8 +1288,9 @@
   }
 
   function renderPackagePrices() {
-    if (!currentReading) return;
-    const product = currentReading.products[selectedProductIdx];
+    const r = state.reading;
+    if (!r) return;
+    const product = r.products[state.productIdx];
     const price = product.price;
     document.getElementById('pkgLightPrice').textContent = (price + 5000).toLocaleString() + '원';
     document.getElementById('pkgStandardPrice').textContent = (price + 7000).toLocaleString() + '원';
@@ -969,44 +1298,57 @@
   }
 
   function selectPackage(pkg) {
-    selectedPackage = pkg;
+    state.pkg = pkg;
     document.querySelectorAll('.package').forEach(p => p.classList.remove('selected'));
     document.querySelector('.package[data-pkg="' + pkg + '"]').classList.add('selected');
   }
 
   /* ============================
-     체크아웃 렌더
+     S10. Checkout
      ============================ */
   function renderCheckout() {
-    if (!currentReading) return;
-    const product = currentReading.products[selectedProductIdx];
+    const r = state.reading;
+    if (!r) return;
+    const product = r.products[state.productIdx];
     const name = document.getElementById('recipientName').value;
-    const relMap = { 'same-team': '같은 팀', 'adjacent': '인접 팀', 'rare': '거의 안 마주침' };
-    const fee = selectedPackage === 'light' ? 5000 : (selectedPackage === 'premium' ? 15000 : 7000);
+    const fee = state.pkg === 'light' ? 5000 : (state.pkg === 'premium' ? 15000 : 7000);
+    const head = (r.headline || '').replace(/\${name}/g, r.name).replace(/\${sender}/g, r.sender);
 
-    document.getElementById('checkoutRecipient').textContent = name + ' (' + relMap[selectedRelation] + ')';
-    document.getElementById('checkoutMeaning').textContent = '"' + currentReading.headline + '"';
+    document.getElementById('checkoutRecipient').textContent = name + ' (' + relationLabel(state.relation) + ')';
+    document.getElementById('checkoutMeaning').textContent = '"' + head + '"';
     document.getElementById('checkoutProduct').textContent = product.name;
     document.getElementById('sumProduct').textContent = product.price.toLocaleString() + '원';
     document.getElementById('sumFee').textContent = fee.toLocaleString() + '원';
     document.getElementById('sumTotal').textContent = (product.price + fee).toLocaleString() + '원';
   }
 
-  function completePay() {
-    goTo(7);
+  function completePay() { goTo(11); }
+
+  function copyShareLink() {
+    const fakeUrl = 'https://gifttarot.app/g/Kx7a2P3m';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(fakeUrl).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const t = btn.textContent;
+        btn.textContent = '✓ 복사됨';
+        setTimeout(() => btn.textContent = t, 1600);
+      });
+    } else {
+      alert('링크 복사: ' + fakeUrl);
+    }
   }
 
   function resetDemo() {
-    currentScreen = 1;
-    selectedMode = 'east';
-    selectedRelation = 'same-team';
-    selectedPackage = 'standard';
-    selectedProductIdx = 0;
-    currentReading = null;
+    state = {
+      screen: 1, mode: 'saju', gender: 'm', relation: 'same-team',
+      budget: 20000, purpose: 'birthday', wish: 'rest', vibe: 'calm',
+      intent: 'cheer', question: 'energy', pkg: 'standard',
+      productIdx: 0, senderHeart: '', tarotFlipped: 0, reading: null,
+    };
+    document.getElementById('senderHeart').value = '';
     goTo(1);
   }
 
-  // 초기 progress
   document.getElementById('progress').style.width = '0%';
 </script>
 
