@@ -1,4 +1,4 @@
-# AGENTS.md — AI Agent Instructions for GlocalX
+# AGENTS.md — AI Agent Instructions for Giftaro
 
 이 파일은 **Cursor, Continue, Aider, Windsurf** 등 AGENTS.md 표준을 따르는 코딩 에이전트를 위한
 진입점이다. Claude Code는 `CLAUDE.md`를 우선 로드하지만, 동일 규범을 참조하도록 이 파일도
@@ -23,25 +23,37 @@
 ## 프로젝트 개요 (1분 요약)
 
 - **코스**: KAIST IMMS BIZ.69911 — IT경영 특수논제: AI 기반 비즈니스 진화, 전략 및 실습 (2026 Spring, 이지수 교수)
-- **프로젝트**: **GlocalX** — 한국 소상공인 식당의 Google Business Profile(GBP)을 외국인 관광객용
-  다국어 콘텐츠로 자동 최적화하는 서비스. 사진 한 장 → EN/JA/zh-TW 마케팅 콘텐츠.
-- **팀**: 4명 (김계휴 Dev/Tech, 김경문 GTM, 이승원 Marketing, 정윤지 AX)
-- **주요 산출물**: `30. Deliverables/business-plan.html`, `30. Deliverables/gbp-guide.html`,
-  `docs/MANIFEST.md`, `docs/WHYTREE.md`, `docs/PREMORTEM.md`
+- **프로젝트**: **기프타로** — 회사 동료의 생일 선물을 5분 안에 의미 있게 고르도록 돕는
+  선물 전달 레이어. 생일·관계 맥락 → 무드 카드 → 실제 브랜드 선물 후보.
+- **팀**: 3명 (김계휴 Dev/Product, 이승원 Content/Marketing, 정윤지 UX/AX)
+- **주요 산출물**: `docs/MANIFEST.md`, `docs/giftaro-status.md`, `docs/archive-index.md`,
+  `docs/gifttarot/index.html`, `research/source-pdfs/`
+- **피벗 전 자료**: `gyehyu/glocalx-archive-2026-05-07`
 - **언어**: 모든 커뮤니케이션과 문서는 **한국어**가 기본. 코드 식별자만 영어.
 
 ---
+
+## 권장 폴더 구조
+
+- `docs/` — 현재 합의된 문서, 상태 공유본, GitHub Pages 진입점
+- `research/` — 원본 PDF, 조사 메모, 상품 카탈로그, 리서치 산출물
+- `development/` — 실행 코드, 테스트, 실험 코드
+- `deliverables/` — 발표/제출용 최종 산출물
+- `submissions/` — 수업 제출본
+- `internal/` — 내부 메모, 로그, 캡처, 디버그 흔적
 
 ## 자주 하는 작업과 출발점
 
 | 작업 | 시작 파일 |
 |---|---|
-| 사업계획서 편집 | `30. Deliverables/business-plan.html` |
-| 원칙/팀 구성 변경 | `docs/MANIFEST.md` |
-| 리스크 관리표 | `docs/PREMORTEM.md` |
-| Why-tree(문제 인과) | `docs/WHYTREE.md` |
-| AI 파이프라인 코드 | `40. Development/analyze_photo.py` 등 |
-| 조사 데이터 | `10. Research/gbp-survey-seomyeon.csv` |
+| 현재 원칙 확인 | `docs/MANIFEST.md` |
+| 팀 공유 상태 확인 | `docs/giftaro-status.md` |
+| 원본 PDF 확인 | `research/source-pdfs/` |
+| 데모 페이지 확인 | `docs/gifttarot/index.html` |
+| 상품 카탈로그 확인 | `research/giftaro-product-catalog.md` |
+| 아카이브 위치 확인 | `docs/archive-index.md` |
+| 코드 작업 | `development/` |
+| 발표/제출물 작성 | `deliverables/` / `submissions/` |
 
 ---
 

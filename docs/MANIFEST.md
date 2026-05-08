@@ -34,6 +34,19 @@
 ### 5. 실제 상품과 실제 맥락만 쓴다
 가짜 브랜드명보다 실제 상품명이 낫다. 다만 상품 추천은 외부 서비스의 결과를 존중하고, 우리는 그 위에 의미를 덧씌운다.
 
+## Repository Layout
+
+active main은 Giftaro만 담는다. 이전 프로젝트 자료는 archive 브랜치로만 보관한다.
+
+- `docs/` — 현재 합의된 문서, 상태 공유본, GitHub Pages 진입점
+- `research/` — 원본 PDF, 조사 메모, 상품 카탈로그, 리서치 산출물
+- `development/` — 실행 코드, 테스트, 실험 코드
+- `deliverables/` — 발표/제출용 최종 산출물
+- `submissions/` — 수업 제출본
+- `internal/` — 내부 메모, 로그, 캡처, 디버그 흔적
+
+새 작업은 위 폴더 중 하나에만 넣는다. 숫자 prefix 폴더는 새 작업에 쓰지 않는다.
+
 ## What We Do Not Do
 
 - 결제창을 만든다
@@ -54,4 +67,3 @@
 1. [`docs/giftaro-status.md`](./giftaro-status.md)
 2. [`docs/archive-index.md`](./archive-index.md)
 3. [`docs/gifttarot/index.html`](./gifttarot/index.html)
-

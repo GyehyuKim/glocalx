@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a course project folder for **BIZ.69911 — IT경영 특수논제: AI 기반 비즈니스 진화, 전략 및 실습** (KAIST IMMS, Spring 2026, instructor: 이지수).
 
-The project is **GlocalX** — a service that automates multilingual Google Business Profile (GBP) content for Korean SMB restaurants targeting foreign tourists. Primary deliverables live under `30. Deliverables/` (business-plan.html, gbp-guide.html) and `docs/` (MANIFEST, WHYTREE, PREMORTEM).
+The project is **Giftaro** — a gift-delivery layer that helps a user turn a colleague's birthday into a small but meaningful gift package. Active references live under `docs/` and `research/`; code lives under `development/`; final outputs live under `deliverables/` and `submissions/`.
 
 ## Governance — MANDATORY
 
 Before making any git/PR operation, read and follow **[`CONTRIBUTING.md`](./CONTRIBUTING.md)**. It is the single source of truth for:
 
-- Branch naming (`<owner>/<topic-slug>`, owner ∈ {gyehyu, gyeongmun, seungwon, yoonji})
+- Branch naming (`<owner>/<topic-slug>`)
 - PR size and lifetime rules
 - Conventional Commits message format
 - Forbidden operations (direct push to main, --force, --no-verify, committing secrets)
@@ -32,6 +32,13 @@ find .git -name "desktop.ini" -type f -delete
 ```
 
 If an error mentions `desktop.ini`, clean first, then retry.
+
+## Pages / Demo
+
+GitHub Pages serves the Giftaro demo from `main /docs`.
+
+- Demo URL: `https://gyehyukim.github.io/glocalx/`
+- Demo entrypoint: `docs/gifttarot/index.html`
 
 ## Working with PPTX Files
 
@@ -98,13 +105,4 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 
 2. **왜 필요한가**: 다른 팀원의 PR이 먼저 main에 머지되면 내 브랜치가 뒤처진다. 이 상태로 머지하면 충돌이 발생하거나 변경사항이 덮어써질 수 있다. `Require branches to be up to date` 브랜치 보호 규칙이 이를 시스템적으로 강제한다.
 
-3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 수행. LLM이 직접 머지하지 않고 PR 생성까지만 한다.
-
-## Deploy Configuration
-
-Platform: Hugging Face Spaces
-Production URL: https://huggingface.co/spaces/Gyehyu2726/glocalx-demo
-App directory: 40. Development/
-Deploy workflow: .github/workflows/deploy-hf-spaces.yml
-Trigger: push to main (paths: 40. Development/**, workflow file)
-Secret required: HF_TOKEN (GitHub repo secret — HF write token for Gyehyu2726/glocalx-demo)
+3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 직접 수행한다. LLM은 PR 생성과 정리까지만 하고 merge 단계에서는 멈춘다.
