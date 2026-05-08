@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>기프타로 — 5분 데모</title>
+<style>
+  :root {
+    --paper: #F4F2EE;
+    --paper-deep: #EDE9E1;
+    --ink: #2A2722;
+    --ink-soft: #5C564E;
+    --ink-faint: #8E867B;
+    --primary: #C00050;
+    --primary-deep: #8C0039;
+    --accent: #B45309;
+    --gold: #B8924C;
+    --line: #D7D2C8;
+    --shadow: 0 8px 32px rgba(80, 60, 40, 0.08);
+    --shadow-deep: 0 16px 48px rgba(80, 60, 40, 0.14);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; letter-spacing: -0.015em; }
+  html, body {
+    height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Apple SD Gothic Neo", "Pretendard", "Helvetica Neue", system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11", "tnum";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  .serif {
+    font-family: "Apple SD Gothic Neo", "Noto Serif KR", "Nanum Myeongjo", serif;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(180,150,110,0.07) 0, transparent 40%),
+      radial-gradient(circle at 88% 82%, rgba(120,90,60,0.06) 0, transparent 40%),
+      linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
+    min-height: 100vh;
+  }
+
+  .stage {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .brand {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-bottom: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .brand b { color: var(--primary); letter-spacing: 0.04em; font-weight: 700; }
+
+  .progress-bar {
+    height: 2px;
+    background: rgba(192, 0, 80, 0.1);
+    border-radius: 1px;
+    margin: 18px auto 36px;
+    max-width: 480px;
+    overflow: hidden;
+  }
+  .progress-bar > div {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 1px;
+    transition: width 0.6s ease;
+  }
+
+  .screen {
+    display: none;
+    animation: fadeUp 0.5s ease;
+  }
+  .screen.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  h1 {
+    font-size: 40px;
+    line-height: 1.18;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 18px;
+    letter-spacing: -0.028em;
+  }
+  h1 .accent { color: var(--primary); }
+  h2 {
+    font-size: 24px;
+    line-height: 1.32;
+    margin-bottom: 10px;
+    color: var(--ink);
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+  h3 {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  p { font-size: 16px; line-height: 1.62; color: var(--ink-soft); margin-bottom: 14px; letter-spacing: -0.012em; }
+  .lead { font-size: 18px; line-height: 1.55; color: var(--ink); letter-spacing: -0.018em; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn.primary { background: var(--primary); }
+  .btn.primary:hover { background: var(--primary-deep); }
+  .btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn.ghost:hover { background: var(--paper-deep); color: var(--ink); }
+  .btn.full { width: 100%; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 160px; }
+
+  .card {
+    background: #FBFAF6;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 26px 24px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card-emph {
+    border-left: 3px solid var(--primary);
+    background: linear-gradient(180deg, #FBFAF6 0%, #F4F0E8 100%);
+  }
+
+  .field { margin-bottom: 22px; }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  label .hint { color: var(--ink-faint); font-weight: 400; font-size: 12px; }
+  input[type=text], input[type=date] {
+    width: 100%;
+    padding: 13px 16px;
+    background: var(--paper-deep);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.012em;
+    transition: all 0.2s ease;
+  }
+  input:focus { outline: none; border-color: var(--primary); background: #FBFAF6; }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 9px 16px;
+    background: var(--paper-deep);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    letter-spacing: -0.012em;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--primary); color: var(--ink); }
+  .chip.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* 모드 선택 */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+  .mode-card {
+    aspect-ratio: 3/4;
+    border-radius: 18px;
+    padding: 28px 22px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-east {
+    background: linear-gradient(135deg, #F0EBE0 0%, #E1D9C8 100%);
+    color: var(--ink);
+  }
+  .mode-east::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 70% 20%, rgba(184,146,76,0.18), transparent 50%);
+  }
+  .mode-west {
+    background: linear-gradient(135deg, #2A2440 0%, #1A1530 100%);
+    color: #E8DDF0;
+  }
+  .mode-west::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 30% 70%, rgba(180,140,220,0.25), transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255,220,150,0.15), transparent 40%);
+  }
+  .mode-card > * { position: relative; z-index: 1; }
+  .mode-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-deep); }
+  .mode-card.selected { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(192,0,80,0.12); }
+  .mode-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.9; }
+  .mode-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.022em; }
+  .mode-sub { font-size: 13px; opacity: 0.75; line-height: 1.55; letter-spacing: -0.01em; }
+
+  /* 카드 reveal */
+  .reveal-stage {
+    text-align: center;
+    padding: 48px 0;
+    min-height: 380px;
+  }
+  .reveal-progress { color: var(--ink-faint); font-size: 14px; letter-spacing: 0.2em; margin-bottom: 24px; }
+  .saju-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 360px;
+    margin: 0 auto 36px;
+  }
+  .saju-cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    background: #FBFAF6;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.6s ease;
+  }
+  .saju-cell.show { opacity: 1; transform: translateY(0); }
+  .saju-cell .label { font-size: 10px; color: var(--ink-faint); margin-bottom: 4px; letter-spacing: 0.18em; font-weight: 600; }
+  .saju-cell .ch {
+    font-size: 28px; font-weight: 500; color: var(--ink); line-height: 1;
+    font-family: "PingFang SC", "Apple SD Gothic Neo", "Noto Serif KR", "Nanum Myeongjo", serif;
+    letter-spacing: 0;
+  }
+  .saju-cell.day .ch { color: var(--primary); }
+  .saju-cell .yo { font-size: 10px; color: var(--ink-soft); margin-top: 4px; letter-spacing: 0; font-weight: 500; }
+
+  .character-reveal {
+    text-align: center;
+    margin: 40px auto;
+    max-width: 480px;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .character-reveal.show { opacity: 1; }
+  .char-illust {
+    width: 132px; height: 132px;
+    margin: 0 auto 18px;
+    background: linear-gradient(135deg, #F4E8C8 0%, #E8C887 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    box-shadow: var(--shadow);
+    border: 3px solid #FBFAF6;
+  }
+  .char-name { font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.024em; }
+  .char-no { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.18em; margin-bottom: 14px; font-weight: 600; }
+  .char-sub { font-size: 15px; color: var(--ink-soft); line-height: 1.55; letter-spacing: -0.012em; }
+
+  .meaning-card {
+    margin: 30px 0;
+    padding: 28px 26px;
+    background: linear-gradient(180deg, #FBFAF6 0%, #F4F0E8 100%);
+    border-radius: 18px;
+    border-left: 3px solid var(--primary);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.8s ease;
+    text-align: left;
+  }
+  .meaning-card.show { opacity: 1; transform: translateY(0); }
+  .meaning-eyebrow { font-size: 11px; color: var(--primary); letter-spacing: 0.18em; margin-bottom: 12px; font-weight: 700; }
+  .meaning-headline { font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 14px; line-height: 1.42; letter-spacing: -0.022em; }
+  .meaning-body { font-size: 15px; color: var(--ink-soft); line-height: 1.72; letter-spacing: -0.012em; }
+  .meaning-tail {
+    margin-top: 20px; padding-top: 18px;
+    border-top: 1px dashed var(--line);
+    font-size: 13px; color: var(--ink-soft); letter-spacing: -0.01em;
+  }
+  .meaning-tail strong { color: var(--primary); font-weight: 600; }
+
+  /* 상품 */
+  .product-list { display: grid; gap: 14px; margin-bottom: 24px; }
+  .product {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #FBFAF6;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .product:hover { border-color: var(--primary); }
+  .product.selected { border-color: var(--primary); background: linear-gradient(90deg, #FFF7FA 0%, #FBFAF6 100%); box-shadow: var(--shadow); }
+  .product-img {
+    width: 76px; height: 76px;
+    background: linear-gradient(135deg, #F4E8C8 0%, #DDC795 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+  }
+  .product-info { min-width: 0; }
+  .product-name { font-size: 15px; color: var(--ink); margin-bottom: 3px; font-weight: 600; letter-spacing: -0.018em; line-height: 1.35; }
+  .product-desc { font-size: 13px; color: var(--ink-faint); margin-bottom: 5px; letter-spacing: -0.01em; }
+  .product-meta { font-size: 11px; color: var(--ink-soft); letter-spacing: 0; font-weight: 500; }
+  .product-price { font-size: 16px; color: var(--primary); font-weight: 700; letter-spacing: -0.018em; font-variant-numeric: tabular-nums; }
+
+  .package-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .package {
+    padding: 16px 12px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #FBFAF6;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+  .package:hover { border-color: var(--primary); }
+  .package.selected { border-color: var(--primary); background: linear-gradient(180deg, #FFF7FA 0%, #FBFAF6 100%); box-shadow: var(--shadow); }
+  .pkg-name { font-size: 11px; color: var(--ink-faint); letter-spacing: 0.16em; margin-bottom: 8px; text-transform: uppercase; font-weight: 600; }
+  .pkg-price { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.022em; font-variant-numeric: tabular-nums; }
+  .pkg-detail { font-size: 11px; color: var(--ink-soft); line-height: 1.5; letter-spacing: -0.005em; }
+
+  .summary {
+    padding: 20px 22px;
+    background: var(--paper-deep);
+    border-radius: 14px;
+    margin-bottom: 20px;
+  }
+  .summary-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: var(--ink-soft); letter-spacing: -0.01em; }
+  .summary-row span:last-child { font-variant-numeric: tabular-nums; }
+  .summary-row.total {
+    border-top: 1px solid var(--line);
+    margin-top: 6px;
+    padding-top: 14px;
+    font-size: 18px;
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+  }
+  .summary-row.total span:last-child { color: var(--primary); }
+
+  /* Done */
+  .done {
+    text-align: center;
+    padding: 56px 0;
+  }
+  .done-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+  }
+  .dogam-card {
+    margin: 32px auto 24px;
+    max-width: 360px;
+    padding: 22px;
+    border: 1px solid var(--line);
+    background: linear-gradient(135deg, #FBFAF6 0%, #F4F0E8 100%);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+  .dogam-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .dogam-slot {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: var(--paper-deep);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+  }
+  .dogam-slot.filled { background: linear-gradient(135deg, #F4E8C8 0%, #E8C887 100%); color: var(--ink); border-color: var(--gold); }
+  .dogam-status { font-size: 13px; color: var(--ink-soft); letter-spacing: -0.012em; }
+  .dogam-status b { color: var(--primary); font-weight: 600; }
+
+  .nav { display: flex; gap: 10px; margin-top: 12px; }
+  .footer-meta {
+    text-align: center;
+    margin-top: 48px;
+    color: var(--ink-faint);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+
+  /* 모드 indicator */
+  .mode-indicator {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .mode-indicator.show { opacity: 1; }
+
+  /* responsive */
+  @media (max-width: 540px) {
+    .stage { padding: 36px 18px 72px; }
+    h1 { font-size: 32px; }
+    .saju-grid { max-width: 280px; }
+    .package-grid { grid-template-columns: 1fr; }
+    .product { grid-template-columns: 60px 1fr; gap: 12px; padding: 12px; }
+    .product-img { width: 60px; height: 60px; font-size: 24px; }
+    .product-price { grid-column: 2; text-align: right; padding-top: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="mode-indicator" id="modeIndicator">🀄 동양식</div>
+
+<div class="stage">
+  <div class="brand"><b>기프타로</b> · GIFTTAROT 5분 데모</div>
+  <div class="progress-bar"><div id="progress" style="width: 0%"></div></div>
+
+  <!-- ========== Screen 1: Landing ========== -->
+  <section class="screen active" data-screen="1">
+    <h1>회사 동료 생일이 모레다.<br /><span class="accent">5분이면 됩니다.</span></h1>
+    <p class="lead" style="margin-top: 12px;">
+      스벅 쿠폰 또 보내기엔 영혼 없고, 5만 원짜리는 부담스러운 사이.<br />
+      받는 사람의 올해 흐름을 한 줄로 풀어, 어울리는 한 가지를 보냅니다.
+    </p>
+
+    <div class="card" style="margin-top: 36px;">
+      <h3>시연 시나리오</h3>
+      <p style="margin-bottom: 8px;"><strong style="color: var(--ink);">이지윤 (네이버 PM 6년차)</strong>이 같은 팀 시니어 개발자 <strong style="color: var(--ink);">김지훈 님 (38세)</strong>의 모레 생일을 위해, 점심 시간 5분 안에 의미 있는 선물을 결정합니다.</p>
+      <p style="font-size: 14px; color: var(--ink-faint); margin-top: 12px; margin-bottom: 0;">※ 이 데모는 가상 사주 데이터로 시연됩니다. 실제 서비스에서는 만세력 라이브러리로 정확히 계산됩니다.</p>
+    </div>
+
+    <button class="btn primary full" onclick="goTo(2)" style="margin-top: 20px;">시작하기 →</button>
+  </section>
+
+  <!-- ========== Screen 2: Mode Select ========== -->
+  <section class="screen" data-screen="2">
+    <h3>STEP 01 / 06</h3>
+    <h2>마음에 드는 분위기를 골라주세요</h2>
+    <p>오늘은 어떤 결을 따라 김지훈 님의 사주를 풀까요?</p>
+
+    <div class="mode-grid">
+      <div class="mode-card mode-east selected" onclick="selectMode('east', this)">
+        <div>
+          <div class="mode-icon">🀄</div>
+          <div class="mode-title">동양식</div>
+          <div class="mode-sub">한지 위에 묵으로,<br />사주 카페의 무게감</div>
+        </div>
+        <div style="font-size: 12px; opacity: 0.7;">한지 · 묵 · 명조</div>
+      </div>
+      <div class="mode-card mode-west" onclick="selectMode('west', this)">
+        <div>
+          <div class="mode-icon">✨</div>
+          <div class="mode-title">서양식</div>
+          <div class="mode-sub">별이 비추는,<br />천체 관측소의 황홀</div>
+        </div>
+        <div style="font-size: 12px; opacity: 0.7;">우주 · 별 · harp</div>
+      </div>
+    </div>
+
+    <div class="nav" style="margin-top: 36px;">
+      <button class="btn ghost" onclick="goTo(1)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(3)">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ========== Screen 3: Recipient Input ========== -->
+  <section class="screen" data-screen="3">
+    <h3>STEP 02 / 06</h3>
+    <h2>받는 사람을 알려주세요</h2>
+    <p>생년월일과 취향 몇 가지면 충분합니다. 시(時)는 모르셔도 괜찮아요.</p>
+
+    <div class="card">
+      <div class="field">
+        <label>이름</label>
+        <input type="text" id="recipientName" value="김지훈" />
+      </div>
+      <div class="field">
+        <label>생년월일 <span class="hint">양력</span></label>
+        <input type="date" id="recipientBirth" value="1989-07-15" />
+      </div>
+      <div class="field">
+        <label>관계 거리</label>
+        <div class="chip-group" id="relationChips">
+          <div class="chip selected" data-val="same-team">같은 팀</div>
+          <div class="chip" data-val="adjacent">인접 팀</div>
+          <div class="chip" data-val="rare">거의 안 마주침</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>받는 분의 알 만한 취향 <span class="hint">(2~3개 선택)</span></label>
+        <div class="chip-group" id="prefChips">
+          <div class="chip selected" data-val="coffee">☕ 커피·차</div>
+          <div class="chip" data-val="book">📖 책·문구</div>
+          <div class="chip selected" data-val="wellness">🌿 향·웰니스</div>
+          <div class="chip" data-val="food">🍱 음식</div>
+          <div class="chip" data-val="design">🎨 디자인 소품</div>
+          <div class="chip" data-val="craft">🍷 술·장인</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(2)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(4)">사주 풀어보기 →</button>
+    </div>
+  </section>
+
+  <!-- ========== Screen 4: Card Reveal ========== -->
+  <section class="screen" data-screen="4">
+    <h3>STEP 03 / 06</h3>
+
+    <div class="reveal-stage">
+      <div class="reveal-progress" id="revealStatus">사주를 풀고 있습니다…</div>
+
+      <div class="saju-grid" id="sajuGrid">
+        <div class="saju-cell"><span class="label">時</span><span class="ch">─</span></div>
+        <div class="saju-cell day"><span class="label">日</span><span class="ch">─</span></div>
+        <div class="saju-cell"><span class="label">月</span><span class="ch">─</span></div>
+        <div class="saju-cell"><span class="label">年</span><span class="ch">─</span></div>
+        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+        <div class="saju-cell day"><span class="ch">─</span><span class="yo">일간</span></div>
+        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+        <div class="saju-cell"><span class="ch">─</span><span class="yo">─</span></div>
+      </div>
+
+      <div class="character-reveal" id="characterReveal">
+        <div class="char-illust" id="charIllust">🛠️</div>
+        <div class="char-no" id="charNo">CHARACTER #07 / 32</div>
+        <div class="char-name" id="charName">디버깅 마스터 PM</div>
+        <div class="char-sub" id="charSub">산처럼 안정적이지만, 결과를 끊임없이 뽑는 시니어</div>
+      </div>
+
+      <div class="meaning-card" id="meaningCard">
+        <div class="meaning-eyebrow">올해 김지훈 님의 한 줄</div>
+        <div class="meaning-headline" id="meaningHeadline">
+          올해 지훈 님 안에서 ‘한 박자 쉬고 싶은 마음’과 ‘새로 피우고 싶은 마음’이 같이 자랍니다.
+        </div>
+        <div class="meaning-body" id="meaningBody">
+          오랜 시간 같은 자리에서 단단하게 쌓아 올린 사람의 사주에, 올해는 ‘물(水)’이 들어와 잠시 흐를 시간이 필요한 운입니다. 큰 결정을 서두를 때가 아니라, 차 한 잔 같이 마실 수 있는 사람과 잠깐 멈출 시기예요.
+        </div>
+        <div class="meaning-tail" id="meaningTail">
+          이 흐름에 어울리는 선물 카테고리: <strong>차·티 세트 · 디퓨저 · 향수</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="revealNav" style="display: none;">
+      <button class="btn ghost" onclick="goTo(3)">← 다시 입력</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(5)">어울리는 선물 보기 →</button>
+    </div>
+  </section>
+
+  <!-- ========== Screen 5: Product Selection ========== -->
+  <section class="screen" data-screen="5">
+    <h3>STEP 04 / 06</h3>
+    <h2 id="productHead">차·티 세트 카테고리에서 골라드렸어요</h2>
+    <p id="productLead">‘잠시 멈춰 차 한 잔’이라는 의미와 자연스러운 3가지. 가격대는 1만 원대 후반~3만 원으로 잡았습니다.</p>
+
+    <div class="product-list" id="productList">
+      <!-- products inserted by JS -->
+    </div>
+
+    <h3 style="margin-top: 32px;">패키지 선택</h3>
+    <div class="package-grid" id="packageGrid">
+      <div class="package" data-pkg="light" onclick="selectPackage('light')">
+        <div class="pkg-name">LIGHT</div>
+        <div class="pkg-price" id="pkgLightPrice">15,000원</div>
+        <div class="pkg-detail">선물 + 디지털 카드</div>
+      </div>
+      <div class="package selected" data-pkg="standard" onclick="selectPackage('standard')">
+        <div class="pkg-name">STANDARD ⭐</div>
+        <div class="pkg-price" id="pkgStandardPrice">27,000원</div>
+        <div class="pkg-detail">선물 + 풀 의미 콘텐츠</div>
+      </div>
+      <div class="package" data-pkg="premium" onclick="selectPackage('premium')">
+        <div class="pkg-name">PREMIUM</div>
+        <div class="pkg-price" id="pkgPremiumPrice">45,000원</div>
+        <div class="pkg-detail">선물 + 종이 카드 동봉</div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(4)">← 카드 다시 보기</button>
+      <button class="btn primary" style="flex: 2;" onclick="goTo(6)">결제하기 →</button>
+    </div>
+  </section>
+
+  <!-- ========== Screen 6: Checkout ========== -->
+  <section class="screen" data-screen="6">
+    <h3>STEP 05 / 06</h3>
+    <h2>결제 확인</h2>
+    <p>김지훈 님에게 의미 있는 한 가지를 보내기 직전입니다.</p>
+
+    <div class="card card-emph">
+      <h3>받는 분</h3>
+      <p style="font-size: 17px; color: var(--ink); margin-bottom: 18px;"><strong id="checkoutRecipient">김지훈 (같은 팀)</strong> · 모레 도착</p>
+
+      <h3>의미 카드 한 줄</h3>
+      <p style="font-size: 16px; font-style: italic; color: var(--ink); margin-bottom: 18px;" id="checkoutMeaning">"올해 지훈 님은 잠시 흐를 시간이 필요한 운입니다."</p>
+
+      <h3>선물</h3>
+      <p style="font-size: 17px; color: var(--ink); margin-bottom: 0;" id="checkoutProduct">다즐링 우롱 4종 시그니처 세트</p>
+    </div>
+
+    <div class="summary">
+      <div class="summary-row"><span>선물 가격</span><span id="sumProduct">22,000원</span></div>
+      <div class="summary-row"><span>의미 콘텐츠 fee</span><span id="sumFee">7,000원</span></div>
+      <div class="summary-row"><span>디지털 카드</span><span>포함</span></div>
+      <div class="summary-row total"><span>합계</span><span id="sumTotal">29,000원</span></div>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost" onclick="goTo(5)">← 이전</button>
+      <button class="btn primary" style="flex: 2;" onclick="completePay()">Toss로 결제하기 →</button>
+    </div>
+  </section>
+
+  <!-- ========== Screen 7: Done + Dogam ========== -->
+  <section class="screen" data-screen="7">
+    <h3>STEP 06 / 06 · DONE</h3>
+
+    <div class="done">
+      <div class="done-icon">🎁</div>
+      <h1 style="font-size: 32px;">발송됐어요.</h1>
+      <p class="lead">김지훈 님이 모레 오전, 의미 카드와 선물을 함께 받게 됩니다.</p>
+
+      <div class="dogam-card">
+        <h3 style="margin-bottom: 4px;">친구 도감</h3>
+        <p style="font-size: 13px; color: var(--ink-faint); margin-bottom: 12px;">선물할수록 동료들의 캐릭터가 모입니다.</p>
+        <div class="dogam-grid">
+          <div class="dogam-slot filled">🛠️</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+          <div class="dogam-slot">?</div>
+        </div>
+        <p class="dogam-status">현재 <b>1 / 32</b> · 다음 <b>3명</b> 더 모으면 Bronze 보상이 unlock됩니다.</p>
+      </div>
+
+      <p style="font-size: 14px; color: var(--ink-faint); max-width: 420px; margin: 0 auto;">
+        💡 다음에 또 보낼 동료가 생각나시나요?<br />아직 도감에 없는 캐릭터의 동료를 떠올려보세요.
+      </p>
+    </div>
+
+    <div class="nav">
+      <button class="btn ghost full" onclick="resetDemo()">처음부터 다시 보기 ↻</button>
+    </div>
+
+    <div class="footer-meta">
+      기프타로 데모 · 회사 동료 D-2 시나리오 · 동양식 모드 first
+    </div>
+  </section>
+
+</div>
+
+<script>
+  /* ============================
+     상태
+     ============================ */
+  let currentScreen = 1;
+  let selectedMode = 'east';
+  let selectedRelation = 'same-team';
+  let selectedPackage = 'standard';
+  let selectedProductIdx = 0;
+  let currentReading = null;
+
+  /* ============================
+     5행 매핑 (간단 버전 — 실제는 만세력 라이브러리)
+     ============================ */
+  const READINGS = {
+    '水': {
+      char: { name: '잔잔한 흐름의 PM', illust: '💧', no: '#11 / 32', sub: '깊이 가라앉히고 멀리 보는 시니어' },
+      headline: '올해 ${name} 님 안에서 ‘잠시 흐를 시간’이 자라고 있어요.',
+      body: '단단하게 쌓아온 사람의 사주에, 올해는 비가 한 번 깊게 들어오는 운입니다. 큰 결정을 서두를 때가 아니라, 평소 가까웠지만 한동안 못 본 사람과 차 한 잔 마실 시기예요.',
+      cat: '차·티 세트 · 디퓨저 · 향수',
+      headTitle: '차·티 세트 카테고리',
+      lead: '‘잠시 멈춰 차 한 잔’의 의미와 자연스러운 3가지.',
+      products: [
+        { emoji: '🍵', name: '다즐링 우롱 4종 시그니처 세트', desc: '봄·여름·가을·겨울 차 4종', meta: '발송 1일 · 만족도 4.7', price: 22000 },
+        { emoji: '🌿', name: '쟈딘드빠리 머스크 디퓨저 100ml', desc: '잔잔하고 클린한 우드 노트', meta: '발송 1일 · 만족도 4.6', price: 28000 },
+        { emoji: '🫖', name: '오설록 한라산 녹차 선물세트', desc: '국내산 우전 차 + 다구', meta: '발송 1일 · 만족도 4.8', price: 24000 },
+      ]
+    },
+    '木': {
+      char: { name: '봄나무 디자이너', illust: '🌱', no: '#04 / 32', sub: '안에서 무언가 자라나기를 기다리는 시니어' },
+      headline: '올해 ${name} 님 안에서 ‘새 가지’가 자라기 시작합니다.',
+      body: '안에 잠재된 표현이 봄볕에 닿아 자라나는 운입니다. 큰 무언가 한 번이 아니라, 매일 손에 쥘 수 있는 작고 단단한 도구가 그 표현을 도와줍니다.',
+      cat: '만년필 · 가죽 노트 · 식물 · 향',
+      headTitle: '문구·식물 카테고리',
+      lead: '‘작지만 매일 손에 쥐는 도구’ 컨셉으로 3가지.',
+      products: [
+        { emoji: '✒️', name: '라미 사파리 만년필 + 가죽 노트', desc: '독일 디자인 클래식', meta: '발송 1일 · 만족도 4.8', price: 24800 },
+        { emoji: '🪴', name: '미니 올리브 분재 + 도자기 화분', desc: '책상 위에 어울리는 사이즈', meta: '발송 2일 · 만족도 4.5', price: 19800 },
+        { emoji: '🕯️', name: '조 말론 우드세이지 캔들', desc: '맑고 청량한 시그니처', meta: '발송 1일 · 만족도 4.7', price: 32000 },
+      ]
+    },
+    '火': {
+      char: { name: '불꽃 그로스 사냥꾼', illust: '🔥', no: '#19 / 32', sub: '안에서 새로 표현하고 싶은 에너지가 차오르는 시니어' },
+      headline: '올해 ${name} 님 마음에 ‘불이 한 번 더 필요한’ 시기예요.',
+      body: '본인 안에 표현되어야 할 에너지가 잠깐 가라앉아 있던 시간이 길었어요. 따뜻하고 환한 무언가가 옆에 있으면, 다시 자기 색으로 빛나기 좋은 운입니다.',
+      cat: '향초 · 홍삼 · 와인 · 핫팩',
+      headTitle: '따뜻한 활력 카테고리',
+      lead: '‘마음에 한 번 더 불을 지피는’ 의미와 자연스러운 3가지.',
+      products: [
+        { emoji: '🕯️', name: '딥티크 베이스 캔들 190g', desc: '따뜻한 우디 노트', meta: '발송 1일 · 만족도 4.9', price: 32000 },
+        { emoji: '🍷', name: '이탈리아 키안티 미니 세트', desc: '375ml 2병 + 글라스', meta: '발송 2일 · 만족도 4.6', price: 28000 },
+        { emoji: '🫖', name: '정관장 홍삼정 에브리타임 30포', desc: '데일리 활력 보완', meta: '발송 1일 · 만족도 4.7', price: 26000 },
+      ]
+    },
+    '土': {
+      char: { name: '단단한 산의 EM', illust: '⛰️', no: '#23 / 32', sub: '자기 자리를 뿌리내리는 시니어' },
+      headline: '올해 ${name} 님은 ‘자기 자리를 단단히 할’ 시기예요.',
+      body: '오래 다져온 흙 위에 무언가 정착시키는 운. 새로운 것을 들이기보다 평소 자리에 따뜻한 무게감을 더해주는 한 가지가 어울립니다.',
+      cat: '도자기·그릇 · 요리책 · 화분',
+      headTitle: '안정·정착 카테고리',
+      lead: '‘자리에 따뜻한 무게감을 더하는’ 컨셉으로 3가지.',
+      products: [
+        { emoji: '🍽️', name: '광주요 한정판 사발 페어', desc: '한국 도예 명가의 시그니처', meta: '발송 2일 · 만족도 4.8', price: 32000 },
+        { emoji: '🪴', name: '폴리쉬 머그 + 화분 세트', desc: '책상 위 작은 정원', meta: '발송 1일 · 만족도 4.6', price: 22000 },
+        { emoji: '📕', name: '이연복 셰프 가정식 레시피북', desc: '저녁 한 끼의 단단함', meta: '발송 1일 · 만족도 4.5', price: 24000 },
+      ]
+    },
+    '金': {
+      char: { name: '리팩토링 수도승', illust: '✨', no: '#15 / 32', sub: '끊을 것을 끊는 결단의 시니어' },
+      headline: '올해 ${name} 님은 ‘끊을 것을 끊을’ 시기예요.',
+      body: '오래 미뤄둔 것들을 정리하고 단단한 미감으로 새로 자리를 잡는 운. 작고 예리한 도구가 그 결단을 도와줍니다.',
+      cat: '만년필 · 액세서리 · 핸드드립',
+      headTitle: '결단·미감 카테고리',
+      lead: '‘작고 예리한 도구’ 컨셉으로 3가지.',
+      products: [
+        { emoji: '✒️', name: '파카 듀오폴드 미니 볼펜', desc: '클래식 미감의 작은 결단', meta: '발송 1일 · 만족도 4.7', price: 32000 },
+        { emoji: '⌚', name: '다니엘 웰링턴 미니멀 시계 스트랩', desc: '교체 가능한 가죽 스트랩', meta: '발송 1일 · 만족도 4.5', price: 22000 },
+        { emoji: '☕', name: '하리오 V60 핸드드립 4종 세트', desc: '아침을 다듬는 도구', meta: '발송 1일 · 만족도 4.8', price: 26000 },
+      ]
+    },
+  };
+
+  function pickWuxing(birthdate) {
+    const m = parseInt(birthdate.split('-')[1]);
+    const d = parseInt(birthdate.split('-')[2]);
+    // 매우 단순화한 매핑 (실제는 만세력 일주). 시연용.
+    if (m === 12 || m === 1) return '水';
+    if (m === 2 || m === 3 || m === 4) return '木';
+    if (m === 5 || m === 6 || m === 7) return d % 2 === 0 ? '水' : '火';
+    if (m === 8) return '土';
+    if (m === 9 || m === 10 || m === 11) return '金';
+    return '木';
+  }
+
+  function getSajuChars(birthdate) {
+    // 시연용 가공. 실제는 만세력 변환.
+    const wuxing = pickWuxing(birthdate);
+    const map = {
+      '水': { time: '甲', day: '壬', month: '癸', year: '辛', timeLand: '寅', dayLand: '申', monthLand: '亥', yearLand: '巳' },
+      '木': { time: '丙', day: '甲', month: '丁', year: '戊', timeLand: '寅', dayLand: '午', monthLand: '卯', yearLand: '辰' },
+      '火': { time: '甲', day: '戊', month: '癸', year: '辛', timeLand: '寅', dayLand: '申', monthLand: '巳', yearLand: '未' },
+      '土': { time: '丙', day: '己', month: '癸', year: '庚', timeLand: '寅', dayLand: '丑', monthLand: '未', yearLand: '申' },
+      '金': { time: '甲', day: '庚', month: '己', year: '丁', timeLand: '申', dayLand: '辰', monthLand: '酉', yearLand: '巳' },
+    };
+    return map[wuxing];
+  }
+
+  /* ============================
+     화면 전환
+     ============================ */
+  function goTo(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelector('.screen[data-screen="' + n + '"]').classList.add('active');
+    currentScreen = n;
+    const total = 7;
+    document.getElementById('progress').style.width = (((n - 1) / (total - 1)) * 100) + '%';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (n === 4) startReveal();
+    if (n === 5) renderProducts();
+    if (n === 6) renderCheckout();
+  }
+
+  /* ============================
+     mode 선택
+     ============================ */
+  function selectMode(mode, el) {
+    selectedMode = mode;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    const ind = document.getElementById('modeIndicator');
+    ind.textContent = mode === 'east' ? '🀄 동양식' : '✨ 서양식';
+    ind.classList.add('show');
+    setTimeout(() => ind.classList.remove('show'), 1800);
+  }
+
+  /* ============================
+     chip 선택
+     ============================ */
+  document.getElementById('relationChips').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('#relationChips .chip').forEach(c => c.classList.remove('selected'));
+    e.target.classList.add('selected');
+    selectedRelation = e.target.dataset.val;
+  });
+  document.getElementById('prefChips').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('chip')) return;
+    e.target.classList.toggle('selected');
+  });
+
+  /* ============================
+     카드 reveal 시퀀스
+     ============================ */
+  function startReveal() {
+    const name = document.getElementById('recipientName').value || '받는 분';
+    const birth = document.getElementById('recipientBirth').value || '1989-07-15';
+    const wuxing = pickWuxing(birth);
+    const reading = JSON.parse(JSON.stringify(READINGS[wuxing]));
+    reading.headline = reading.headline.replace('${name}', name);
+    reading.body = reading.body.replace('${name}', name);
+    currentReading = { wuxing, name, ...reading };
+
+    // saju 글자 셋업
+    const chars = getSajuChars(birth);
+    const cells = document.querySelectorAll('#sajuGrid .saju-cell');
+    cells.forEach(c => c.classList.remove('show'));
+    const tenLabels = ['편관', '일간', '정재', '상관'];
+    const charSeq = [chars.time, chars.day, chars.month, chars.year, chars.timeLand, chars.dayLand, chars.monthLand, chars.yearLand];
+    const yoSeq = ['편관', '일간', '정재', '상관', '식신', '편인', '비견', '겁재'];
+
+    document.getElementById('revealStatus').textContent = name + ' 님의 사주를 풀고 있습니다…';
+
+    cells.forEach((cell, i) => {
+      const ch = cell.querySelector('.ch');
+      ch.textContent = '─';
+      const yo = cell.querySelector('.yo');
+      if (yo) yo.textContent = yoSeq[i] || '';
+    });
+
+    document.getElementById('characterReveal').classList.remove('show');
+    document.getElementById('meaningCard').classList.remove('show');
+    document.getElementById('revealNav').style.display = 'none';
+
+    // 한 글자씩 reveal
+    cells.forEach((cell, i) => {
+      setTimeout(() => {
+        const ch = cell.querySelector('.ch');
+        ch.textContent = charSeq[i];
+        cell.classList.add('show');
+      }, 400 + i * 280);
+    });
+
+    // 캐릭터 reveal
+    setTimeout(() => {
+      document.getElementById('revealStatus').textContent = name + ' 님의 캐릭터가 드러납니다.';
+      document.getElementById('charIllust').textContent = reading.char.illust;
+      document.getElementById('charName').textContent = reading.char.name;
+      document.getElementById('charNo').textContent = 'CHARACTER ' + reading.char.no;
+      document.getElementById('charSub').textContent = reading.char.sub;
+      document.getElementById('characterReveal').classList.add('show');
+    }, 3200);
+
+    // 의미 카드 reveal
+    setTimeout(() => {
+      document.getElementById('revealStatus').textContent = '올해 ' + name + ' 님의 한 줄.';
+      document.getElementById('meaningHeadline').textContent = reading.headline;
+      document.getElementById('meaningBody').textContent = reading.body;
+      document.getElementById('meaningTail').innerHTML = '이 흐름에 어울리는 선물 카테고리: <strong>' + reading.cat + '</strong>';
+      document.getElementById('meaningCard').classList.add('show');
+      document.getElementById('revealNav').style.display = 'flex';
+    }, 4600);
+  }
+
+  /* ============================
+     상품 list 렌더
+     ============================ */
+  function renderProducts() {
+    if (!currentReading) return;
+    document.getElementById('productHead').textContent = currentReading.headTitle;
+    document.getElementById('productLead').textContent = currentReading.lead;
+
+    const list = document.getElementById('productList');
+    list.innerHTML = '';
+    currentReading.products.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'product' + (i === selectedProductIdx ? ' selected' : '');
+      div.innerHTML = `
+        <div class="product-img">${p.emoji}</div>
+        <div class="product-info">
+          <div class="product-name">${p.name}</div>
+          <div class="product-desc">${p.desc}</div>
+          <div class="product-meta">${p.meta}</div>
+        </div>
+        <div class="product-price">${p.price.toLocaleString()}원</div>
+      `;
+      div.addEventListener('click', () => {
+        selectedProductIdx = i;
+        renderProducts();
+        renderPackagePrices();
+      });
+      list.appendChild(div);
+    });
+    renderPackagePrices();
+  }
+
+  function renderPackagePrices() {
+    if (!currentReading) return;
+    const product = currentReading.products[selectedProductIdx];
+    const price = product.price;
+    document.getElementById('pkgLightPrice').textContent = (price + 5000).toLocaleString() + '원';
+    document.getElementById('pkgStandardPrice').textContent = (price + 7000).toLocaleString() + '원';
+    document.getElementById('pkgPremiumPrice').textContent = (price + 15000).toLocaleString() + '원';
+  }
+
+  function selectPackage(pkg) {
+    selectedPackage = pkg;
+    document.querySelectorAll('.package').forEach(p => p.classList.remove('selected'));
+    document.querySelector('.package[data-pkg="' + pkg + '"]').classList.add('selected');
+  }
+
+  /* ============================
+     체크아웃 렌더
+     ============================ */
+  function renderCheckout() {
+    if (!currentReading) return;
+    const product = currentReading.products[selectedProductIdx];
+    const name = document.getElementById('recipientName').value;
+    const relMap = { 'same-team': '같은 팀', 'adjacent': '인접 팀', 'rare': '거의 안 마주침' };
+    const fee = selectedPackage === 'light' ? 5000 : (selectedPackage === 'premium' ? 15000 : 7000);
+
+    document.getElementById('checkoutRecipient').textContent = name + ' (' + relMap[selectedRelation] + ')';
+    document.getElementById('checkoutMeaning').textContent = '"' + currentReading.headline + '"';
+    document.getElementById('checkoutProduct').textContent = product.name;
+    document.getElementById('sumProduct').textContent = product.price.toLocaleString() + '원';
+    document.getElementById('sumFee').textContent = fee.toLocaleString() + '원';
+    document.getElementById('sumTotal').textContent = (product.price + fee).toLocaleString() + '원';
+  }
+
+  function completePay() {
+    goTo(7);
+  }
+
+  function resetDemo() {
+    currentScreen = 1;
+    selectedMode = 'east';
+    selectedRelation = 'same-team';
+    selectedPackage = 'standard';
+    selectedProductIdx = 0;
+    currentReading = null;
+    goTo(1);
+  }
+
+  // 초기 progress
+  document.getElementById('progress').style.width = '0%';
+</script>
+
+</body>
+</html>
