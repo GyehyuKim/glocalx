@@ -590,8 +590,12 @@ const cases = [
 ];
 
 const addedClauses = new Set();
+let activeToken = null;
 
 function generateClause(idx) {
+  if (activeToken) activeToken.cancelled = true;
+  const token = { cancelled: false };
+  activeToken = token;
   const c = cases[idx];
   const output = document.getElementById('ai-output');
   const btns = document.querySelectorAll('.case-btn');
@@ -601,6 +605,7 @@ function generateClause(idx) {
   output.innerHTML = '<div class="ai-thinking">조항 생성 중...</div>';
 
   setTimeout(() => {
+    if (token.cancelled) return;
     output.innerHTML = '';
 
     // 제목 행
@@ -625,6 +630,7 @@ function generateClause(idx) {
     cursor.className = 'cursor';
 
     function type() {
+      if (token.cancelled) { cursor.remove(); return; }
       if (i < chars.length) {
         const ch = chars[i];
         if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
