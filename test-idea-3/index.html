@@ -237,6 +237,13 @@
   .clause-ko { font-weight: 600; color: var(--navy); }
   .clause-en { color: var(--sub); font-size: 11px; font-family: 'Inter', sans-serif; margin-top: 4px; }
   .cursor { display: inline-block; width: 2px; height: 14px; background: var(--navy); margin-left: 1px; animation: blink 0.7s infinite; vertical-align: middle; }
+  .ai-thinking { color: var(--sub); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .ai-thinking::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--navy); border-radius: 50%; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.2} 50%{opacity:1} }
+  .clause-article-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .clause-ko-body { font-size: 13px; line-height: 1.85; color: var(--text); }
+  .clause-en-block { margin-top: 14px; padding: 10px 14px; background: #f5f7fa; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 11px; color: var(--sub); line-height: 1.7; transition: opacity 0.5s; }
+  .clause-en-label { font-size: 9px; font-weight: 700; color: #aaa; letter-spacing: 1px; margin-bottom: 4px; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   .clause-added {
     background: var(--accent);
@@ -591,37 +598,64 @@ function generateClause(idx) {
   btns.forEach(b => b.classList.remove('active'));
   btns[idx].classList.add('active');
   output.classList.add('generating');
-  output.innerHTML = '';
+  output.innerHTML = '<div class="ai-thinking">조항 생성 중...</div>';
 
-  const fullText = `📋 분쟁 케이스: ${c.icon} ${c.title}\n\n${c.ko}\n\n[EN] ${c.en}`;
-  const chars = Array.from(fullText);
-  let i = 0;
-  const cursor = document.createElement('span');
-  cursor.className = 'cursor';
+  setTimeout(() => {
+    output.innerHTML = '';
 
-  function type() {
-    if (i < chars.length) {
-      const ch = chars[i];
-      if (ch === '\n') {
-        output.appendChild(document.createElement('br'));
+    // 제목 행
+    const koLines = c.ko.split('\n');
+    const titleLine = koLines[0];
+    const bodyLines = koLines.slice(1);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'clause-article-title';
+    titleEl.textContent = titleLine;
+    output.appendChild(titleEl);
+
+    // 본문 타이프라이터
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'clause-ko-body';
+    output.appendChild(bodyEl);
+
+    const bodyText = bodyLines.join('\n');
+    const chars = Array.from(bodyText);
+    let i = 0;
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+
+    function type() {
+      if (i < chars.length) {
+        const ch = chars[i];
+        if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+        if (ch === '\n') {
+          bodyEl.appendChild(document.createElement('br'));
+        } else {
+          bodyEl.appendChild(document.createTextNode(ch));
+        }
+        bodyEl.appendChild(cursor);
+        i++;
+        setTimeout(type, ch === '\n' ? 50 : 14);
       } else {
-        const t = document.createTextNode(ch);
-        output.appendChild(t);
-      }
-      if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
-      output.appendChild(cursor);
-      i++;
-      setTimeout(type, ch === '\n' ? 40 : 15);
-    } else {
-      if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
-      output.classList.remove('generating');
-      if (!addedClauses.has(idx)) {
-        addedClauses.add(idx);
-        addClauseToContract(c.summary, idx);
+        cursor.remove();
+        output.classList.remove('generating');
+
+        // 영문 번역 fade-in
+        const enBlock = document.createElement('div');
+        enBlock.className = 'clause-en-block';
+        enBlock.style.opacity = '0';
+        enBlock.innerHTML = `<div class="clause-en-label">EN</div>${c.en.replace(/\n/g, '<br>')}`;
+        output.appendChild(enBlock);
+        requestAnimationFrame(() => { enBlock.style.opacity = '1'; });
+
+        if (!addedClauses.has(idx)) {
+          addedClauses.add(idx);
+          addClauseToContract(c.summary, idx);
+        }
       }
     }
-  }
-  type();
+    type();
+  }, 500);
 }
 
 function addClauseToContract(summary, idx) {
