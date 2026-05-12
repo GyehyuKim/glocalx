@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a course project folder for **BIZ.69911 — IT경영 특수논제: AI 기반 비즈니스 진화, 전략 및 실습** (KAIST IMMS, Spring 2026, instructor: 이지수).
 
-The project is **GlocalX** — a service that automates multilingual Google Business Profile (GBP) content for Korean SMB restaurants targeting foreign tourists. Primary deliverables live under `30. Deliverables/` (business-plan.html, gbp-guide.html) and `docs/` (MANIFEST, WHYTREE, PREMORTEM).
+The project is **ReadingGo** — 독서습관 앱계의 Duolingo. 독서 + 게이미피케이션(스트릭, XP, 소셜)으로 매일 읽게 만드는 앱. 소스 문서는 `docs/` (MANIFESTO, whytree, pitch). 데모 엔트리포인트: `docs/readinggo/index.html` (예정).
 
 ## Governance — MANDATORY
 
 Before making any git/PR operation, read and follow **[`CONTRIBUTING.md`](./CONTRIBUTING.md)**. It is the single source of truth for:
 
-- Branch naming (`<owner>/<topic-slug>`, owner ∈ {gyehyu, gyeongmun, seungwon, yoonji})
+- Branch naming (`<owner>/<topic-slug>`, owner ∈ {gyehyu, seungwon, yunji})
 - PR size and lifetime rules
 - Conventional Commits message format
 - Forbidden operations (direct push to main, --force, --no-verify, committing secrets)
@@ -22,6 +22,13 @@ Before making any git/PR operation, read and follow **[`CONTRIBUTING.md`](./CONT
 **Priority on conflict**: `CONTRIBUTING.md` > `CLAUDE.md` > `AGENTS.md` > other docs.
 
 Other agents (Cursor, Continue, Aider) should enter via [`AGENTS.md`](./AGENTS.md) — same governance, same rules.
+
+## Active Workspace Boundaries
+
+- `docs/` — MANIFESTO, whytree, pitch, GitHub Pages 데모
+- `old/` — 이전 아이디어 아카이브 (기프타로, GosiOps, 트렌드 패치노트, 찍먹). 읽기 전용.
+
+새 작업은 `docs/` 에만 한다. `old/` 는 레퍼런스 용도로만 열람.
 
 ## Google Drive environment
 
@@ -100,11 +107,9 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 
 3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 수행. LLM이 직접 머지하지 않고 PR 생성까지만 한다.
 
-## Deploy Configuration
+## Pages / Demo
 
-Platform: Hugging Face Spaces
-Production URL: https://huggingface.co/spaces/Gyehyu2726/glocalx-demo
-App directory: 40. Development/
-Deploy workflow: .github/workflows/deploy-hf-spaces.yml
-Trigger: push to main (paths: 40. Development/**, workflow file)
-Secret required: HF_TOKEN (GitHub repo secret — HF write token for Gyehyu2726/glocalx-demo)
+GitHub Pages serves from `main /docs`.
+
+- Demo URL: `https://gyehyukim.github.io/glocalx/readinggo/` (예정)
+- Demo entrypoint: `docs/readinggo/index.html` (예정)
