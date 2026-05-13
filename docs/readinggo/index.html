@@ -9,101 +9,89 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  body { background: #e5e7eb; display: flex; justify-content: center; min-height: 100vh; }
-  #root { width: 100%; max-width: 390px; min-height: 100vh; }
-  ::-webkit-scrollbar { width: 0; }
+  body { background:#e5e7eb; display:flex; justify-content:center; min-height:100vh; margin:0; }
+  #root { width:100%; max-width:390px; min-height:100vh; }
+  ::-webkit-scrollbar { width:0; }
+  @keyframes slideUp   { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes popIn     { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+  @keyframes bounce    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes sparkle   { 0%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1.3)} 100%{opacity:0;transform:scale(0)} }
+  @keyframes confetti  { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(120px) rotate(720deg);opacity:0} }
+  @keyframes glow      { 0%,100%{box-shadow:0 0 8px 2px rgba(34,197,94,0.4)} 50%{box-shadow:0 0 20px 6px rgba(34,197,94,0.8)} }
+  .sparrow-bounce { animation: bounce 1s ease-in-out infinite; }
+  .node-glow      { animation: glow 2s ease-in-out infinite; }
+  .line-clamp-2   { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .path-connector { position:absolute; width:4px; background:#d1fae5; border-radius:2px; left:50%; transform:translateX(-50%); }
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
+// ── localStorage ──────────────────────────────────────────────────────────────
 const LS = {
-  get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
-  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  get:(k,d)=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d} },
+  set:(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch{} },
 };
 
-// ── Initial data ──────────────────────────────────────────────────────────────
+// ── Seed data ─────────────────────────────────────────────────────────────────
 const INIT_USER = {
-  name: "리리",
-  level: 3,
-  xp: 240,
-  xpMax: 500,
-  streak: 7,
-  currentBook: { title: "어린 왕자", author: "생텍쥐페리", totalPages: 160, currentPage: 72 },
-  sessions: 14,
+  name:"리리", level:3, xp:240, xpMax:500, streak:7,
+  currentBook:{ id:1, title:"어린 왕자", author:"생텍쥐페리", totalPages:160, currentPage:72 },
+  sessions: [
+    { id:1, page:10, sentence:"\"별을 바라보렴. 내 별이 어디 있는지 알 수 없을 테니까.\"", date:"5/7" },
+    { id:2, page:22, sentence:"\"길들인다는 건, 관계를 맺는다는 뜻이야.\"", date:"5/8" },
+    { id:3, page:35, sentence:"\"사막이 아름다운 건 어딘가에 우물을 숨기고 있기 때문이야.\"", date:"5/9" },
+    { id:4, page:48, sentence:"\"사람들은 급행열차를 타지만 무엇을 찾는지 몰라.\"", date:"5/10" },
+    { id:5, page:57, sentence:"\"중요한 건 눈에 보이지 않아. 마음으로 보아야 해.\"", date:"5/11" },
+    { id:6, page:63, sentence:"\"어른들은 숫자를 좋아해.\"", date:"5/12" },
+    { id:7, page:72, sentence:"\"나는 책임이 있어. 장미에 대해.\"", date:"5/13" },
+  ],
 };
-
 const INIT_FRIENDS = [
-  { id: 1, name: "계휴", stage: 4, isLit: true, sentence: "\"별은 아름답다, 모래들이 아름답듯이.\"" },
-  { id: 2, name: "승원", stage: 2, isLit: false, sentence: "\"사막이 아름다운 건 어딘가에 우물을 숨기고 있기 때문이야.\"" },
-  { id: 3, name: "지수", stage: 5, isLit: true, sentence: "\"중요한 건 눈에 보이지 않아.\"" },
-  { id: 4, name: "민준", stage: 1, isLit: false, sentence: "" },
+  { id:1, name:"계휴",  stage:4, isLit:true,  sentence:"\"별은 아름답다, 모래들이 아름답듯이.\"" },
+  { id:2, name:"승원",  stage:2, isLit:false, sentence:"\"사막이 아름다운 건 어딘가에 우물을 숨기고 있기 때문이야.\"" },
+  { id:3, name:"지수",  stage:5, isLit:true,  sentence:"\"중요한 건 눈에 보이지 않아.\"" },
+  { id:4, name:"민준",  stage:1, isLit:false, sentence:"" },
 ];
-
 const INIT_FEED = [
-  { id: 1, user: "계휴", book: "어린 왕자", sentence: "\"별은 아름답다, 모래들이 아름답듯이.\"", time: "2시간 전", claps: 3 },
-  { id: 2, user: "지수", book: "어린 왕자", sentence: "\"중요한 건 눈에 보이지 않아. 마음으로 보아야 해.\"", time: "5시간 전", claps: 7 },
-  { id: 3, user: "리리", book: "어린 왕자", sentence: "\"길들인다는 건, 관계를 맺는다는 뜻이야.\"", time: "어제", claps: 5 },
+  { id:1, user:"계휴", book:"어린 왕자", sentence:"\"별은 아름답다, 모래들이 아름답듯이.\"", time:"2시간 전", claps:3 },
+  { id:2, user:"지수", book:"어린 왕자", sentence:"\"중요한 건 눈에 보이지 않아. 마음으로 보아야 해.\"", time:"5시간 전", claps:7 },
+  { id:3, user:"리리", book:"어린 왕자", sentence:"\"길들인다는 건, 관계를 맺는다는 뜻이야.\"", time:"어제", claps:5 },
+];
+const INIT_BOOKS = [
+  { id:1, title:"어린 왕자",    author:"생텍쥐페리",      cover:"📖", totalPages:160 },
+  { id:2, title:"데미안",       author:"헤르만 헤세",      cover:"📗", totalPages:228 },
+  { id:3, title:"노르웨이의 숲", author:"무라카미 하루키", cover:"📘", totalPages:308 },
 ];
 
-const INIT_BOOKS = [
-  { id: 1, title: "어린 왕자", author: "생텍쥐페리", cover: "📖", totalPages: 160 },
-  { id: 2, title: "데미안", author: "헤르만 헤세", cover: "📗", totalPages: 228 },
-  { id: 3, title: "노르웨이의 숲", author: "무라카미 하루키", cover: "📘", totalPages: 308 },
+// ── Nest stage config ─────────────────────────────────────────────────────────
+const NEST_STAGES = [
+  { max:20,  name:"기초 공사",   emoji:"🪵", color:"#9ca3af", bg:"#f3f4f6", desc:"나뭇가지 몇 개의 소박한 시작" },
+  { max:50,  name:"포근한 둥지", emoji:"🪹", color:"#d97706", bg:"#fef3c7", desc:"비를 피할 수 있는 아늑한 둥지" },
+  { max:80,  name:"튼튼한 나무집", emoji:"🏠", color:"#16a34a", bg:"#dcfce7", desc:"지붕이 생긴 안정적인 집" },
+  { max:99,  name:"고급 저택",   emoji:"🏡", color:"#2563eb", bg:"#dbeafe", desc:"정원과 조명이 있는 럭셔리 저택" },
+  { max:100, name:"리딩 팰리스", emoji:"🏰", color:"#9333ea", bg:"#f3e8ff", desc:"완독 축하 파티가 열리는 궁전!" },
 ];
+const getNestStage = pct => NEST_STAGES.find(s => pct <= s.max) || NEST_STAGES[4];
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
-const HomeIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
+const Ico = ({ d, size=20, cls="" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cls}>
+    {d}
   </svg>
 );
-const MapIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-    <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-  </svg>
-);
-const UsersIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </svg>
-);
-const SearchIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="11" cy="11" r="8"/>
-    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
-const CheckCircleIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-    <polyline points="22 4 12 14.01 9 11.01"/>
-  </svg>
-);
-const SendIcon = ({ size = 16, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="22" y1="2" x2="11" y2="13"/>
-    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-  </svg>
-);
-const XIcon = ({ size = 20, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
+const HomeIcon   = ({s=20,c=""}) => <Ico size={s} cls={c} d={<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>} />;
+const MapIcon    = ({s=20,c=""}) => <Ico size={s} cls={c} d={<><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></>} />;
+const UsersIcon  = ({s=20,c=""}) => <Ico size={s} cls={c} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
+const SearchIcon = ({s=20,c=""}) => <Ico size={s} cls={c} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />;
+const XIcon      = ({s=20,c=""}) => <Ico size={s} cls={c} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
 
-// ── Sparrow Mascot ────────────────────────────────────────────────────────────
-const SparrowMascot = ({ size = 60, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
+// ── Sparrow SVG ───────────────────────────────────────────────────────────────
+const Sparrow = ({ size=48, cls="" }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={cls}>
     <circle cx="50" cy="55" r="35" fill="#FDB813"/>
     <circle cx="50" cy="55" r="35" stroke="#854D0E" strokeWidth="2"/>
     <path d="M15 55C15 55 5 45 15 35" stroke="#854D0E" strokeWidth="3" strokeLinecap="round"/>
@@ -115,15 +103,12 @@ const SparrowMascot = ({ size = 60, className = "" }) => (
   </svg>
 );
 
-// ── NestIcon ──────────────────────────────────────────────────────────────────
-const NestIcon = ({ stage, size = 40, isLit = false }) => {
-  const icons = ["🪵", "🪹", "🏠", "🏡", "🏰"];
-  const icon = icons[Math.min(stage - 1, 4)] || "🪵";
+// ── NestIcon (village) ────────────────────────────────────────────────────────
+const NestIcon = ({ stage, size=40, isLit=false }) => {
+  const icons = ["🪵","🪹","🏠","🏡","🏰"];
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      <span style={{ fontSize: size * 0.7, filter: isLit ? "none" : "grayscale(80%)", opacity: isLit ? 1 : 0.5 }}>
-        {icon}
-      </span>
+    <div className="relative inline-flex items-center justify-center" style={{width:size,height:size}}>
+      <span style={{fontSize:size*0.7, filter:isLit?"none":"grayscale(80%)", opacity:isLit?1:0.5}}>{icons[Math.min(stage-1,4)]}</span>
       {isLit && (
         <span className="absolute top-0 right-0 flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"/>
@@ -134,79 +119,258 @@ const NestIcon = ({ stage, size = 40, isLit = false }) => {
   );
 };
 
-// ── NestEvolution ─────────────────────────────────────────────────────────────
-const NestEvolution = ({ percentage }) => {
-  const stages = [
-    { range: [0, 20], name: "기초 공사", color: "bg-gray-400", emoji: "🪵" },
-    { range: [21, 50], name: "포근한 둥지", color: "bg-yellow-400", emoji: "🪹" },
-    { range: [51, 80], name: "튼튼한 나무집", color: "bg-green-500", emoji: "🏠" },
-    { range: [81, 99], name: "고급 저택", color: "bg-blue-500", emoji: "🏡" },
-    { range: [100, 100], name: "리딩 팰리스", color: "bg-purple-500", emoji: "🏰" },
-  ];
-  const current = stages.find(s => percentage <= s.range[1]) || stages[4];
+// ── NestEvolution (compact header card) ──────────────────────────────────────
+const NestHeader = ({ book }) => {
+  if (!book) return null;
+  const pct = Math.round((book.currentPage / book.totalPages) * 100);
+  const stage = getNestStage(pct);
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="text-5xl">{current.emoji}</div>
-      <div className="text-sm font-semibold text-gray-700">{current.name}</div>
-      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-        <div className={`h-3 rounded-full transition-all duration-500 ${current.color}`} style={{ width: `${Math.min(percentage, 100)}%` }}/>
+    <div className="mx-4 mt-3 rounded-2xl p-4 shadow-sm" style={{background:stage.bg}}>
+      <div className="flex items-center gap-3">
+        <span className="text-4xl">{stage.emoji}</span>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm font-bold" style={{color:stage.color}}>{stage.name}</span>
+            <span className="text-xs font-semibold text-gray-500">{pct}%</span>
+          </div>
+          <div className="w-full bg-white/60 rounded-full h-2.5 overflow-hidden">
+            <div className="h-2.5 rounded-full transition-all duration-700"
+              style={{width:`${pct}%`, background:stage.color}} />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">{book.title} · {book.currentPage}/{book.totalPages}p</p>
+        </div>
       </div>
-      <div className="text-xs text-gray-500">{percentage}% 완료</div>
+      {pct < 100 && <p className="text-xs mt-2" style={{color:stage.color}}>{stage.desc}</p>}
+    </div>
+  );
+};
+
+// ── Dynamic Path ──────────────────────────────────────────────────────────────
+// Duolingo-style: completed nodes left/right zigzag, current node shows sparrow
+const DynamicPath = ({ sessions, onRecordClick, todayDone }) => {
+  const pathRef = useRef(null);
+
+  // Node positions: zigzag pattern [left, center-right, right, center-left, ...]
+  const positions = ["15%","55%","75%","35%","15%","55%","75%","35%"];
+  const getPos = idx => positions[idx % positions.length];
+
+  // After render, scroll to current node
+  useEffect(() => {
+    if (pathRef.current) {
+      const current = pathRef.current.querySelector('[data-current="true"]');
+      if (current) current.scrollIntoView({ behavior:"smooth", block:"center" });
+    }
+  }, [sessions.length]);
+
+  const nodes = sessions.map((s,i) => ({ ...s, idx:i, completed:true }));
+  // Add current "next" node
+  const nextIdx = sessions.length;
+
+  return (
+    <div ref={pathRef} className="relative px-4 py-4" style={{minHeight:`${(nextIdx+2)*90}px`}}>
+      {/* SVG connector line */}
+      <svg className="absolute inset-0 w-full pointer-events-none" style={{height:`${(nextIdx+2)*90}px`}} xmlns="http://www.w3.org/2000/svg">
+        {nodes.map((n,i) => {
+          const x1 = parseFloat(getPos(i))+5;
+          const y1 = i*90+44;
+          const x2 = parseFloat(getPos(i+1))+5;
+          const y2 = (i+1)*90+44;
+          return (
+            <line key={i}
+              x1={`${x1}%`} y1={y1}
+              x2={`${x2}%`} y2={y2}
+              stroke="#bbf7d0" strokeWidth="4" strokeDasharray="8 4" strokeLinecap="round"
+            />
+          );
+        })}
+        {/* line to next (current) node */}
+        {nodes.length > 0 && (
+          <line
+            x1={`${parseFloat(getPos(nextIdx-1))+5}%`} y1={(nextIdx-1)*90+44}
+            x2={`${parseFloat(getPos(nextIdx))+5}%`}   y2={nextIdx*90+44}
+            stroke="#bbf7d0" strokeWidth="4" strokeDasharray="8 4" strokeLinecap="round"
+          />
+        )}
+      </svg>
+
+      {/* Completed nodes */}
+      {nodes.map((n,i) => (
+        <div key={n.id} className="absolute group" style={{left:getPos(i), top:`${i*90+12}px`}}>
+          {/* Tooltip */}
+          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded-xl px-3 py-2 w-48 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none shadow-lg">
+            <p className="font-semibold mb-0.5">{n.date}</p>
+            <p className="leading-snug line-clamp-2">{n.sentence}</p>
+            <p className="text-gray-400 mt-1">p.{n.page}</p>
+          </div>
+          {/* Node circle */}
+          <div className="w-14 h-14 rounded-full bg-green-500 border-4 border-green-600 flex items-center justify-center shadow-md cursor-default">
+            <span className="text-white text-xl">✓</span>
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-1 w-14">{n.date}</p>
+        </div>
+      ))}
+
+      {/* Current node — sparrow */}
+      <div className="absolute" data-current="true"
+        style={{left:getPos(nextIdx), top:`${nextIdx*90+4}px`}}>
+        <div className="relative flex flex-col items-center">
+          {/* Sparrow bouncing above */}
+          <div className="sparrow-bounce mb-1">
+            <Sparrow size={44}/>
+          </div>
+          {/* Node button */}
+          {!todayDone ? (
+            <button
+              onClick={onRecordClick}
+              className="w-14 h-14 rounded-full bg-white border-4 border-green-500 node-glow flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            >
+              <span className="text-2xl">📝</span>
+            </button>
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-green-100 border-4 border-green-400 flex items-center justify-center shadow-md">
+              <span className="text-2xl">🔥</span>
+            </div>
+          )}
+          <div className="mt-1 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+            {todayDone ? "오늘 완료!" : "오늘 기록하기"}
+          </div>
+        </div>
+      </div>
+
+      {/* Ghost next node (teaser) */}
+      <div className="absolute opacity-20" style={{left:getPos(nextIdx+1), top:`${(nextIdx+1)*90+12}px`}}>
+        <div className="w-14 h-14 rounded-full bg-gray-200 border-4 border-gray-300 border-dashed flex items-center justify-center">
+          <span className="text-gray-400 text-xl">?</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Completion Ceremony ───────────────────────────────────────────────────────
+const CompletionCeremony = ({ book, onClose }) => {
+  const confettiColors = ["#22c55e","#f59e0b","#3b82f6","#ec4899","#8b5cf6"];
+  const pieces = Array.from({length:20},(_,i)=>i);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:"rgba(0,0,0,0.7)"}}>
+      <div className="relative bg-white rounded-3xl p-8 mx-6 text-center shadow-2xl overflow-hidden" style={{animation:"popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)"}}>
+        {/* Confetti */}
+        {pieces.map(i => (
+          <div key={i} className="absolute" style={{
+            left:`${Math.random()*100}%`,
+            top:"-10px",
+            width:"8px", height:"8px",
+            background:confettiColors[i%5],
+            borderRadius:"2px",
+            animation:`confetti ${1+Math.random()*1.5}s ${Math.random()*0.5}s ease-in forwards`,
+          }}/>
+        ))}
+        <div className="text-7xl mb-3">🏰</div>
+        <h2 className="text-2xl font-black text-gray-800 mb-1">완독 대성공!</h2>
+        <p className="text-gray-500 mb-2 text-sm">{book.title}을(를) 완독했어요 🎉</p>
+        <p className="text-green-600 font-bold text-lg mb-6">리딩 팰리스 달성!</p>
+        <div className="flex justify-center gap-3 mb-6">
+          {["🔥 스트릭","⭐ +100 XP","🏅 완독 배지"].map(t=>(
+            <div key={t} className="bg-green-50 rounded-xl px-3 py-2 text-xs font-semibold text-green-700">{t}</div>
+          ))}
+        </div>
+        <button onClick={onClose} className="w-full py-4 bg-green-500 text-white font-black text-base rounded-2xl hover:bg-green-600 shadow-md">
+          계속 읽기 🐦
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── NestView (둥지 탭) ────────────────────────────────────────────────────────
+const NestView = ({ user, onRecordClick, todayDone }) => {
+  const { currentBook, streak, level, xp, xpMax } = user;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Sticky header */}
+      <div className="bg-green-500 px-5 pt-5 pb-4 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-white font-black text-xl tracking-tight">리딩고</h1>
+            <p className="text-green-100 text-xs">안녕하세요, {user.name}님!</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="bg-orange-400 rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow">
+              <span className="text-base">🔥</span>
+              <span className="text-white text-sm font-black">{streak}</span>
+            </div>
+            <div className="bg-blue-500 rounded-full px-3 py-1.5 shadow">
+              <span className="text-white text-xs font-black">Lv.{level}</span>
+            </div>
+          </div>
+        </div>
+        {/* XP bar */}
+        <div className="mt-3 bg-green-400 rounded-full h-2 overflow-hidden">
+          <div className="bg-white h-2 rounded-full transition-all duration-500" style={{width:`${(xp/xpMax)*100}%`}}/>
+        </div>
+        <p className="text-green-100 text-xs text-right mt-0.5">{xp} / {xpMax} XP</p>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 pb-6">
+        {/* Nest evolution card */}
+        <NestHeader book={currentBook} />
+
+        {/* Section title */}
+        <div className="px-5 mt-4 mb-1 flex items-center gap-2">
+          <span className="text-sm font-bold text-gray-700">나의 독서 로드맵</span>
+          <span className="text-xs text-gray-400">기록할 때마다 새 길이 생겨요</span>
+        </div>
+
+        {/* Dynamic path */}
+        <DynamicPath
+          sessions={user.sessions}
+          onRecordClick={onRecordClick}
+          todayDone={todayDone}
+        />
+      </div>
     </div>
   );
 };
 
 // ── Mission Modal ─────────────────────────────────────────────────────────────
 const MissionModal = ({ book, onClose, onSubmit }) => {
-  const [page, setPage] = useState("");
+  const [page, setPage] = useState(String(book.currentPage || ""));
   const [sentence, setSentence] = useState("");
-  const valid = page && parseInt(page) > 0 && sentence.length >= 10;
-
-  const handleSubmit = () => {
-    if (!valid) return;
-    onSubmit(parseInt(page), sentence);
-  };
+  const valid = page && parseInt(page) > (book.currentPage||0) && parseInt(page) <= book.totalPages && sentence.length >= 10;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="bg-white w-full max-w-sm rounded-t-3xl p-6 pb-8" style={{ animation: "slideUp 0.3s ease" }}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{background:"rgba(0,0,0,0.5)"}}>
+      <div className="bg-white w-full max-w-sm rounded-t-3xl p-6 pb-8" style={{animation:"slideUp 0.3s ease"}}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-gray-800">오늘의 독서 기록</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XIcon /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XIcon s={22}/></button>
         </div>
         <div className="bg-green-50 rounded-xl p-3 mb-5 flex items-center gap-3">
           <span className="text-2xl">📖</span>
           <div>
             <p className="text-sm font-semibold text-gray-800">{book.title}</p>
-            <p className="text-xs text-gray-500">{book.author} · 전 {book.totalPages}p</p>
+            <p className="text-xs text-gray-500">{book.author} · 전 {book.totalPages}p · 현재 {book.currentPage}p</p>
           </div>
         </div>
         <div className="mb-4">
-          <label className="text-sm font-medium text-gray-700 mb-1 block">오늘 읽은 마지막 페이지</label>
-          <input
-            type="number"
-            placeholder={`1 ~ ${book.totalPages}`}
-            value={page}
-            onChange={e => setPage(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
+          <label className="text-sm font-semibold text-gray-700 mb-1.5 block">오늘 읽은 마지막 페이지</label>
+          <input type="number" placeholder={`${(book.currentPage||0)+1} ~ ${book.totalPages}`}
+            value={page} onChange={e=>setPage(e.target.value)}
+            className="w-full border-2 border-gray-100 focus:border-green-400 rounded-xl px-4 py-3 text-base outline-none transition-colors"/>
         </div>
         <div className="mb-6">
-          <label className="text-sm font-medium text-gray-700 mb-1 block">기억하고 싶은 한 문장</label>
+          <label className="text-sm font-semibold text-gray-700 mb-1.5 block">기억하고 싶은 한 문장</label>
           <textarea
-            placeholder="오늘 읽은 내용 중 인상 깊은 문장을 적어주세요 (최소 10자)"
-            value={sentence}
-            onChange={e => setSentence(e.target.value)}
-            rows={3}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
-          />
-          <p className="text-xs text-gray-400 text-right mt-1">{sentence.length} / 500</p>
+            placeholder="오늘 읽은 내용 중 마음에 남는 문장을 적어주세요 (최소 10자)"
+            value={sentence} onChange={e=>setSentence(e.target.value)}
+            rows={3} maxLength={500}
+            className="w-full border-2 border-gray-100 focus:border-green-400 rounded-xl px-4 py-3 text-sm outline-none resize-none transition-colors"/>
+          <p className="text-xs text-gray-400 text-right mt-1">{sentence.length}/500</p>
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={!valid}
-          className={`w-full py-4 rounded-2xl text-white font-bold text-base transition-all ${valid ? "bg-green-500 hover:bg-green-600 shadow-md" : "bg-gray-300 cursor-not-allowed"}`}
-        >
+        <button onClick={()=>valid&&onSubmit(parseInt(page),sentence)} disabled={!valid}
+          className={`w-full py-4 rounded-2xl text-white font-black text-base transition-all ${valid?"bg-green-500 hover:bg-green-600 shadow-md active:scale-95":"bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
           기록 완료 🔥
         </button>
       </div>
@@ -215,247 +379,122 @@ const MissionModal = ({ book, onClose, onSubmit }) => {
 };
 
 // ── Reward Modal ──────────────────────────────────────────────────────────────
-const RewardModal = ({ xpGained, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
-    <div className="bg-white rounded-3xl p-8 mx-6 text-center shadow-xl" style={{ animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-      <div className="text-6xl mb-4">🎉</div>
-      <h2 className="text-xl font-bold text-gray-800 mb-2">훌륭해요!</h2>
-      <p className="text-gray-500 text-sm mb-5">오늘 독서 기록 완료!</p>
-      <div className="flex justify-center gap-4 mb-6">
-        <div className="bg-orange-50 rounded-xl px-4 py-2 text-center">
+const RewardModal = ({ xpGained, sessionNum, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:"rgba(0,0,0,0.6)"}}>
+    <div className="bg-white rounded-3xl p-8 mx-6 text-center shadow-2xl" style={{animation:"popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)"}}>
+      <div className="text-6xl mb-3">🎉</div>
+      <h2 className="text-xl font-black text-gray-800 mb-1">훌륭해요!</h2>
+      <p className="text-gray-500 text-sm mb-1">오늘 독서 기록 완료!</p>
+      <p className="text-green-600 font-bold text-sm mb-5">로드맵 {sessionNum}번째 노드 획득 🗺️</p>
+      <div className="flex justify-center gap-3 mb-6">
+        <div className="bg-orange-50 rounded-xl px-4 py-3 text-center">
           <div className="text-2xl">🔥</div>
-          <div className="text-xs text-orange-600 font-semibold">스트릭 유지</div>
+          <div className="text-xs text-orange-600 font-semibold mt-1">스트릭 유지</div>
         </div>
-        <div className="bg-blue-50 rounded-xl px-4 py-2 text-center">
-          <div className="text-2xl font-bold text-blue-600">+{xpGained}</div>
-          <div className="text-xs text-blue-600 font-semibold">XP 획득</div>
+        <div className="bg-blue-50 rounded-xl px-4 py-3 text-center">
+          <div className="text-2xl font-black text-blue-600">+{xpGained}</div>
+          <div className="text-xs text-blue-600 font-semibold mt-1">XP 획득</div>
         </div>
-        <div className="bg-green-50 rounded-xl px-4 py-2 text-center">
+        <div className="bg-green-50 rounded-xl px-4 py-3 text-center">
           <div className="text-2xl">⬆️</div>
-          <div className="text-xs text-green-600 font-semibold">로드맵 전진</div>
+          <div className="text-xs text-green-600 font-semibold mt-1">전진!</div>
         </div>
       </div>
-      <button onClick={onClose} className="w-full py-3 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-600">
+      <button onClick={onClose} className="w-full py-3 bg-green-500 text-white font-black rounded-2xl hover:bg-green-600">
         계속하기
       </button>
     </div>
   </div>
 );
 
-// ── NestView (홈/둥지) ────────────────────────────────────────────────────────
-const NestView = ({ user, onRecordClick }) => {
-  const { currentBook, sessions, streak, level, xp, xpMax } = user;
-  const percentage = currentBook ? Math.round((currentBook.currentPage / currentBook.totalPages) * 100) : 0;
-
-  // Dynamic zigzag path nodes
-  const totalNodes = Math.max(sessions + 3, 10);
-  const nodes = Array.from({ length: totalNodes }, (_, i) => ({
-    id: i + 1,
-    completed: i < sessions,
-    current: i === sessions,
-  }));
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="bg-green-500 px-5 pt-5 pb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-white font-bold text-lg">리딩고</h1>
-            <p className="text-green-100 text-xs">안녕하세요, {user.name}님!</p>
-          </div>
-          <div className="flex gap-2">
-            <div className="bg-orange-400 rounded-full px-3 py-1 flex items-center gap-1">
-              <span className="text-white text-sm">🔥</span>
-              <span className="text-white text-sm font-bold">{streak}</span>
-            </div>
-            <div className="bg-blue-500 rounded-full px-3 py-1 flex items-center gap-1">
-              <span className="text-white text-xs font-bold">Lv.{level}</span>
-            </div>
-          </div>
-        </div>
-        {/* XP bar */}
-        <div className="bg-green-400 rounded-full h-2 mb-1 overflow-hidden">
-          <div className="bg-white h-2 rounded-full" style={{ width: `${(xp / xpMax) * 100}%` }}/>
-        </div>
-        <p className="text-green-100 text-xs text-right">{xp} / {xpMax} XP</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto bg-gray-50">
-        {/* Book + Evolution */}
-        {currentBook && (
-          <div className="mx-4 mt-4 bg-white rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">📖</span>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">{currentBook.title}</p>
-                <p className="text-xs text-gray-500">{currentBook.author} · {currentBook.currentPage}/{currentBook.totalPages}p</p>
-              </div>
-            </div>
-            <NestEvolution percentage={percentage} />
-          </div>
-        )}
-
-        {/* Record button */}
-        <div className="px-4 mt-4">
-          <button
-            onClick={onRecordClick}
-            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-md text-base transition-all active:scale-95"
-          >
-            📝 오늘의 독서 기록하기
-          </button>
-        </div>
-
-        {/* Dynamic path */}
-        <div className="mx-4 mt-5 mb-4 bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">🗺️ 나의 독서 로드맵</h3>
-          <div className="relative">
-            {nodes.map((node, idx) => {
-              const isLeft = idx % 2 === 0;
-              return (
-                <div key={node.id} className={`flex items-center mb-3 ${isLeft ? "justify-start" : "justify-end"}`}>
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
-                    node.completed
-                      ? "bg-green-500 border-green-500"
-                      : node.current
-                      ? "bg-white border-green-500 shadow-lg shadow-green-200 scale-110"
-                      : "bg-gray-100 border-gray-200"
-                  }`}>
-                    {node.completed ? (
-                      <CheckCircleIcon size={18} className="text-white" />
-                    ) : node.current ? (
-                      <SparrowMascot size={28} />
-                    ) : (
-                      <span className="text-gray-300 text-xs font-bold">{node.id}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ── VillageView (마을) ────────────────────────────────────────────────────────
+// ── VillageView ───────────────────────────────────────────────────────────────
 const VillageView = ({ friends, onSendWorm }) => {
   const [sent, setSent] = useState({});
-
-  const handleSend = (id) => {
-    setSent(s => ({ ...s, [id]: true }));
+  const doSend = id => {
+    setSent(s=>({...s,[id]:true}));
     onSendWorm(id);
-    setTimeout(() => setSent(s => ({ ...s, [id]: false })), 3000);
+    setTimeout(()=>setSent(s=>({...s,[id]:false})),3000);
   };
-
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-green-500 px-5 pt-5 pb-4">
-        <h2 className="text-white font-bold text-lg">리딩 빌리지</h2>
+      <div className="bg-green-500 px-5 pt-5 pb-4 flex-shrink-0">
+        <h2 className="text-white font-black text-lg">리딩 빌리지</h2>
         <p className="text-green-100 text-xs">친구들의 오늘 독서 현황</p>
       </div>
       <div className="flex-1 overflow-y-auto bg-green-50 p-4">
-        {/* Legend */}
         <div className="flex gap-3 mb-4 text-xs text-gray-500">
-          <span>💡 불빛 ON = 오늘 읽음</span>
-          <span>🪱 모이 = 독려 알림</span>
+          <span>💡 불빛 ON = 오늘 읽음</span><span>🪱 모이 = 독려 알림</span>
         </div>
-        {/* Friend grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {friends.map(f => (
-            <div key={f.id} className={`bg-white rounded-2xl p-3 shadow-sm border-2 ${f.isLit ? "border-green-300" : "border-gray-100"}`}>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {friends.map(f=>(
+            <div key={f.id} className={`bg-white rounded-2xl p-3 shadow-sm border-2 ${f.isLit?"border-green-300":"border-gray-100"}`}>
               <div className="flex items-start justify-between mb-2">
-                <NestIcon stage={f.stage} size={44} isLit={f.isLit} />
-                {f.isLit && <span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">읽는 중</span>}
+                <NestIcon stage={f.stage} size={44} isLit={f.isLit}/>
+                {f.isLit&&<span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">읽는 중</span>}
               </div>
               <p className="text-sm font-bold text-gray-800 mb-1">{f.name}</p>
-              {f.sentence && (
-                <p className="text-xs text-gray-400 line-clamp-2 mb-2">{f.sentence}</p>
-              )}
-              {!f.isLit && (
-                <button
-                  onClick={() => handleSend(f.id)}
-                  disabled={sent[f.id]}
-                  className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    sent[f.id] ? "bg-gray-100 text-gray-400" : "bg-green-500 text-white hover:bg-green-600"
-                  }`}
-                >
-                  {sent[f.id] ? "전송됨 ✓" : <><span>🪱</span> 모이 보내기</>}
+              {f.sentence&&<p className="text-xs text-gray-400 line-clamp-2 mb-2">{f.sentence}</p>}
+              {!f.isLit&&(
+                <button onClick={()=>doSend(f.id)} disabled={sent[f.id]}
+                  className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${sent[f.id]?"bg-gray-100 text-gray-400":"bg-green-500 text-white hover:bg-green-600"}`}>
+                  {sent[f.id]?"전송됨 ✓":<><span>🪱</span>모이 보내기</>}
                 </button>
               )}
             </div>
           ))}
         </div>
-
-        {/* Village board */}
-        <div className="mt-4 bg-white rounded-2xl p-4 shadow-sm">
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
           <h3 className="text-sm font-bold text-gray-700 mb-3">📋 마을 게시판</h3>
-          <div className="text-xs text-gray-400 text-center py-4">
-            게시판이 조용해요. 첫 글을 남겨보세요! ✍️
-          </div>
+          <p className="text-xs text-gray-400 text-center py-4">첫 글을 남겨보세요! ✍️</p>
         </div>
       </div>
     </div>
   );
 };
 
-// ── SocialView (소셜) ─────────────────────────────────────────────────────────
+// ── SocialView ────────────────────────────────────────────────────────────────
 const SocialView = ({ feed, onClap }) => {
-  const [clapState, setClapState] = useState({});
+  const [clapped, setClapped] = useState({});
   const leagues = [
-    { rank: 1, name: "계휴", xp: 420, badge: "🥇" },
-    { rank: 2, name: "지수", xp: 380, badge: "🥈" },
-    { rank: 3, name: "리리", xp: 240, badge: "🥉" },
-    { rank: 4, name: "승원", xp: 180, badge: "" },
+    {rank:1,name:"계휴",xp:420,badge:"🥇"},
+    {rank:2,name:"지수",xp:380,badge:"🥈"},
+    {rank:3,name:"리리",xp:240,badge:"🥉"},
+    {rank:4,name:"승원",xp:180,badge:""},
   ];
-
-  const handleClap = (id) => {
-    if (clapState[id]) return;
-    setClapState(s => ({ ...s, [id]: true }));
-    onClap(id);
-  };
-
+  const doClap = id => { if(clapped[id])return; setClapped(s=>({...s,[id]:true})); onClap(id); };
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-green-500 px-5 pt-5 pb-4">
-        <h2 className="text-white font-bold text-lg">소셜</h2>
+      <div className="bg-green-500 px-5 pt-5 pb-4 flex-shrink-0">
+        <h2 className="text-white font-black text-lg">소셜</h2>
         <p className="text-green-100 text-xs">친구들의 독서 문장 피드</p>
       </div>
       <div className="flex-1 overflow-y-auto bg-gray-50">
-        {/* League */}
         <div className="mx-4 mt-4 bg-white rounded-2xl p-4 shadow-sm mb-4">
           <h3 className="text-sm font-bold text-gray-700 mb-3">🏆 이번 주 리그</h3>
           <div className="space-y-2">
-            {leagues.map(l => (
-              <div key={l.rank} className={`flex items-center gap-3 p-2 rounded-xl ${l.name === "리리" ? "bg-green-50" : ""}`}>
-                <span className="text-lg w-6 text-center">{l.badge || l.rank}</span>
+            {leagues.map(l=>(
+              <div key={l.rank} className={`flex items-center gap-3 p-2 rounded-xl ${l.name==="리리"?"bg-green-50":""}`}>
+                <span className="text-lg w-6 text-center">{l.badge||l.rank}</span>
                 <span className="flex-1 text-sm font-medium text-gray-800">{l.name}</span>
                 <span className="text-xs text-blue-600 font-semibold">{l.xp} XP</span>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Feed */}
         <div className="px-4 pb-4 space-y-3">
-          {feed.map(item => (
+          {feed.map(item=>(
             <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
-                <SparrowMascot size={32} />
+                <Sparrow size={32}/>
                 <div>
                   <p className="text-sm font-semibold text-gray-800">{item.user}</p>
                   <p className="text-xs text-gray-400">{item.book} · {item.time}</p>
                 </div>
               </div>
               <p className="text-sm text-gray-700 italic mb-3 leading-relaxed">{item.sentence}</p>
-              <button
-                onClick={() => handleClap(item.id)}
-                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
-                  clapState[item.id] ? "bg-orange-100 text-orange-500" : "bg-gray-100 text-gray-500 hover:bg-orange-50"
-                }`}
-              >
-                👏 {item.claps + (clapState[item.id] ? 1 : 0)}
+              <button onClick={()=>doClap(item.id)}
+                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${clapped[item.id]?"bg-orange-100 text-orange-500":"bg-gray-100 text-gray-500 hover:bg-orange-50"}`}>
+                👏 {item.claps+(clapped[item.id]?1:0)}
               </button>
             </div>
           ))}
@@ -465,23 +504,18 @@ const SocialView = ({ feed, onClap }) => {
   );
 };
 
-// ── SearchView (내서재) ───────────────────────────────────────────────────────
+// ── SearchView ────────────────────────────────────────────────────────────────
 const SearchView = ({ books, currentBook, onRegister }) => {
   const [query, setQuery] = useState("");
-
-  const filtered = query
-    ? books.filter(b => b.title.includes(query) || b.author.includes(query))
-    : books;
-
+  const filtered = query ? books.filter(b=>b.title.includes(query)||b.author.includes(query)) : books;
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-green-500 px-5 pt-5 pb-4">
-        <h2 className="text-white font-bold text-lg">내 서재</h2>
+      <div className="bg-green-500 px-5 pt-5 pb-4 flex-shrink-0">
+        <h2 className="text-white font-black text-lg">내 서재</h2>
         <p className="text-green-100 text-xs">읽을 책을 등록하세요</p>
       </div>
       <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
-        {/* Current book */}
-        {currentBook && (
+        {currentBook&&(
           <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
             <p className="text-xs text-green-600 font-semibold mb-2">📖 현재 읽는 중</p>
             <div className="flex items-center gap-3">
@@ -493,36 +527,22 @@ const SearchView = ({ books, currentBook, onRegister }) => {
             </div>
           </div>
         )}
-
-        {/* Search */}
         <div className="relative mb-4">
-          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            placeholder="책 제목, 저자 검색..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
-          />
+          <SearchIcon s={16} c="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+          <input placeholder="책 제목, 저자 검색..." value={query} onChange={e=>setQuery(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"/>
         </div>
-
-        {/* Book list */}
         <div className="space-y-2">
-          {filtered.map(book => (
+          {filtered.map(book=>(
             <div key={book.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
               <span className="text-3xl">{book.cover}</span>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-800">{book.title}</p>
                 <p className="text-xs text-gray-500">{book.author} · {book.totalPages}p</p>
               </div>
-              <button
-                onClick={() => onRegister(book)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-                  currentBook?.id === book.id
-                    ? "bg-gray-100 text-gray-400"
-                    : "bg-green-500 text-white hover:bg-green-600"
-                }`}
-              >
-                {currentBook?.id === book.id ? "읽는 중" : "등록"}
+              <button onClick={()=>onRegister(book)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${currentBook?.id===book.id?"bg-gray-100 text-gray-400":"bg-green-500 text-white hover:bg-green-600"}`}>
+                {currentBook?.id===book.id?"읽는 중":"등록"}
               </button>
             </div>
           ))}
@@ -532,29 +552,22 @@ const SearchView = ({ books, currentBook, onRegister }) => {
   );
 };
 
-// ── Bottom Nav ────────────────────────────────────────────────────────────────
-const BottomNav = ({ activeTab, onTabChange }) => {
+// ── BottomNav ─────────────────────────────────────────────────────────────────
+const BottomNav = ({ active, onChange }) => {
   const tabs = [
-    { id: "nest", label: "둥지", icon: HomeIcon },
-    { id: "village", label: "마을", icon: MapIcon },
-    { id: "social", label: "소셜", icon: UsersIcon },
-    { id: "library", label: "내서재", icon: SearchIcon },
+    {id:"nest",    label:"둥지",   Icon:({s,c})=><HomeIcon  s={s} c={c}/>},
+    {id:"village", label:"마을",   Icon:({s,c})=><MapIcon   s={s} c={c}/>},
+    {id:"social",  label:"소셜",   Icon:({s,c})=><UsersIcon s={s} c={c}/>},
+    {id:"library", label:"내서재", Icon:({s,c})=><SearchIcon s={s} c={c}/>},
   ];
   return (
-    <div className="bg-white border-t border-gray-100 flex items-center" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      {tabs.map(tab => {
-        const Icon = tab.icon;
-        const active = activeTab === tab.id;
+    <div className="bg-white border-t border-gray-100 flex items-center flex-shrink-0" style={{paddingBottom:"env(safe-area-inset-bottom)"}}>
+      {tabs.map(({id,label,Icon})=>{
+        const on = active===id;
         return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2 transition-all"
-          >
-            <Icon size={22} className={active ? "text-green-500" : "text-gray-300"} />
-            <span className={`text-xs font-medium ${active ? "text-green-500" : "text-gray-300"}`}>
-              {tab.label}
-            </span>
+          <button key={id} onClick={()=>onChange(id)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all">
+            <Icon s={22} c={on?"text-green-500":"text-gray-300"}/>
+            <span className={`text-xs font-semibold ${on?"text-green-500":"text-gray-300"}`}>{label}</span>
           </button>
         );
       })}
@@ -564,105 +577,81 @@ const BottomNav = ({ activeTab, onTabChange }) => {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 const App = () => {
-  const [activeTab, setActiveTab] = useState("nest");
-  const [user, setUser] = useState(() => LS.get("rg_user", INIT_USER));
-  const [friends, setFriends] = useState(() => LS.get("rg_friends", INIT_FRIENDS));
-  const [feed, setFeed] = useState(() => LS.get("rg_feed", INIT_FEED));
-  const [books] = useState(INIT_BOOKS);
+  const [tab, setTab]           = useState("nest");
+  const [user, setUser]         = useState(()=>LS.get("rg_user2", INIT_USER));
+  const [friends]               = useState(INIT_FRIENDS);
+  const [feed, setFeed]         = useState(()=>LS.get("rg_feed2", INIT_FEED));
+  const [books]                 = useState(INIT_BOOKS);
   const [showMission, setShowMission] = useState(false);
-  const [showReward, setShowReward] = useState(false);
-  const [lastXP, setLastXP] = useState(0);
+  const [showReward,  setShowReward]  = useState(false);
+  const [showCeremony, setShowCeremony] = useState(false);
+  const [lastXP, setLastXP]     = useState(0);
+  const [todayDone, setTodayDone] = useState(()=>LS.get("rg_today2",false));
 
-  useEffect(() => { LS.set("rg_user", user); }, [user]);
-  useEffect(() => { LS.set("rg_friends", friends); }, [friends]);
-  useEffect(() => { LS.set("rg_feed", feed); }, [feed]);
+  useEffect(()=>{ LS.set("rg_user2",user); },[user]);
+  useEffect(()=>{ LS.set("rg_feed2",feed); },[feed]);
+  useEffect(()=>{ LS.set("rg_today2",todayDone); },[todayDone]);
 
   const handleRecord = useCallback((page, sentence) => {
-    const xpGained = 30 + Math.floor(Math.random() * 20);
-    setUser(u => ({
-      ...u,
-      xp: Math.min(u.xp + xpGained, u.xpMax),
-      streak: u.streak + 1,
-      sessions: u.sessions + 1,
-      currentBook: u.currentBook ? { ...u.currentBook, currentPage: Math.min(page, u.currentBook.totalPages) } : u.currentBook,
-    }));
-    // Add to feed
-    const newEntry = {
-      id: Date.now(),
-      user: user.name,
-      book: user.currentBook?.title || "",
-      sentence,
-      time: "방금",
-      claps: 0,
-    };
-    setFeed(f => [newEntry, ...f]);
+    const xpGained = 30 + Math.floor(Math.random()*20);
+    const today = new Date();
+    const dateStr = `${today.getMonth()+1}/${today.getDate()}`;
+    const isComplete = page >= user.currentBook.totalPages;
+
+    setUser(u => {
+      const newSessions = [...u.sessions, {
+        id: Date.now(), page, sentence, date: dateStr
+      }];
+      return {
+        ...u,
+        xp: Math.min(u.xp + xpGained, u.xpMax),
+        streak: u.streak + 1,
+        sessions: newSessions,
+        currentBook: { ...u.currentBook, currentPage: Math.min(page, u.currentBook.totalPages) },
+      };
+    });
+
+    setFeed(f=>[{
+      id:Date.now(), user:user.name,
+      book:user.currentBook.title, sentence,
+      time:"방금", claps:0
+    },...f]);
+
     setLastXP(xpGained);
+    setTodayDone(true);
     setShowMission(false);
-    setShowReward(true);
+
+    if (isComplete) {
+      setTimeout(()=>setShowCeremony(true), 300);
+    } else {
+      setShowReward(true);
+    }
   }, [user]);
-
-  const handleSendWorm = useCallback((friendId) => {
-    // In a real app, send push notification
-  }, []);
-
-  const handleClap = useCallback((feedId) => {
-    setFeed(f => f.map(item => item.id === feedId ? { ...item, claps: item.claps + 1 } : item));
-  }, []);
-
-  const handleRegister = useCallback((book) => {
-    setUser(u => ({ ...u, currentBook: { ...book, currentPage: 0 } }));
-  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden shadow-2xl">
       <div className="flex-1 overflow-hidden">
-        {activeTab === "nest" && (
-          <NestView user={user} onRecordClick={() => setShowMission(true)} />
-        )}
-        {activeTab === "village" && (
-          <VillageView friends={friends} onSendWorm={handleSendWorm} />
-        )}
-        {activeTab === "social" && (
-          <SocialView feed={feed} onClap={handleClap} />
-        )}
-        {activeTab === "library" && (
-          <SearchView books={books} currentBook={user.currentBook} onRegister={handleRegister} />
-        )}
+        {tab==="nest"    && <NestView user={user} onRecordClick={()=>setShowMission(true)} todayDone={todayDone}/>}
+        {tab==="village" && <VillageView friends={friends} onSendWorm={()=>{}}/>}
+        {tab==="social"  && <SocialView feed={feed} onClap={id=>setFeed(f=>f.map(i=>i.id===id?{...i,claps:i.claps+1}:i))}/>}
+        {tab==="library" && <SearchView books={books} currentBook={user.currentBook} onRegister={book=>setUser(u=>({...u,currentBook:{...book,currentPage:0}}))}/>}
       </div>
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav active={tab} onChange={setTab}/>
 
       {showMission && user.currentBook && (
-        <MissionModal
-          book={user.currentBook}
-          onClose={() => setShowMission(false)}
-          onSubmit={handleRecord}
-        />
+        <MissionModal book={user.currentBook} onClose={()=>setShowMission(false)} onSubmit={handleRecord}/>
       )}
       {showReward && (
-        <RewardModal xpGained={lastXP} onClose={() => setShowReward(false)} />
+        <RewardModal xpGained={lastXP} sessionNum={user.sessions.length} onClose={()=>setShowReward(false)}/>
+      )}
+      {showCeremony && (
+        <CompletionCeremony book={user.currentBook} onClose={()=>setShowCeremony(false)}/>
       )}
     </div>
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-
-<style>
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-@keyframes popIn {
-  from { transform: scale(0.7); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>
 </body>
 </html>
