@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>리딩고 (Reading GO)</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #e5e7eb; display: flex; justify-content: center; min-height: 100vh; }
+  #root { width: 100%; max-width: 390px; min-height: 100vh; }
+  ::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ── localStorage helpers ──────────────────────────────────────────────────────
+const LS = {
+  get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+// ── Initial data ──────────────────────────────────────────────────────────────
+const INIT_USER = {
+  name: "리리",
+  level: 3,
+  xp: 240,
+  xpMax: 500,
+  streak: 7,
+  currentBook: { title: "어린 왕자", author: "생텍쥐페리", totalPages: 160, currentPage: 72 },
+  sessions: 14,
+};
+
+const INIT_FRIENDS = [
+  { id: 1, name: "계휴", stage: 4, isLit: true, sentence: "\"별은 아름답다, 모래들이 아름답듯이.\"" },
+  { id: 2, name: "승원", stage: 2, isLit: false, sentence: "\"사막이 아름다운 건 어딘가에 우물을 숨기고 있기 때문이야.\"" },
+  { id: 3, name: "지수", stage: 5, isLit: true, sentence: "\"중요한 건 눈에 보이지 않아.\"" },
+  { id: 4, name: "민준", stage: 1, isLit: false, sentence: "" },
+];
+
+const INIT_FEED = [
+  { id: 1, user: "계휴", book: "어린 왕자", sentence: "\"별은 아름답다, 모래들이 아름답듯이.\"", time: "2시간 전", claps: 3 },
+  { id: 2, user: "지수", book: "어린 왕자", sentence: "\"중요한 건 눈에 보이지 않아. 마음으로 보아야 해.\"", time: "5시간 전", claps: 7 },
+  { id: 3, user: "리리", book: "어린 왕자", sentence: "\"길들인다는 건, 관계를 맺는다는 뜻이야.\"", time: "어제", claps: 5 },
+];
+
+const INIT_BOOKS = [
+  { id: 1, title: "어린 왕자", author: "생텍쥐페리", cover: "📖", totalPages: 160 },
+  { id: 2, title: "데미안", author: "헤르만 헤세", cover: "📗", totalPages: 228 },
+  { id: 3, title: "노르웨이의 숲", author: "무라카미 하루키", cover: "📘", totalPages: 308 },
+];
+
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
+const HomeIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+const MapIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+    <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+  </svg>
+);
+const UsersIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+const SearchIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const CheckCircleIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+const SendIcon = ({ size = 16, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="22" y1="2" x2="11" y2="13"/>
+    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </svg>
+);
+const XIcon = ({ size = 20, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+// ── Sparrow Mascot ────────────────────────────────────────────────────────────
+const SparrowMascot = ({ size = 60, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
+    <circle cx="50" cy="55" r="35" fill="#FDB813"/>
+    <circle cx="50" cy="55" r="35" stroke="#854D0E" strokeWidth="2"/>
+    <path d="M15 55C15 55 5 45 15 35" stroke="#854D0E" strokeWidth="3" strokeLinecap="round"/>
+    <path d="M85 55C85 55 95 45 85 35" stroke="#854D0E" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="40" cy="45" r="4" fill="black"/>
+    <circle cx="60" cy="45" r="4" fill="black"/>
+    <path d="M45 55L50 62L55 55H45Z" fill="#EA580C"/>
+    <ellipse cx="50" cy="70" rx="15" ry="10" fill="white" fillOpacity="0.4"/>
+  </svg>
+);
+
+// ── NestIcon ──────────────────────────────────────────────────────────────────
+const NestIcon = ({ stage, size = 40, isLit = false }) => {
+  const icons = ["🪵", "🪹", "🏠", "🏡", "🏰"];
+  const icon = icons[Math.min(stage - 1, 4)] || "🪵";
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <span style={{ fontSize: size * 0.7, filter: isLit ? "none" : "grayscale(80%)", opacity: isLit ? 1 : 0.5 }}>
+        {icon}
+      </span>
+      {isLit && (
+        <span className="absolute top-0 right-0 flex h-3 w-3">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"/>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"/>
+        </span>
+      )}
+    </div>
+  );
+};
+
+// ── NestEvolution ─────────────────────────────────────────────────────────────
+const NestEvolution = ({ percentage }) => {
+  const stages = [
+    { range: [0, 20], name: "기초 공사", color: "bg-gray-400", emoji: "🪵" },
+    { range: [21, 50], name: "포근한 둥지", color: "bg-yellow-400", emoji: "🪹" },
+    { range: [51, 80], name: "튼튼한 나무집", color: "bg-green-500", emoji: "🏠" },
+    { range: [81, 99], name: "고급 저택", color: "bg-blue-500", emoji: "🏡" },
+    { range: [100, 100], name: "리딩 팰리스", color: "bg-purple-500", emoji: "🏰" },
+  ];
+  const current = stages.find(s => percentage <= s.range[1]) || stages[4];
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="text-5xl">{current.emoji}</div>
+      <div className="text-sm font-semibold text-gray-700">{current.name}</div>
+      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className={`h-3 rounded-full transition-all duration-500 ${current.color}`} style={{ width: `${Math.min(percentage, 100)}%` }}/>
+      </div>
+      <div className="text-xs text-gray-500">{percentage}% 완료</div>
+    </div>
+  );
+};
+
+// ── Mission Modal ─────────────────────────────────────────────────────────────
+const MissionModal = ({ book, onClose, onSubmit }) => {
+  const [page, setPage] = useState("");
+  const [sentence, setSentence] = useState("");
+  const valid = page && parseInt(page) > 0 && sentence.length >= 10;
+
+  const handleSubmit = () => {
+    if (!valid) return;
+    onSubmit(parseInt(page), sentence);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+      <div className="bg-white w-full max-w-sm rounded-t-3xl p-6 pb-8" style={{ animation: "slideUp 0.3s ease" }}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-800">오늘의 독서 기록</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XIcon /></button>
+        </div>
+        <div className="bg-green-50 rounded-xl p-3 mb-5 flex items-center gap-3">
+          <span className="text-2xl">📖</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">{book.title}</p>
+            <p className="text-xs text-gray-500">{book.author} · 전 {book.totalPages}p</p>
+          </div>
+        </div>
+        <div className="mb-4">
+          <label className="text-sm font-medium text-gray-700 mb-1 block">오늘 읽은 마지막 페이지</label>
+          <input
+            type="number"
+            placeholder={`1 ~ ${book.totalPages}`}
+            value={page}
+            onChange={e => setPage(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+        </div>
+        <div className="mb-6">
+          <label className="text-sm font-medium text-gray-700 mb-1 block">기억하고 싶은 한 문장</label>
+          <textarea
+            placeholder="오늘 읽은 내용 중 인상 깊은 문장을 적어주세요 (최소 10자)"
+            value={sentence}
+            onChange={e => setSentence(e.target.value)}
+            rows={3}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+          />
+          <p className="text-xs text-gray-400 text-right mt-1">{sentence.length} / 500</p>
+        </div>
+        <button
+          onClick={handleSubmit}
+          disabled={!valid}
+          className={`w-full py-4 rounded-2xl text-white font-bold text-base transition-all ${valid ? "bg-green-500 hover:bg-green-600 shadow-md" : "bg-gray-300 cursor-not-allowed"}`}
+        >
+          기록 완료 🔥
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Reward Modal ──────────────────────────────────────────────────────────────
+const RewardModal = ({ xpGained, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
+    <div className="bg-white rounded-3xl p-8 mx-6 text-center shadow-xl" style={{ animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
+      <div className="text-6xl mb-4">🎉</div>
+      <h2 className="text-xl font-bold text-gray-800 mb-2">훌륭해요!</h2>
+      <p className="text-gray-500 text-sm mb-5">오늘 독서 기록 완료!</p>
+      <div className="flex justify-center gap-4 mb-6">
+        <div className="bg-orange-50 rounded-xl px-4 py-2 text-center">
+          <div className="text-2xl">🔥</div>
+          <div className="text-xs text-orange-600 font-semibold">스트릭 유지</div>
+        </div>
+        <div className="bg-blue-50 rounded-xl px-4 py-2 text-center">
+          <div className="text-2xl font-bold text-blue-600">+{xpGained}</div>
+          <div className="text-xs text-blue-600 font-semibold">XP 획득</div>
+        </div>
+        <div className="bg-green-50 rounded-xl px-4 py-2 text-center">
+          <div className="text-2xl">⬆️</div>
+          <div className="text-xs text-green-600 font-semibold">로드맵 전진</div>
+        </div>
+      </div>
+      <button onClick={onClose} className="w-full py-3 bg-green-500 text-white font-bold rounded-2xl hover:bg-green-600">
+        계속하기
+      </button>
+    </div>
+  </div>
+);
+
+// ── NestView (홈/둥지) ────────────────────────────────────────────────────────
+const NestView = ({ user, onRecordClick }) => {
+  const { currentBook, sessions, streak, level, xp, xpMax } = user;
+  const percentage = currentBook ? Math.round((currentBook.currentPage / currentBook.totalPages) * 100) : 0;
+
+  // Dynamic zigzag path nodes
+  const totalNodes = Math.max(sessions + 3, 10);
+  const nodes = Array.from({ length: totalNodes }, (_, i) => ({
+    id: i + 1,
+    completed: i < sessions,
+    current: i === sessions,
+  }));
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-green-500 px-5 pt-5 pb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-white font-bold text-lg">리딩고</h1>
+            <p className="text-green-100 text-xs">안녕하세요, {user.name}님!</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="bg-orange-400 rounded-full px-3 py-1 flex items-center gap-1">
+              <span className="text-white text-sm">🔥</span>
+              <span className="text-white text-sm font-bold">{streak}</span>
+            </div>
+            <div className="bg-blue-500 rounded-full px-3 py-1 flex items-center gap-1">
+              <span className="text-white text-xs font-bold">Lv.{level}</span>
+            </div>
+          </div>
+        </div>
+        {/* XP bar */}
+        <div className="bg-green-400 rounded-full h-2 mb-1 overflow-hidden">
+          <div className="bg-white h-2 rounded-full" style={{ width: `${(xp / xpMax) * 100}%` }}/>
+        </div>
+        <p className="text-green-100 text-xs text-right">{xp} / {xpMax} XP</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        {/* Book + Evolution */}
+        {currentBook && (
+          <div className="mx-4 mt-4 bg-white rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">📖</span>
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">{currentBook.title}</p>
+                <p className="text-xs text-gray-500">{currentBook.author} · {currentBook.currentPage}/{currentBook.totalPages}p</p>
+              </div>
+            </div>
+            <NestEvolution percentage={percentage} />
+          </div>
+        )}
+
+        {/* Record button */}
+        <div className="px-4 mt-4">
+          <button
+            onClick={onRecordClick}
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl shadow-md text-base transition-all active:scale-95"
+          >
+            📝 오늘의 독서 기록하기
+          </button>
+        </div>
+
+        {/* Dynamic path */}
+        <div className="mx-4 mt-5 mb-4 bg-white rounded-2xl p-4 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 mb-4">🗺️ 나의 독서 로드맵</h3>
+          <div className="relative">
+            {nodes.map((node, idx) => {
+              const isLeft = idx % 2 === 0;
+              return (
+                <div key={node.id} className={`flex items-center mb-3 ${isLeft ? "justify-start" : "justify-end"}`}>
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                    node.completed
+                      ? "bg-green-500 border-green-500"
+                      : node.current
+                      ? "bg-white border-green-500 shadow-lg shadow-green-200 scale-110"
+                      : "bg-gray-100 border-gray-200"
+                  }`}>
+                    {node.completed ? (
+                      <CheckCircleIcon size={18} className="text-white" />
+                    ) : node.current ? (
+                      <SparrowMascot size={28} />
+                    ) : (
+                      <span className="text-gray-300 text-xs font-bold">{node.id}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── VillageView (마을) ────────────────────────────────────────────────────────
+const VillageView = ({ friends, onSendWorm }) => {
+  const [sent, setSent] = useState({});
+
+  const handleSend = (id) => {
+    setSent(s => ({ ...s, [id]: true }));
+    onSendWorm(id);
+    setTimeout(() => setSent(s => ({ ...s, [id]: false })), 3000);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="bg-green-500 px-5 pt-5 pb-4">
+        <h2 className="text-white font-bold text-lg">리딩 빌리지</h2>
+        <p className="text-green-100 text-xs">친구들의 오늘 독서 현황</p>
+      </div>
+      <div className="flex-1 overflow-y-auto bg-green-50 p-4">
+        {/* Legend */}
+        <div className="flex gap-3 mb-4 text-xs text-gray-500">
+          <span>💡 불빛 ON = 오늘 읽음</span>
+          <span>🪱 모이 = 독려 알림</span>
+        </div>
+        {/* Friend grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {friends.map(f => (
+            <div key={f.id} className={`bg-white rounded-2xl p-3 shadow-sm border-2 ${f.isLit ? "border-green-300" : "border-gray-100"}`}>
+              <div className="flex items-start justify-between mb-2">
+                <NestIcon stage={f.stage} size={44} isLit={f.isLit} />
+                {f.isLit && <span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full">읽는 중</span>}
+              </div>
+              <p className="text-sm font-bold text-gray-800 mb-1">{f.name}</p>
+              {f.sentence && (
+                <p className="text-xs text-gray-400 line-clamp-2 mb-2">{f.sentence}</p>
+              )}
+              {!f.isLit && (
+                <button
+                  onClick={() => handleSend(f.id)}
+                  disabled={sent[f.id]}
+                  className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    sent[f.id] ? "bg-gray-100 text-gray-400" : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                >
+                  {sent[f.id] ? "전송됨 ✓" : <><span>🪱</span> 모이 보내기</>}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Village board */}
+        <div className="mt-4 bg-white rounded-2xl p-4 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 mb-3">📋 마을 게시판</h3>
+          <div className="text-xs text-gray-400 text-center py-4">
+            게시판이 조용해요. 첫 글을 남겨보세요! ✍️
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── SocialView (소셜) ─────────────────────────────────────────────────────────
+const SocialView = ({ feed, onClap }) => {
+  const [clapState, setClapState] = useState({});
+  const leagues = [
+    { rank: 1, name: "계휴", xp: 420, badge: "🥇" },
+    { rank: 2, name: "지수", xp: 380, badge: "🥈" },
+    { rank: 3, name: "리리", xp: 240, badge: "🥉" },
+    { rank: 4, name: "승원", xp: 180, badge: "" },
+  ];
+
+  const handleClap = (id) => {
+    if (clapState[id]) return;
+    setClapState(s => ({ ...s, [id]: true }));
+    onClap(id);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="bg-green-500 px-5 pt-5 pb-4">
+        <h2 className="text-white font-bold text-lg">소셜</h2>
+        <p className="text-green-100 text-xs">친구들의 독서 문장 피드</p>
+      </div>
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        {/* League */}
+        <div className="mx-4 mt-4 bg-white rounded-2xl p-4 shadow-sm mb-4">
+          <h3 className="text-sm font-bold text-gray-700 mb-3">🏆 이번 주 리그</h3>
+          <div className="space-y-2">
+            {leagues.map(l => (
+              <div key={l.rank} className={`flex items-center gap-3 p-2 rounded-xl ${l.name === "리리" ? "bg-green-50" : ""}`}>
+                <span className="text-lg w-6 text-center">{l.badge || l.rank}</span>
+                <span className="flex-1 text-sm font-medium text-gray-800">{l.name}</span>
+                <span className="text-xs text-blue-600 font-semibold">{l.xp} XP</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Feed */}
+        <div className="px-4 pb-4 space-y-3">
+          {feed.map(item => (
+            <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <SparrowMascot size={32} />
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{item.user}</p>
+                  <p className="text-xs text-gray-400">{item.book} · {item.time}</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 italic mb-3 leading-relaxed">{item.sentence}</p>
+              <button
+                onClick={() => handleClap(item.id)}
+                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+                  clapState[item.id] ? "bg-orange-100 text-orange-500" : "bg-gray-100 text-gray-500 hover:bg-orange-50"
+                }`}
+              >
+                👏 {item.claps + (clapState[item.id] ? 1 : 0)}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── SearchView (내서재) ───────────────────────────────────────────────────────
+const SearchView = ({ books, currentBook, onRegister }) => {
+  const [query, setQuery] = useState("");
+
+  const filtered = query
+    ? books.filter(b => b.title.includes(query) || b.author.includes(query))
+    : books;
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="bg-green-500 px-5 pt-5 pb-4">
+        <h2 className="text-white font-bold text-lg">내 서재</h2>
+        <p className="text-green-100 text-xs">읽을 책을 등록하세요</p>
+      </div>
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+        {/* Current book */}
+        {currentBook && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+            <p className="text-xs text-green-600 font-semibold mb-2">📖 현재 읽는 중</p>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">📖</span>
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">{currentBook.title}</p>
+                <p className="text-xs text-gray-500">{currentBook.author} · {currentBook.currentPage}/{currentBook.totalPages}p</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Search */}
+        <div className="relative mb-4">
+          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            placeholder="책 제목, 저자 검색..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+          />
+        </div>
+
+        {/* Book list */}
+        <div className="space-y-2">
+          {filtered.map(book => (
+            <div key={book.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <span className="text-3xl">{book.cover}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-800">{book.title}</p>
+                <p className="text-xs text-gray-500">{book.author} · {book.totalPages}p</p>
+              </div>
+              <button
+                onClick={() => onRegister(book)}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
+                  currentBook?.id === book.id
+                    ? "bg-gray-100 text-gray-400"
+                    : "bg-green-500 text-white hover:bg-green-600"
+                }`}
+              >
+                {currentBook?.id === book.id ? "읽는 중" : "등록"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Bottom Nav ────────────────────────────────────────────────────────────────
+const BottomNav = ({ activeTab, onTabChange }) => {
+  const tabs = [
+    { id: "nest", label: "둥지", icon: HomeIcon },
+    { id: "village", label: "마을", icon: MapIcon },
+    { id: "social", label: "소셜", icon: UsersIcon },
+    { id: "library", label: "내서재", icon: SearchIcon },
+  ];
+  return (
+    <div className="bg-white border-t border-gray-100 flex items-center" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {tabs.map(tab => {
+        const Icon = tab.icon;
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className="flex-1 flex flex-col items-center gap-0.5 py-2 transition-all"
+          >
+            <Icon size={22} className={active ? "text-green-500" : "text-gray-300"} />
+            <span className={`text-xs font-medium ${active ? "text-green-500" : "text-gray-300"}`}>
+              {tab.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── App ───────────────────────────────────────────────────────────────────────
+const App = () => {
+  const [activeTab, setActiveTab] = useState("nest");
+  const [user, setUser] = useState(() => LS.get("rg_user", INIT_USER));
+  const [friends, setFriends] = useState(() => LS.get("rg_friends", INIT_FRIENDS));
+  const [feed, setFeed] = useState(() => LS.get("rg_feed", INIT_FEED));
+  const [books] = useState(INIT_BOOKS);
+  const [showMission, setShowMission] = useState(false);
+  const [showReward, setShowReward] = useState(false);
+  const [lastXP, setLastXP] = useState(0);
+
+  useEffect(() => { LS.set("rg_user", user); }, [user]);
+  useEffect(() => { LS.set("rg_friends", friends); }, [friends]);
+  useEffect(() => { LS.set("rg_feed", feed); }, [feed]);
+
+  const handleRecord = useCallback((page, sentence) => {
+    const xpGained = 30 + Math.floor(Math.random() * 20);
+    setUser(u => ({
+      ...u,
+      xp: Math.min(u.xp + xpGained, u.xpMax),
+      streak: u.streak + 1,
+      sessions: u.sessions + 1,
+      currentBook: u.currentBook ? { ...u.currentBook, currentPage: Math.min(page, u.currentBook.totalPages) } : u.currentBook,
+    }));
+    // Add to feed
+    const newEntry = {
+      id: Date.now(),
+      user: user.name,
+      book: user.currentBook?.title || "",
+      sentence,
+      time: "방금",
+      claps: 0,
+    };
+    setFeed(f => [newEntry, ...f]);
+    setLastXP(xpGained);
+    setShowMission(false);
+    setShowReward(true);
+  }, [user]);
+
+  const handleSendWorm = useCallback((friendId) => {
+    // In a real app, send push notification
+  }, []);
+
+  const handleClap = useCallback((feedId) => {
+    setFeed(f => f.map(item => item.id === feedId ? { ...item, claps: item.claps + 1 } : item));
+  }, []);
+
+  const handleRegister = useCallback((book) => {
+    setUser(u => ({ ...u, currentBook: { ...book, currentPage: 0 } }));
+  }, []);
+
+  return (
+    <div className="flex flex-col h-screen bg-white overflow-hidden shadow-2xl">
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "nest" && (
+          <NestView user={user} onRecordClick={() => setShowMission(true)} />
+        )}
+        {activeTab === "village" && (
+          <VillageView friends={friends} onSendWorm={handleSendWorm} />
+        )}
+        {activeTab === "social" && (
+          <SocialView feed={feed} onClap={handleClap} />
+        )}
+        {activeTab === "library" && (
+          <SearchView books={books} currentBook={user.currentBook} onRegister={handleRegister} />
+        )}
+      </div>
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {showMission && user.currentBook && (
+        <MissionModal
+          book={user.currentBook}
+          onClose={() => setShowMission(false)}
+          onSubmit={handleRecord}
+        />
+      )}
+      {showReward && (
+        <RewardModal xpGained={lastXP} onClose={() => setShowReward(false)} />
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<style>
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+</body>
+</html>
