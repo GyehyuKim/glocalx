@@ -256,23 +256,78 @@ Export 포맷:
 
 ---
 
-## 5. 데이터 모델 (MVP 최소)
+## 5. 백엔드 스펙
+
+### 5.1 플랫폼
+
+**Supabase** — Auth + PostgreSQL + Storage + Edge Functions 일괄 처리.
+
+| 역할 | Supabase 기능 |
+|---|---|
+| 인증 | Supabase Auth (Google OAuth provider) |
+| DB | PostgreSQL (RLS로 row-level 접근 제어) |
+| 표지 이미지 | Storage (알라딘 API 캐싱) 또는 외부 URL 직접 저장 |
+| 스트릭 배치 | pg_cron UTC 15:00 (KST 자정) — §5.6 참조 |
+
+### 5.2 인증 — Google OAuth
+
+- Supabase Auth의 Google provider 사용. `access_token` 발급 후 Supabase session으로 교환.
+- 웹 데모: `@supabase/auth-ui-react` 또는 직접 redirect
+- APK: `expo-auth-session` + Supabase Auth (redirect URI 별도 등록 필요)
+- 두 플랫폼 모두 같은 Supabase 프로젝트 사용. Google Cloud Console에 웹 + Android redirect URI 각각 등록.
+
+### 5.3 소셜 그래프 — 팔로우 (단방향)
+
+- 상대 수락 없이 팔로우 즉시 적용. 마을에 팔로이의 집 불빛 표시.
+- 향후 block 기능 추가 시 일방적 팔로우로 인한 사생활 노출 차단 가능 (block 테이블 추가만으로 확장).
+
+```
+Follow
+  follower_id, following_id, created_at
+  UNIQUE(follower_id, following_id)
+```
+
+**친구 추천 쿼리 조건**: 전체 유저 중 `본인 제외` + `이미 following 중인 유저 제외`. 향후 `reason` 컬럼 추가로 "같은 책 읽는 사람" 등 랭킹 로직 교체 가능.
+
+### 5.4 도서 데이터 — 표지 URL 수집
+
+알라딘 오픈 API(무료)로 ISBN → 표지 이미지 URL 보강.
+
+**처리 흐름**:
+1. `books_toc.csv` (100권, PR #83)를 Supabase `books` 테이블에 seed
+2. 각 book의 ISBN으로 알라딘 오픈 API 호출: `http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx?ttbkey=…&itemIdType=ISBN13&ItemId={isbn}&output=js`
+3. 응답의 `cover` 필드를 `books.cover_url`에 저장
+4. API 실패(ISBN 불일치 등) 시 fallback: 플레이스홀더 이미지 URL
+
+**필요한 것**: 알라딘 TTB API 키 (무료, ttb.aladin.co.kr 가입 후 발급)
+
+### 5.5 데이터 모델 (MVP 최소)
 
 ```
 User
-  id, name, avatar, timezone, streak, xp, shields
+  id, name, avatar_url, timezone, xp
+  -- streak/shield는 Streak 테이블로 분리
 
 Book
-  id, isbn, title, author, cover_url, total_pages, chapters[]
+  id, isbn, title, author, publisher, cover_url, total_pages
 
 Chapter
-  id, book_id, title, start_page, end_page, order
+  id, book_id, title, start_page, end_page, chapter_order
 
 UserBook
-  user_id, book_id, status
+  user_id, book_id, status (reading | completed)
 
 ReadingSession
-  id, user_book_id, date, current_page, pages_read (derived: current_page - prev session's current_page), sentence, xp_earned
+  id, user_book_id, session_date, current_page, pages_read_today, xp_earned
+  UNIQUE(user_book_id, session_date)  -- 하루 1세션 강제
+
+Sentence
+  id, user_book_id, session_date, text, created_at
+  -- 하루 여러 개 허용 (session과 별도 테이블)
+
+Follow
+  follower_id, following_id, created_at
+  UNIQUE(follower_id, following_id)
 
 Club
   id, book_id, theme (library | tree), brick_count
@@ -284,7 +339,38 @@ Streak
   user_id, current, longest, last_check_in_date, shields_remaining, pause_until
 ```
 
-저장: MVP 데모는 JSON/CSV → 실제 서비스 시 Supabase로 마이그레이션 (논의 §5.2).
+### 5.6 스트릭 / 방패 처리 방식
+
+→ **KST 자정 pg_cron 배치**로 확정.
+
+```sql
+-- Supabase pg_cron (UTC 15:00 = KST 00:00)
+select cron.schedule(
+  'streak-shield-daily',
+  '0 15 * * *',
+  $$
+    -- 전날 check-in 없는 유저: 방패 소모 or 스트릭 리셋
+    update streak
+    set
+      shields_remaining = case
+        when shields_remaining > 0 then shields_remaining - 1
+        else 0
+      end,
+      current = case
+        when shields_remaining > 0 then current
+        else 0
+      end
+    where last_check_in_date < current_date - interval '1 day';
+  $$
+);
+```
+
+| 항목 | 결정 |
+|---|---|
+| 실행 시각 | UTC 15:00 (= KST 00:00) |
+| 방패 소모 | 전날 세션 없으면 `shields_remaining - 1`, 스트릭 유지 |
+| 방패 0개 + 미참여 | `current = 0` (스트릭 리셋) |
+| 글로벌 확장 시 | 유저별 타임존 컬럼 추가 후 재작업 (MVP 범위 외) |
 
 ---
 
