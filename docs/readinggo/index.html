@@ -338,7 +338,8 @@ const NestView = ({ user, onRecordClick, todayDone }) => {
 const MissionModal = ({ book, onClose, onSubmit }) => {
   const [page, setPage] = useState(String(book.currentPage || ""));
   const [sentence, setSentence] = useState("");
-  const valid = page && parseInt(page) > (book.currentPage||0) && parseInt(page) <= book.totalPages && sentence.length >= 10;
+  const pageNum = parseInt(page);
+  const valid = page && pageNum > 0 && pageNum <= book.totalPages && sentence.trim().length > 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{background:"rgba(0,0,0,0.5)"}}>
@@ -586,7 +587,7 @@ const App = () => {
   const [showReward,  setShowReward]  = useState(false);
   const [showCeremony, setShowCeremony] = useState(false);
   const [lastXP, setLastXP]     = useState(0);
-  const [todayDone, setTodayDone] = useState(()=>LS.get("rg_today2",false));
+  const [todayDone, setTodayDone] = useState(false);
 
   useEffect(()=>{ LS.set("rg_user2",user); },[user]);
   useEffect(()=>{ LS.set("rg_feed2",feed); },[feed]);
