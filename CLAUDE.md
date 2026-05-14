@@ -107,6 +107,37 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 
 3. **머지 권한**: main 머지는 계휴(gyehyu)가 GitHub 웹에서 수행. LLM이 직접 머지하지 않고 PR 생성까지만 한다.
 
+## 도서 데이터 — books.tsv
+
+`docs/readinggo/data/books.tsv` 가 유일한 도서 데이터 소스다. **절대 직접 책 정보를 하드코딩하지 말 것.**
+
+### 파일 구조
+```
+book_id  isbn             title      author      publisher  total_pages  cover_url
+b001     9788934972464    사피엔스   유발 하라리  김영사     648          https://image.aladin.co.kr/...
+```
+- 구분자: 탭(`\t`)
+- 총 542권 (민음사 세계문학전집 중심 + 사피엔스·코스모스 등 교양서)
+- `cover_url`: 알라딘 CDN 이미지 URL (모든 행에 존재)
+
+### 프론트엔드에서 사용하는 법
+```js
+// data.js의 loadBooks()가 TSV를 파싱해 배열로 반환
+const books = await loadBooks();
+// books[0] → { book_id, isbn, title, author, publisher, total_pages, cover_url }
+
+// 제목 검색
+const found = books.find(b => b.title === '사피엔스');
+
+// 퍼지 검색 (onboarding 검색창)
+const results = fuzzySearch(books, query).slice(0, 20);
+```
+
+### 주의
+- `loadBooks()`는 `window.loadBooks`로 export됨 — `data.js` 로드 후 어디서든 호출 가능
+- 결과는 내부 캐시(`_booksCache`)됨 — 중복 fetch 없음
+- 새 책 추가가 필요하면 `books.tsv`에만 행 추가 (하드코딩 금지)
+
 ## Pages / Demo
 
 GitHub Pages serves from `main /docs`.
