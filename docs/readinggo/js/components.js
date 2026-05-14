@@ -233,8 +233,24 @@ const Toast = ({ msg, onDone }) => {
 
 // ── BookCover (공통 표지 컴포넌트) ────────────────────────────────────────────
 const BookCover = ({ book, size = 56, radius = 12 }) => {
-  if (book && book.cover_url) {
-    return <img src={book.cover_url} alt={book.title} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0 }}/>;
+  const [src, setSrc] = React.useState(book?.cover_url || '');
+
+  React.useEffect(() => {
+    if (!book?.cover_url && book?.isbn) {
+      fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${book.isbn}&fields=items/volumeInfo/imageLinks/thumbnail`)
+        .then(r => r.json())
+        .then(d => {
+          const url = d?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
+          if (url) setSrc(url.replace('http:', 'https:'));
+        })
+        .catch(() => {});
+    } else {
+      setSrc(book?.cover_url || '');
+    }
+  }, [book?.isbn, book?.cover_url]);
+
+  if (src) {
+    return <img src={src} alt={book?.title} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0 }}/>;
   }
   return (
     <div style={{ width: size, height: size, borderRadius: radius, background: '#F0FDF4',
