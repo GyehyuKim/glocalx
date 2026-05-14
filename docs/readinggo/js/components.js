@@ -1,0 +1,206 @@
+// components.js — 공통 UI 컴포넌트
+// 의존: data.js (getNestStage, NEST_STAGES)
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── Sparrow SVG (§11 디자인 토큰) ─────────────────────────────────────────────
+const Sparrow = ({ size = 48, cls = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 120 120" fill="none" className={cls}>
+    <ellipse cx="60" cy="72" rx="32" ry="28" fill="#C49A4A"/>
+    <ellipse cx="55" cy="76" rx="24" ry="16" fill="#8B6234" transform="rotate(-10 55 76)"/>
+    <ellipse cx="56" cy="74" rx="20" ry="12" fill="#A07840" transform="rotate(-10 56 74)"/>
+    <ellipse cx="66" cy="80" rx="16" ry="14" fill="#E8D5A3"/>
+    <circle cx="72" cy="44" r="22" fill="#C49A4A"/>
+    <ellipse cx="72" cy="28" rx="14" ry="10" fill="#6B3F1A"/>
+    <ellipse cx="68" cy="30" rx="10" ry="7" fill="#8B5E2A"/>
+    <ellipse cx="84" cy="50" rx="10" ry="8" fill="#F5EDD0"/>
+    <ellipse cx="80" cy="52" rx="5" ry="4" fill="#2A1A0A" transform="rotate(15 80 52)"/>
+    <circle cx="76" cy="40" r="5" fill="#1A0A00"/>
+    <circle cx="77" cy="39" r="1.5" fill="white"/>
+    <path d="M88 46 L98 44 L88 50 Z" fill="#8B6234"/>
+    <path d="M88 48 L96 46 L88 50 Z" fill="#6B4A1A"/>
+    <line x1="55" y1="96" x2="50" y2="110" stroke="#8B6234" strokeWidth="3" strokeLinecap="round"/>
+    <line x1="65" y1="96" x2="70" y2="110" stroke="#8B6234" strokeWidth="3" strokeLinecap="round"/>
+    <line x1="50" y1="110" x2="44" y2="114" stroke="#8B6234" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="50" y1="110" x2="52" y2="115" stroke="#8B6234" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="70" y1="110" x2="64" y2="114" stroke="#8B6234" strokeWidth="2.5" strokeLinecap="round"/>
+    <line x1="70" y1="110" x2="72" y2="115" stroke="#8B6234" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+
+// ── 아이콘 ─────────────────────────────────────────────────────────────────────
+const Icon = ({ d, s = 22, c = '', fill = 'none', sw = 2 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={c}>{d}</svg>
+);
+const HomeIcon    = ({ s, c }) => <Icon s={s} c={c} d={<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>}/>;
+const MapIcon     = ({ s, c }) => <Icon s={s} c={c} d={<><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></>}/>;
+const UsersIcon   = ({ s, c }) => <Icon s={s} c={c} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
+const BookIcon    = ({ s, c }) => <Icon s={s} c={c} d={<><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></>}/>;
+const SearchIcon  = ({ s, c }) => <Icon s={s} c={c} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
+const XIcon       = ({ s = 22, c = '' }) => <Icon s={s} c={c} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
+const BackIcon    = ({ s = 22, c = '' }) => <Icon s={s} c={c} d={<polyline points="15 18 9 12 15 6"/>}/>;
+const RightIcon   = ({ s = 22, c = '' }) => <Icon s={s} c={c} d={<polyline points="9 18 15 12 9 6"/>}/>;
+const SettingsIcon= ({ s = 22, c = '' }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={c}>
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
+// ── NestIcon (마을 카드용) ─────────────────────────────────────────────────────
+const NestIcon = ({ stage, size = 40, isLit = false }) => {
+  const icons = ['🪵', '🪹', '🏠', '🏡', '🏰'];
+  const emoji = icons[Math.min((stage || 1) - 1, 4)];
+  return (
+    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
+      <span style={{ fontSize: size * 0.68, filter: isLit ? 'none' : 'grayscale(70%)', opacity: isLit ? 1 : 0.55 }}>
+        {emoji}
+      </span>
+      {isLit && (
+        <span style={{ position: 'absolute', top: 0, right: 0 }}>
+          <span style={{ position: 'relative', display: 'flex', width: 12, height: 12 }}>
+            <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#FFC800', opacity: .75, animation: 'ping 1.2s ease-out infinite' }}/>
+            <span style={{ position: 'relative', width: 12, height: 12, borderRadius: '50%', background: '#FFC800', display: 'block' }}/>
+          </span>
+        </span>
+      )}
+    </div>
+  );
+};
+
+// ── AppHeader (§5.1 상단 바) ──────────────────────────────────────────────────
+const AppHeader = ({ streak, xp, level }) => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '12px 16px', background: '#fff', borderBottom: '2px solid #E5E5E5', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <Sparrow size={28}/>
+      <span style={{ fontSize: 17, fontWeight: 900, color: '#1F1F1F', letterSpacing: '-0.5px' }}>
+        reading<span style={{ color: '#58CC02' }}>Go</span>
+      </span>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 20 }}>🔥</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#FF9600' }}>{streak}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        <span style={{ fontSize: 18 }}>⚡</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: '#1CB0F6' }}>{xp}</span>
+      </div>
+      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#CE82FF',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontWeight: 800, fontSize: 11, color: '#fff' }}>Lv{level}</span>
+      </div>
+    </div>
+  </div>
+);
+
+// ── NestBanner (§5.2 둥지 진화 + 탭으로 활성 책 전환) ───────────────────────
+const NestBanner = ({ userBook, onTap }) => {
+  if (!userBook) return (
+    <div style={{ margin: '16px 16px 0', borderRadius: 16, padding: 16, textAlign: 'center',
+      background: '#f3f4f6', border: '2px solid #E5E5E5' }}>
+      <p style={{ fontSize: 13, color: '#AFAFAF', fontWeight: 700, margin: 0 }}>첫 책을 등록해보세요 📚</p>
+    </div>
+  );
+  const pct = Math.min(100, Math.round((userBook.currentPage / userBook.book.total_pages) * 100));
+  const st  = getNestStage(pct);
+  return (
+    <button onClick={onTap} style={{ display: 'block', width: 'calc(100% - 32px)', margin: '16px 16px 0',
+      background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+      <div style={{ borderRadius: 16, overflow: 'hidden', background: st.bg, border: `2px solid ${st.color}44` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16 }}>
+          {userBook.book.cover_url
+            ? <img src={userBook.book.cover_url} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }}/>
+            : <div style={{ width: 56, height: 56, borderRadius: 12, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{st.emoji}</div>
+          }
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontWeight: 800, fontSize: 13, color: st.color }}>{st.emoji} {st.name}</span>
+              <span style={{ fontWeight: 700, fontSize: 12, color: '#AFAFAF' }}>{pct}%</span>
+              <RightIcon s={14} c="text-gray-400" style={{ marginLeft: 'auto' }}/>
+            </div>
+            <div style={{ width: '100%', borderRadius: 999, height: 10, background: '#E5E5E5', overflow: 'hidden' }}>
+              <div style={{ height: 10, borderRadius: 999, width: `${pct}%`, background: st.color, transition: 'width .7s' }}/>
+            </div>
+            <p style={{ fontSize: 11, color: '#AFAFAF', marginTop: 4, margin: '4px 0 0', overflow: 'hidden',
+              whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+              {userBook.book.title} · {userBook.currentPage}/{userBook.book.total_pages}p
+            </p>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+};
+
+// ── BottomNav (하단 4탭) ──────────────────────────────────────────────────────
+const BottomNav = ({ active, onChange }) => {
+  const tabs = [
+    { id: 'nest',    label: '둥지',   IC: HomeIcon  },
+    { id: 'village', label: '마을',   IC: MapIcon   },
+    { id: 'social',  label: '소셜',   IC: UsersIcon },
+    { id: 'library', label: '내서재', IC: BookIcon  },
+  ];
+  return (
+    <div style={{ display: 'flex', background: '#fff', borderTop: '2px solid #E5E5E5',
+      flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {tabs.map(({ id, label, IC }) => {
+        const on = active === id;
+        return (
+          <button key={id} onClick={() => onChange(id)} style={{ flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 2, padding: '10px 0', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <IC s={22} c={on ? '' : ''} style={{ color: on ? '#58CC02' : '#AFAFAF' }}/>
+            <span style={{ fontSize: 11, fontWeight: 800, color: on ? '#58CC02' : '#AFAFAF' }}>{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── Toast (알림 시뮬레이션) ───────────────────────────────────────────────────
+const Toast = ({ msg, onDone }) => {
+  useEffect(() => { const t = setTimeout(onDone, 2500); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 9999, pointerEvents: 'none' }} className="pop-in">
+      <div style={{ background: '#1F1F1F', color: '#fff', borderRadius: 20, padding: '12px 20px',
+        fontSize: 14, fontWeight: 700, boxShadow: '0 8px 24px rgba(0,0,0,.3)', whiteSpace: 'nowrap' }}>
+        {msg}
+      </div>
+    </div>
+  );
+};
+
+// ── BookCover (공통 표지 컴포넌트) ────────────────────────────────────────────
+const BookCover = ({ book, size = 56, radius = 12 }) => {
+  if (book && book.cover_url) {
+    return <img src={book.cover_url} alt={book.title} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0 }}/>;
+  }
+  return (
+    <div style={{ width: size, height: size, borderRadius: radius, background: '#F0FDF4',
+      border: '2px solid #D7F0BF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.5, flexShrink: 0 }}>📖</div>
+  );
+};
+
+// ── window exports ─────────────────────────────────────────────────────────────
+window.Sparrow      = Sparrow;
+window.HomeIcon     = HomeIcon;
+window.MapIcon      = MapIcon;
+window.UsersIcon    = UsersIcon;
+window.BookIcon     = BookIcon;
+window.SearchIcon   = SearchIcon;
+window.XIcon        = XIcon;
+window.BackIcon     = BackIcon;
+window.RightIcon    = RightIcon;
+window.SettingsIcon = SettingsIcon;
+window.NestIcon     = NestIcon;
+window.AppHeader    = AppHeader;
+window.NestBanner   = NestBanner;
+window.BottomNav    = BottomNav;
+window.Toast        = Toast;
+window.BookCover    = BookCover;
