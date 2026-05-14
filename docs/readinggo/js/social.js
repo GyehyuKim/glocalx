@@ -7,6 +7,26 @@ const SocialView = ({ state, onStateChange }) => {
   const clapped   = state.clappedFeed  || {};
   const sympathied = state.sympathyFeed || {};
   const saved      = state.savedFeed    || {};
+  const friends   = state.friends      || [];
+  const [searchQ, setSearchQ] = React.useState('');
+  const [searchOpen, setSearchOpen] = React.useState(false);
+
+  const followedIds = new Set(friends.map(f => f.id));
+  const searchResults = searchQ.trim()
+    ? NPC_SEARCH_USERS.filter(u =>
+        u.handle.includes(searchQ.toLowerCase()) ||
+        u.name.includes(searchQ)
+      )
+    : NPC_SEARCH_USERS;
+
+  const doFollow = user => {
+    if (followedIds.has(user.id)) return;
+    onStateChange(prev => ({
+      ...prev,
+      friends: [...prev.friends, { ...user, sentence: user.sentence || '' }],
+    }));
+    window._showToast && window._showToast(`🐦 @${user.handle} 팔로우!`);
+  };
 
   const doReact = (id, type) => {
     const fieldMap = { clap: 'clappedFeed', sympathy: 'sympathyFeed', save: 'savedFeed' };
@@ -30,13 +50,65 @@ const SocialView = ({ state, onStateChange }) => {
     <div className="rg-screen">
       {/* 헤더 */}
       <div className="rg-tab-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 22 }}>👥</span>
-          <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>소셜</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 22 }}>👥</span>
+            <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>소셜</span>
+          </div>
+          <button onClick={() => setSearchOpen(v => !v)} style={{
+            display: 'flex', alignItems: 'center', gap: 4, background: searchOpen ? '#F1FBF5' : '#F7F7F7',
+            border: `1.5px solid ${searchOpen ? '#3FD17F' : '#E5E5E5'}`,
+            borderRadius: 20, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit',
+            fontWeight: 800, fontSize: 12, color: searchOpen ? '#1F8E4D' : '#5A5F69',
+          }}>
+            <SearchIcon s={14}/> 친구 찾기
+          </button>
         </div>
       </div>
 
       <div className="rg-scroll" style={{ padding: '16px 16px 0' }}>
+        {/* ── 친구 찾기 패널 ─────────────────────────────────────────────────── */}
+        {searchOpen && (
+          <div className="rg-card" style={{ marginBottom: 16 }}>
+            <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 10px' }}>
+              🔍 친구 찾기
+            </p>
+            <input
+              type="text" value={searchQ}
+              onChange={e => setSearchQ(e.target.value)}
+              placeholder="@닉네임으로 검색"
+              className="rg-input"
+              style={{ marginBottom: 10, fontSize: 13, padding: '10px 14px' }}
+              onFocus={e => e.target.style.borderColor = '#3FD17F'}
+              onBlur={e => e.target.style.borderColor  = '#E5E5E5'}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {searchResults.map(user => (
+                <div key={user.id} style={{ display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 0', borderBottom: '1px solid #F7F7F7' }}>
+                  <NestIcon stage={user.stage} size={36} isLit={user.isLit}/>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', margin: 0 }}>
+                      {user.name} <span style={{ fontSize: 10, color: '#AFAFAF', fontWeight: 600 }}>· NPC</span>
+                    </p>
+                    <p style={{ fontSize: 11, color: '#AFAFAF', margin: 0 }}>@{user.handle}</p>
+                  </div>
+                  <button onClick={() => doFollow(user)}
+                    disabled={followedIds.has(user.id)}
+                    style={{
+                      padding: '6px 14px', borderRadius: 14, border: 'none', cursor: followedIds.has(user.id) ? 'default' : 'pointer',
+                      fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+                      background: followedIds.has(user.id) ? '#E5E5E5' : '#3FD17F',
+                      color:      followedIds.has(user.id) ? '#AFAFAF' : '#fff',
+                    }}>
+                    {followedIds.has(user.id) ? '팔로잉 ✓' : '팔로우'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── 주간 리그 (§6.5 / §5.6) ─────────────────────────────────────── */}
         <div className="rg-card" style={{ marginBottom: 16 }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 12px' }}>
