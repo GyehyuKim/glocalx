@@ -213,12 +213,11 @@ const SocialView = ({ state, onStateChange }) => {
             <span style={{ fontSize: 22 }}>👥</span>
             <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>소셜</span>
           </div>
-          <button onClick={() => setSearchOpen(v => !v)} style={{
+          <button onClick={() => setSearchOpen(true)} style={{
             display: 'flex', alignItems: 'center', gap: 4,
-            background: searchOpen ? '#F1FBF5' : '#F7F7F7',
-            border: `1.5px solid ${searchOpen ? '#3FD17F' : '#E5E5E5'}`,
+            background: '#F7F7F7', border: '1.5px solid #E5E5E5',
             borderRadius: 20, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit',
-            fontWeight: 800, fontSize: 12, color: searchOpen ? '#1F8E4D' : '#5A5F69',
+            fontWeight: 800, fontSize: 12, color: '#5A5F69',
           }}>
             <SearchIcon s={14}/> 친구 찾기
           </button>
@@ -229,7 +228,13 @@ const SocialView = ({ state, onStateChange }) => {
         {/* 친구 찾기 패널 */}
         {searchOpen && (
           <div className="rg-card" style={{ marginBottom: 16 }}>
-            <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 10px' }}>🔍 친구 찾기</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: 0 }}>🔍 친구 찾기</p>
+            <button onClick={() => { setSearchOpen(false); setSearchQ(''); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+              <XIcon s={18}/>
+            </button>
+          </div>
             <input type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)}
               placeholder="@닉네임으로 검색" className="rg-input"
               style={{ marginBottom: 10, fontSize: 13, padding: '10px 14px' }}
