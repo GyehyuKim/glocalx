@@ -184,9 +184,9 @@ const ActiveBookSheet = ({ userBooks, activeId, onSelect, onClose }) => {
   );
 };
 
-// ── 일일 미션 모달 (D-1 → D-2 통합, 재진입 시) ───────────────────────────────
-const MissionModal = ({ userBook, onClose, onSubmit }) => {
-  const [step, setStep] = React.useState('page'); // 'page' | 'sentence'
+// ── 일일 미션 모달 (D-1 → D-2 통합, addOnly=true 면 문장만) ────────────────
+const MissionModal = ({ userBook, onClose, onSubmit, addOnly = false }) => {
+  const [step, setStep] = React.useState(addOnly ? 'sentence' : 'page');
   const [page, setPage] = React.useState(userBook.currentPage);
   const [sentencePage, setSentencePage] = React.useState(userBook.currentPage);
   const [text, setText] = React.useState('');
@@ -208,7 +208,7 @@ const MissionModal = ({ userBook, onClose, onSubmit }) => {
         <div style={{ padding: '0 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>
-              {step === 'page' ? '오늘의 독서 기록' : '오늘의 문장'}
+              {step === 'page' ? '오늘의 독서 기록' : addOnly ? '문장 추가' : '오늘의 문장'}
             </span>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
               <XIcon s={20} style={{ color: '#AFAFAF' }}/>
@@ -265,8 +265,11 @@ const MissionModal = ({ userBook, onClose, onSubmit }) => {
                 onBlur={e => e.target.style.borderColor  = '#E5E5E5'}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                <button onClick={() => setStep('page')} style={{ background:'none',border:'none',cursor:'pointer',
-                  color:'#AFAFAF',fontWeight:700,fontSize:13 }}>← 이전</button>
+                {!addOnly
+                  ? <button onClick={() => setStep('page')} style={{ background:'none',border:'none',cursor:'pointer',
+                      color:'#AFAFAF',fontWeight:700,fontSize:13 }}>← 이전</button>
+                  : <div/>
+                }
                 <span style={{ fontSize: 11, color: '#AFAFAF', fontWeight: 700 }}>{text.length}/200</span>
               </div>
               <button onClick={() => textValid && onSubmit(page, text.trim(), parseInt(sentencePage) || page)}
@@ -342,25 +345,28 @@ const RewardModal = ({ sessionNum, xpGained, isComplete, bookTitle, onClose }) =
 
 // ── NestView (둥지 탭 전체) ───────────────────────────────────────────────────
 const NestView = ({ state, onStateChange }) => {
-  const [showSheet,   setSheet]   = React.useState(false);
-  const [showMission, setMission] = React.useState(false);
-  const [reward,      setReward]  = React.useState(null); // {sessionNum, xpGained, isComplete}
+  const [showSheet,    setSheet]    = React.useState(false);
+  const [showMission,  setMission]  = React.useState(false);
+  const [showAddSent,  setAddSent]  = React.useState(false);
+  const [showCal,      setCal]      = React.useState(false);
+  const [reward,       setReward]   = React.useState(null);
 
+  const activeDate = state.simDate || todayISO();
   const activeBook = getActiveBook(state);
-  const todayDone  = hasDoneToday(activeBook);
+  const todayDone  = hasDoneToday(activeBook, activeDate);
 
   const handleRecord = (page, text, sentencePage) => {
     const xpGained = 10;
     const isComplete = page >= (activeBook?.book.total_pages || Infinity);
     const sessionId  = genId();
-    const dateLabel  = todayLabel();
-    const dateISO    = todayISO();
+    const d = new Date(activeDate);
+    const dateLabel = `${d.getMonth()+1}/${d.getDate()}`;
 
     onStateChange(prev => {
       const updatedBooks = prev.userBooks.map(ub => {
         if (ub.id !== prev.activeUserBookId) return ub;
         const newSession = {
-          id: sessionId, sessionDate: dateISO, currentPage: page,
+          id: sessionId, sessionDate: activeDate, currentPage: page,
           xpEarned: xpGained, createdAt: new Date().toISOString(), date: dateLabel, sentence: text,
         };
         const newSentence = {
@@ -379,16 +385,12 @@ const NestView = ({ state, onStateChange }) => {
       const newStreak = prev.user.streak + 1;
       const newFeed   = [
         { id: genId(), handle: 'me', name: prev.user.displayName || '나',
-          book: activeBook.book.title, sentence: text, time: '방금', claps: 0 },
+          book: activeBook.book.title, sentence: text, time: '방금', claps: 0, sympathy: 0, saves: 0 },
         ...prev.feed,
       ];
-
-      return {
-        ...prev,
-        userBooks: updatedBooks,
+      return { ...prev, userBooks: updatedBooks,
         user: { ...prev.user, xp: newXP, level: calcLevel(newXP), streak: newStreak },
-        feed: newFeed,
-      };
+        feed: newFeed };
     });
 
     setMission(false);
@@ -396,12 +398,42 @@ const NestView = ({ state, onStateChange }) => {
     setReward({ sessionNum: finalNum, xpGained, isComplete, bookTitle: activeBook?.book.title });
   };
 
+  const handleAddSentence = (_, text, sentencePage) => {
+    onStateChange(prev => {
+      const todaySession = (prev.userBooks.find(u=>u.id===prev.activeUserBookId)?.sessions||[])
+        .find(s => s.sessionDate === activeDate);
+      const updatedBooks = prev.userBooks.map(ub => {
+        if (ub.id !== prev.activeUserBookId) return ub;
+        const newSentence = {
+          id: genId(), text, page: sentencePage || ub.currentPage,
+          sessionId: todaySession?.id || '', createdAt: new Date().toISOString(),
+        };
+        return { ...ub, sentences: [...(ub.sentences || []), newSentence] };
+      });
+      return { ...prev, userBooks: updatedBooks };
+    });
+    setAddSent(false);
+    window._showToast && window._showToast('✍️ 문장이 추가됐어요!');
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <AppHeader streak={state.user.streak} xp={state.user.xp} level={state.user.level}/>
+      <AppHeader streak={state.user.streak} xp={state.user.xp} level={state.user.level}
+        onStreakTap={() => setCal(true)}/>
 
       <div style={{ flex: 1, overflowY: 'auto', background: '#F7F7F7' }}>
         <NestBanner userBook={activeBook} onTap={() => setSheet(true)}/>
+
+        {/* 문장 추가 버튼 (오늘 이미 기록한 경우) */}
+        {activeBook && todayDone && (
+          <div style={{ padding: '12px 16px 0', display: 'flex', gap: 8 }}>
+            <button onClick={() => setAddSent(true)}
+              className="btn-duo btn-white"
+              style={{ flex: 1, fontSize: 13, padding: '10px 0' }}>
+              ✍️ 문장 추가
+            </button>
+          </div>
+        )}
 
         {/* 로드맵 헤더 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 20px 8px' }}>
@@ -436,11 +468,19 @@ const NestView = ({ state, onStateChange }) => {
 
       {/* 일일 미션 모달 */}
       {showMission && activeBook && (
-        <MissionModal
-          userBook={activeBook}
-          onClose={() => setMission(false)}
-          onSubmit={handleRecord}
-        />
+        <MissionModal userBook={activeBook} onClose={() => setMission(false)} onSubmit={handleRecord}/>
+      )}
+
+      {/* 문장만 추가 모달 */}
+      {showAddSent && activeBook && (
+        <MissionModal userBook={activeBook} onClose={() => setAddSent(false)}
+          onSubmit={handleAddSentence} addOnly={true}/>
+      )}
+
+      {/* 스트릭 달력 */}
+      {showCal && (
+        <StreakCalendar userBooks={state.userBooks} simDate={state.simDate}
+          onClose={() => setCal(false)}/>
       )}
 
       {/* 보상 모달 */}

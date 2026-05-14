@@ -70,7 +70,7 @@ const NestIcon = ({ stage, size = 40, isLit = false }) => {
 };
 
 // ── AppHeader (§5.1 상단 바) ──────────────────────────────────────────────────
-const AppHeader = ({ streak, xp, level }) => (
+const AppHeader = ({ streak, xp, level, onStreakTap }) => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '12px 16px', background: '#fff', borderBottom: '2px solid #E5E5E5', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -80,10 +80,14 @@ const AppHeader = ({ streak, xp, level }) => (
       </span>
     </div>
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <button onClick={onStreakTap} style={{ display: 'flex', alignItems: 'center', gap: 4,
+        background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+        borderRadius: 10, transition: 'background .15s' }}
+        onMouseEnter={e => e.currentTarget.style.background='#FFF3E0'}
+        onMouseLeave={e => e.currentTarget.style.background='none'}>
         <span style={{ fontSize: 20 }}>🔥</span>
         <span style={{ fontWeight: 800, fontSize: 15, color: '#FF9600' }}>{streak}</span>
-      </div>
+      </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
         <span style={{ fontSize: 18 }}>⚡</span>
         <span style={{ fontWeight: 800, fontSize: 15, color: '#1CB0F6' }}>{xp}</span>
@@ -95,6 +99,58 @@ const AppHeader = ({ streak, xp, level }) => (
     </div>
   </div>
 );
+
+// ── StreakCalendar (이달 불꽃 달력) ───────────────────────────────────────────
+const StreakCalendar = ({ userBooks, simDate, onClose }) => {
+  const activeDate = simDate || todayISO();
+  const [year, month] = activeDate.split('-').map(Number);
+  const sessionDates = getSessionDates(userBooks);
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = Array(firstDay).fill(null).concat(Array.from({ length: daysInMonth }, (_, i) => i + 1));
+  const pad = n => String(n).padStart(2, '0');
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.5)',
+      display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 20px 36px' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p style={{ fontWeight: 900, fontSize: 16, color: '#1F1F1F', margin: 0 }}>
+            🔥 {year}년 {month}월 독서 기록
+          </p>
+          <button onClick={onClose} className="rg-btn-icon"><XIcon s={20}/></button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
+          {['일','월','화','수','목','금','토'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#AFAFAF', padding: '4px 0' }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={`e${i}`}/>;
+            const iso = `${year}-${pad(month)}-${pad(day)}`;
+            const hasSession = sessionDates.has(iso);
+            const isToday = iso === activeDate;
+            return (
+              <div key={iso} style={{ textAlign: 'center', padding: '6px 0', borderRadius: 10,
+                background: isToday ? '#FFF3E0' : 'transparent',
+                border: isToday ? '2px solid #FF9600' : '2px solid transparent' }}>
+                {hasSession
+                  ? <div style={{ fontSize: 16 }}>🔥</div>
+                  : <div style={{ fontSize: 12, fontWeight: 700, color: '#AFAFAF' }}>{day}</div>
+                }
+              </div>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 12, color: '#AFAFAF', textAlign: 'center', margin: '12px 0 0', fontWeight: 600 }}>
+          이번 달 {Array.from(sessionDates).filter(d => d.startsWith(`${year}-${pad(month)}`)).length}일 독서
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // ── NestBanner (§5.2 둥지 진화 + 탭으로 활성 책 전환) ───────────────────────
 const NestBanner = ({ userBook, onTap }) => {
@@ -199,8 +255,9 @@ window.BackIcon     = BackIcon;
 window.RightIcon    = RightIcon;
 window.SettingsIcon = SettingsIcon;
 window.NestIcon     = NestIcon;
-window.AppHeader    = AppHeader;
-window.NestBanner   = NestBanner;
-window.BottomNav    = BottomNav;
-window.Toast        = Toast;
-window.BookCover    = BookCover;
+window.AppHeader       = AppHeader;
+window.NestBanner      = NestBanner;
+window.BottomNav       = BottomNav;
+window.Toast           = Toast;
+window.BookCover       = BookCover;
+window.StreakCalendar  = StreakCalendar;

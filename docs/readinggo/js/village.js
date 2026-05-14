@@ -1,9 +1,63 @@
 // village.js — 마을 탭 (§5.5 리딩 빌리지)
 // 의존: data.js, components.js
 
+// ── 친구 상세 시트 ─────────────────────────────────────────────────────────────
+const FriendDetail = ({ friend, onClose }) => {
+  const npcInfo = NPC_SEARCH_USERS.find(n => n.handle === friend.handle);
+  const books = npcInfo?.books || [];
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.5)',
+      display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
+      <div style={{ width: '100%', background: '#fff', borderRadius: '24px 24px 0 0',
+        padding: '20px 20px 40px', maxHeight: '75%', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <NestIcon stage={friend.stage} size={44} isLit={friend.isLit}/>
+            <div>
+              <p style={{ fontWeight: 900, fontSize: 16, color: '#1F1F1F', margin: 0 }}>{friend.name}</p>
+              <p style={{ fontSize: 12, color: '#AFAFAF', margin: 0 }}>@{friend.handle}
+                {friend.isNpc && <span style={{ fontSize: 10, color: '#AFAFAF' }}> · NPC</span>}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rg-btn-icon"><XIcon s={20}/></button>
+        </div>
+        {npcInfo?.bio && (
+          <p style={{ fontSize: 13, color: '#5A5F69', marginBottom: 14, fontWeight: 600 }}>{npcInfo.bio}</p>
+        )}
+        {books.length > 0 && (
+          <>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#AFAFAF', marginBottom: 8 }}>읽고 있는 책</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {books.map(b => (
+                <span key={b} style={{ background: '#F0FDF4', border: '1.5px solid #D7F0BF',
+                  borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700, color: '#1F8E4D' }}>
+                  {b}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+        {friend.sentence && (
+          <>
+            <p style={{ fontSize: 12, fontWeight: 800, color: '#AFAFAF', marginBottom: 8 }}>오늘의 문장</p>
+            <div style={{ background: '#FAF6F0', borderRadius: 14, padding: '12px 14px',
+              borderLeft: '3px solid #3FD17F' }}>
+              <p style={{ fontSize: 13, color: '#2A2D33', fontStyle: 'italic',
+                lineHeight: 1.6, margin: 0 }}>{friend.sentence}</p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const VillageView = ({ state, onStateChange }) => {
   const friends = state.friends || [];
   const pokes   = state.pokes  || {};
+  const [detailFriend, setDetailFriend] = React.useState(null);
 
   const sendPoke = id => {
     onStateChange(prev => ({ ...prev, pokes: { ...prev.pokes, [id]: true } }));
@@ -28,8 +82,8 @@ const VillageView = ({ state, onStateChange }) => {
         {/* 친구 둥지 3열 그리드 (§5.5) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
           {friends.map(f => (
-            <div key={f.id} className="rg-card" style={{
-              padding: 10,
+            <div key={f.id} className="rg-card" onClick={() => setDetailFriend(f)} style={{
+              padding: 10, cursor: 'pointer',
               borderColor: f.isLit ? '#D7F0BF' : '#E5E5E5',
               boxShadow: f.isLit ? '0 0 8px rgba(255,194,51,0.5)' : '0 2px 8px rgba(0,0,0,.04)',
             }}>
@@ -79,16 +133,33 @@ const VillageView = ({ state, onStateChange }) => {
           ))}
         </div>
 
-        {/* 마을 게시판 빈 상태 (§12) */}
+        {/* 마을 게시판 */}
         <div className="rg-card" style={{ padding: 20 }}>
-          <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 8px' }}>
+          <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 12px' }}>
             📋 마을 게시판
           </p>
-          <p style={{ fontSize: 13, color: '#AFAFAF', textAlign: 'center', padding: '20px 0', margin: 0 }}>
-            첫 글을 남겨보세요 ✍️
-          </p>
+          {SEED_BOARD_POSTS.map(post => (
+            <div key={post.id} style={{ marginBottom: 12, paddingBottom: 12,
+              borderBottom: '1px solid #F7F7F7' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <span style={{ fontWeight: 800, fontSize: 12, color: '#1F1F1F' }}>{post.name}</span>
+                {post.isNpc && <span style={{ fontSize: 10, color: '#AFAFAF' }}>· NPC</span>}
+                <span style={{ fontSize: 11, color: '#AFAFAF', marginLeft: 'auto' }}>{post.time}</span>
+              </div>
+              <p style={{ fontSize: 13, color: '#5A5F69', lineHeight: 1.55, margin: 0 }}>{post.text}</p>
+            </div>
+          ))}
+          <button style={{ width: '100%', padding: '8px 0', borderRadius: 12, border: '1.5px dashed #E5E5E5',
+            background: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#AFAFAF',
+            fontFamily: 'inherit' }}>
+            ✍️ 글 남기기
+          </button>
         </div>
       </div>
+
+      {detailFriend && (
+        <FriendDetail friend={detailFriend} onClose={() => setDetailFriend(null)}/>
+      )}
     </div>
   );
 };

@@ -23,8 +23,7 @@ const ScreenA = ({ onStart }) => (
         "하루 한 페이지,<br/>한 문장에서 시작해요."
       </p>
       <p style={{ fontSize: 15, color: '#AFAFAF', fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
-        독서습관 앱계의 듀오링고 🐦<br/>
-        1페이지만 읽어도 오늘은 성공이에요.
+        1페이지만 읽어도 오늘은 성공이에요 🐦
       </p>
     </div>
 
@@ -36,6 +35,10 @@ const ScreenA = ({ onStart }) => (
     </div>
   </div>
 );
+
+// ── 큐레이션 Top10 제목 목록 (§C-1) — books.tsv에서 title 매칭 ───────────────
+const TOP10_RECENT_TITLES  = ['소년이 온다','사피엔스','호모 데우스','21세기를 위한 21가지 제언','설득의 심리학','제로 투 원','몰입','오리지널스','남아 있는 나날','방랑자들'];
+const TOP10_STEADY_TITLES  = ['데미안','이방인','1984','호밀밭의 파수꾼','노인과 바다','참을 수 없는 존재의 가벼움','백년의 고독 1','코스모스','차라투스트라는 이렇게 말했다','죄와 벌 1'];
 
 // ── Screen C-1: 책 검색 ────────────────────────────────────────────────────────
 const ScreenC1 = ({ onSelect, onManual }) => {
@@ -57,15 +60,11 @@ const ScreenC1 = ({ onSelect, onManual }) => {
     }
   }, [query, books]);
 
-  // rank 컬럼이 없으면 인덱스 기준 Top 10으로 fallback
-  const hasRank = loaded && books.some(b => b.rank_recent || b.rank_steady);
-  const top10 = loaded
-    ? hasRank
-      ? books.filter(b => tab === 'recent' ? (parseInt(b.rank_recent) || 999) < 11 : (parseInt(b.rank_steady) || 999) < 11)
-          .sort((a, b) => (parseInt(a['rank_' + tab]) || 999) - (parseInt(b['rank_' + tab]) || 999))
-          .slice(0, 10)
-      : books.slice(0, 10)
-    : [];
+  const top10 = React.useMemo(() => {
+    if (!loaded) return [];
+    const titles = tab === 'recent' ? TOP10_RECENT_TITLES : TOP10_STEADY_TITLES;
+    return titles.map(t => books.find(b => b.title === t)).filter(Boolean);
+  }, [loaded, books, tab]);
 
   const display = query.trim() ? results : top10;
 

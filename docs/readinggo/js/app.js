@@ -115,6 +115,11 @@ const App = () => {
     setTab('library');
   }, []);
 
+  // 날짜 시뮬레이터
+  const advanceDay = React.useCallback(() => {
+    setState(prev => ({ ...prev, simDate: advanceSimDate(prev.simDate), pokes: {} }));
+  }, []);
+
   // ── 렌더 ──────────────────────────────────────────────────────────────────────
 
   // 온보딩 단계 (책 추가 포함)
@@ -142,6 +147,16 @@ const App = () => {
 
       {/* Toast */}
       {toast && <Toast msg={toast} onDone={() => setToast(null)}/>}
+
+      {/* 날짜 시뮬레이터 (데모용 플로팅 버튼) */}
+      <button onClick={advanceDay} style={{
+        position: 'absolute', bottom: 80, right: 12, zIndex: 100,
+        background: '#1F1F1F', color: '#fff', border: 'none', borderRadius: 20,
+        padding: '8px 14px', fontSize: 11, fontWeight: 800, cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(0,0,0,.3)', fontFamily: 'inherit', opacity: 0.75,
+      }}>
+        🗓 {state.simDate || todayISO()} +1일
+      </button>
     </div>
   );
 };
