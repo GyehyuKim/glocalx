@@ -36,9 +36,31 @@ const ScreenA = ({ onStart }) => (
   </div>
 );
 
-// ── 큐레이션 Top10 (§C-1) ──────────────────────────────────────────────────────
-const TOP10_RECENT = ['도둑맞은 집중력','아주 작은 습관의 힘','채식주의자','파친코','82년생 김지영','불편한 편의점','미드나잇 라이브러리','역행자','세이노의 가르침','죽고 싶지만 떡볶이는 먹고 싶어'];
-const TOP10_STEADY = ['어린 왕자','1984','사피엔스','데미안','총균쇠','코스모스','호밀밭의 파수꾼','멋진 신세계','노인과 바다','죽음의 수용소에서'];
+// ── 큐레이션 Top10 stub 목록 (§C-1) — CSV 매칭 없으면 stub 사용 ───────────────
+const TOP10_RECENT = [
+  { book_id:'cr1', title:'도둑맞은 집중력',            author:'요한 하리',     total_pages:380, isbn:'9791169213981', cover_url:'' },
+  { book_id:'cr2', title:'아주 작은 습관의 힘',         author:'제임스 클리어', total_pages:368, isbn:'9788991921894', cover_url:'' },
+  { book_id:'cr3', title:'채식주의자',                  author:'한강',          total_pages:248, isbn:'9788936434588', cover_url:'' },
+  { book_id:'cr4', title:'파친코',                      author:'이민진',        total_pages:620, isbn:'9788954649919', cover_url:'' },
+  { book_id:'cr5', title:'82년생 김지영',               author:'조남주',        total_pages:190, isbn:'9788936434267', cover_url:'' },
+  { book_id:'cr6', title:'불편한 편의점',               author:'김호연',        total_pages:280, isbn:'9791165344825', cover_url:'' },
+  { book_id:'cr7', title:'미드나잇 라이브러리',          author:'맷 헤이그',     total_pages:336, isbn:'9791191891294', cover_url:'' },
+  { book_id:'cr8', title:'역행자',                      author:'자청',          total_pages:364, isbn:'9791168810266', cover_url:'' },
+  { book_id:'cr9', title:'세이노의 가르침',              author:'세이노',        total_pages:680, isbn:'9791192966199', cover_url:'' },
+  { book_id:'cr10',title:'죽고 싶지만 떡볶이는 먹고 싶어', author:'백세희',     total_pages:236, isbn:'9788901222875', cover_url:'' },
+];
+const TOP10_STEADY = [
+  { book_id:'cs1', title:'어린 왕자',         author:'앙투안 드 생텍쥐페리', total_pages:160, isbn:'9788901225531', cover_url:'' },
+  { book_id:'cs2', title:'1984',              author:'조지 오웰',            total_pages:452, isbn:'9788937460777', cover_url:'' },
+  { book_id:'cs3', title:'사피엔스',          author:'유발 하라리',          total_pages:648, isbn:'9788934972464', cover_url:'' },
+  { book_id:'cs4', title:'데미안',            author:'헤르만 헤세',          total_pages:248, isbn:'9788937460449', cover_url:'' },
+  { book_id:'cs5', title:'총균쇠',            author:'재레드 다이아몬드',    total_pages:752, isbn:'9788958627234', cover_url:'' },
+  { book_id:'cs6', title:'코스모스',          author:'칼 세이건',            total_pages:719, isbn:'9788983711892', cover_url:'' },
+  { book_id:'cs7', title:'호밀밭의 파수꾼',   author:'J.D. 샐린저',          total_pages:312, isbn:'9788937460470', cover_url:'' },
+  { book_id:'cs8', title:'멋진 신세계',       author:'올더스 헉슬리',        total_pages:328, isbn:'9788937460951', cover_url:'' },
+  { book_id:'cs9', title:'노인과 바다',       author:'어니스트 헤밍웨이',    total_pages:176, isbn:'9788937460289', cover_url:'' },
+  { book_id:'cs10',title:'죽음의 수용소에서', author:'빅터 프랭클',          total_pages:224, isbn:'9788990062024', cover_url:'' },
+];
 
 // ── Screen C-1: 책 검색 ────────────────────────────────────────────────────────
 const ScreenC1 = ({ onSelect, onManual }) => {
@@ -67,8 +89,11 @@ const ScreenC1 = ({ onSelect, onManual }) => {
           .sort((a, b) => (parseInt(a['rank_' + tab]) || 999) - (parseInt(b['rank_' + tab]) || 999))
           .slice(0, 10)
       : (() => {
-          const titles = tab === 'recent' ? TOP10_RECENT : TOP10_STEADY;
-          return titles.map(t => books.find(b => b.title.includes(t) || t.includes(b.title))).filter(Boolean);
+          const stubs = tab === 'recent' ? TOP10_RECENT : TOP10_STEADY;
+          return stubs.map(stub => {
+            const found = books.find(b => b.title.includes(stub.title) || stub.title.includes(b.title));
+            return found || stub;
+          });
         })()
     : [];
 
