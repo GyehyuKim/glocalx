@@ -233,32 +233,8 @@ const Toast = ({ msg, onDone }) => {
 
 // ── BookCover (공통 표지 컴포넌트) ────────────────────────────────────────────
 const BookCover = ({ book, size = 56, radius = 12 }) => {
-  const [src, setSrc] = React.useState(book?.cover_url || '');
-
-  React.useEffect(() => {
-    if (book?.cover_url) { setSrc(book.cover_url); return; }
-    if (!book?.title) return;
-    const q = book.isbn ? `isbn:${book.isbn}` : `intitle:${book.title}`;
-    fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=1&fields=items/volumeInfo/imageLinks/thumbnail`)
-      .then(r => r.json())
-      .then(d => {
-        const url = d?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
-        if (url) { setSrc(url.replace('http:', 'https:')); return; }
-        // ISBN 검색 실패 시 제목으로 재시도
-        if (book.isbn) {
-          return fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}&maxResults=1&fields=items/volumeInfo/imageLinks/thumbnail`)
-            .then(r => r.json())
-            .then(d2 => {
-              const url2 = d2?.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
-              if (url2) setSrc(url2.replace('http:', 'https:'));
-            });
-        }
-      })
-      .catch(() => {});
-  }, [book?.isbn, book?.cover_url, book?.title]);
-
-  if (src) {
-    return <img src={src} alt={book?.title} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0 }}/>;
+  if (book && book.cover_url) {
+    return <img src={book.cover_url} alt={book.title} style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', flexShrink: 0 }}/>;
   }
   return (
     <div style={{ width: size, height: size, borderRadius: radius, background: '#F0FDF4',
