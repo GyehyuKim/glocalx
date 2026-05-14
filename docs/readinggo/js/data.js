@@ -179,6 +179,12 @@ function advanceSimDate(simDate) {
   return d.toISOString().slice(0, 10);
 }
 
+// ── 교보문고 직접 링크 (ISBN → product URL) ────────────────────────────────────
+// ISBN으로 자동 생성 불가 — 확인된 URL만 추가
+const KYOBO_URLS = {
+  '9788934972464': 'https://product.kyobobook.co.kr/detail/S000000597165', // 사피엔스
+};
+
 // ── window exports ─────────────────────────────────────────────────────────────
 window.NPC_SEARCH_USERS  = NPC_SEARCH_USERS;
 window.SEED_BOARD_POSTS  = SEED_BOARD_POSTS;
@@ -196,6 +202,7 @@ window.todayLabel    = todayLabel;
 window.calcLevel     = calcLevel;
 window.INITIAL_STATE = INITIAL_STATE;
 window.loadAppState  = loadAppState;
+window.KYOBO_URLS         = KYOBO_URLS;
 window.getActiveBook      = getActiveBook;
 window.hasDoneToday       = hasDoneToday;
 window.getSessionDates    = getSessionDates;

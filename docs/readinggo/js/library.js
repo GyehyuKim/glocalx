@@ -89,7 +89,7 @@ const BookDetail = ({ userBook, onBack, onDelete }) => {
         )}
 
         {/* 교보문고 링크 (§5.7) */}
-        <a href={`https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(book.isbn || book.title)}`}
+        <a href={KYOBO_URLS[book.isbn] || `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(book.isbn || book.title)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '12px 0',
             background: '#FFF9F0', border: '1.5px solid #FFE0A0', borderRadius: 14,
