@@ -12,9 +12,9 @@ const VillageView = ({ state, onStateChange }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="rg-screen">
       {/* 헤더 */}
-      <div style={{ padding: '14px 16px 12px', borderBottom: '2px solid #E5E5E5', background: '#fff' }}>
+      <div className="rg-tab-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 22 }}>🏘️</span>
           <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>리딩 빌리지</span>
@@ -24,22 +24,20 @@ const VillageView = ({ state, onStateChange }) => {
         </p>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16, background: '#F7F7F7' }}>
+      <div className="rg-scroll">
         {/* 친구 둥지 2열 그리드 (§5.5) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           {friends.map(f => (
-            <div key={f.id} style={{
-              background: '#fff', borderRadius: 20, padding: 14,
-              border: `2px solid ${f.isLit ? '#D7F0BF' : '#E5E5E5'}`,
+            <div key={f.id} className="rg-card" style={{
+              padding: 14,
+              borderColor: f.isLit ? '#D7F0BF' : '#E5E5E5',
               boxShadow: '0 2px 8px rgba(0,0,0,.04)',
             }}>
               {/* 둥지 아이콘 + 불빛 */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                 <NestIcon stage={f.stage} size={44} isLit={f.isLit}/>
                 {f.isLit && (
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#58CC02',
-                    background: '#F0FDF4', border: '1.5px solid #D7F0BF',
-                    borderRadius: 8, padding: '2px 8px' }}>읽는 중</span>
+                  <span className="rg-badge-green" style={{ fontSize: 10 }}>읽는 중</span>
                 )}
               </div>
 
@@ -82,7 +80,7 @@ const VillageView = ({ state, onStateChange }) => {
         </div>
 
         {/* 마을 게시판 빈 상태 (§12) */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '2px solid #E5E5E5' }}>
+        <div className="rg-card" style={{ padding: 20 }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 8px' }}>
             📋 마을 게시판
           </p>

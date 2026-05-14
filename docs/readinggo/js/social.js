@@ -19,19 +19,18 @@ const SocialView = ({ state, onStateChange }) => {
   const badge = rank => rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="rg-screen">
       {/* 헤더 */}
-      <div style={{ padding: '14px 16px', borderBottom: '2px solid #E5E5E5', background: '#fff' }}>
+      <div className="rg-tab-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 22 }}>👥</span>
           <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>소셜</span>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', background: '#F7F7F7', padding: '16px 16px 0' }}>
+      <div className="rg-scroll" style={{ padding: '16px 16px 0' }}>
         {/* ── 주간 리그 (§6.5 / §5.6) ─────────────────────────────────────── */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 16, marginBottom: 16,
-          border: '2px solid #E5E5E5' }}>
+        <div className="rg-card" style={{ marginBottom: 16 }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 12px' }}>
             🏆 이번 주 리그
           </p>
@@ -68,8 +67,7 @@ const SocialView = ({ state, onStateChange }) => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 16 }}>
             {feed.map(item => (
-              <div key={item.id} style={{ background: '#fff', borderRadius: 20, padding: 16,
-                border: '2px solid #E5E5E5' }}>
+              <div key={item.id} className="rg-card">
                 {/* 유저 정보 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#F0FDF4',

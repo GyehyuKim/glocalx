@@ -41,10 +41,9 @@ const BookDetail = ({ userBook, onBack, onDelete }) => {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16, background: '#F7F7F7' }}>
+      <div className="rg-scroll">
         {/* 표지 + 진척 바 */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, marginBottom: 12,
-          border: '2px solid #E5E5E5', display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div className="rg-card" style={{ padding: 20, marginBottom: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
           <BookCover book={book} size={80} radius={14}/>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontWeight: 900, fontSize: 15, color: '#1F1F1F', margin: '0 0 4px',
@@ -76,8 +75,7 @@ const BookDetail = ({ userBook, onBack, onDelete }) => {
               const d = new Date(s.createdAt);
               const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
               return (
-                <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px',
-                  border: '2px solid #E5E5E5' }}>
+                <div key={s.id} className="rg-card" style={{ borderRadius: 16, padding: '14px 16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#58CC02' }}>{dateStr}</span>
                     <span style={{ fontSize: 12, color: '#AFAFAF', fontWeight: 700 }}>p.{s.page}</span>
@@ -134,9 +132,9 @@ const SettingsView = ({ state, onBack, onStateChange, onReset }) => {
         <span style={{ fontWeight: 900, fontSize: 17, color: '#1F1F1F' }}>설정</span>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16, background: '#F7F7F7', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="rg-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* 닉네임 */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '2px solid #E5E5E5' }}>
+        <div className="rg-card" style={{ padding: 20 }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 10px' }}>닉네임 (§5.8)</p>
           <p style={{ fontSize: 11, color: '#AFAFAF', margin: '0 0 10px', lineHeight: 1.5 }}>
             영소문자 / 숫자 / 한글 / 언더스코어 · 2~16자
@@ -156,7 +154,7 @@ const SettingsView = ({ state, onBack, onStateChange, onReset }) => {
         </div>
 
         {/* 데모 시뮬레이션 패널 (§9) */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '2px solid #FFC80044' }}>
+        <div className="rg-card" style={{ padding: 20, borderColor: '#FFC80044' }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 4px' }}>
             🎬 데모 시뮬레이션
           </p>
@@ -167,7 +165,7 @@ const SettingsView = ({ state, onBack, onStateChange, onReset }) => {
         </div>
 
         {/* 로그아웃 */}
-        <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '2px solid #E5E5E5' }}>
+        <div className="rg-card" style={{ padding: 20 }}>
           <button onClick={onReset} style={{ width: '100%', background: 'none', border: '2px solid #FF4B4B',
             borderRadius: 14, padding: '12px 0', color: '#FF4B4B', fontWeight: 800, fontSize: 14,
             cursor: 'pointer', fontFamily: 'Nunito' }}>
@@ -250,12 +248,11 @@ const LibraryView = ({ state, onStateChange, onAddBook }) => {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16, background: '#F7F7F7' }}>
+      <div className="rg-scroll">
         {/* 현재 읽는 중 카드 (§5.7) */}
         {activeBook && (
-          <div onClick={() => setDetail(activeBook.id)} style={{ background: '#fff',
-            borderRadius: 20, padding: 16, marginBottom: 12, cursor: 'pointer',
-            border: '2px solid #D7F0BF' }}>
+          <div onClick={() => setDetail(activeBook.id)} className="rg-card" style={{
+            marginBottom: 12, cursor: 'pointer', borderColor: '#D7F0BF' }}>
             <p style={{ fontSize: 11, fontWeight: 800, color: '#58CC02', margin: '0 0 8px' }}>
               📖 현재 읽는 중
             </p>
