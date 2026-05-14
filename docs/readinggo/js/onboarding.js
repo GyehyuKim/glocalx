@@ -36,6 +36,10 @@ const ScreenA = ({ onStart }) => (
   </div>
 );
 
+// ── 큐레이션 Top10 (§C-1) ──────────────────────────────────────────────────────
+const TOP10_RECENT = ['도둑맞은 집중력','아주 작은 습관의 힘','채식주의자','파친코','82년생 김지영','불편한 편의점','미드나잇 라이브러리','역행자','세이노의 가르침','죽고 싶지만 떡볶이는 먹고 싶어'];
+const TOP10_STEADY = ['어린 왕자','1984','사피엔스','데미안','총균쇠','코스모스','호밀밭의 파수꾼','멋진 신세계','노인과 바다','죽음의 수용소에서'];
+
 // ── Screen C-1: 책 검색 ────────────────────────────────────────────────────────
 const ScreenC1 = ({ onSelect, onManual }) => {
   const [query, setQuery]     = React.useState('');
@@ -56,14 +60,16 @@ const ScreenC1 = ({ onSelect, onManual }) => {
     }
   }, [query, books]);
 
-  // rank 컬럼이 없으면 인덱스 기준 Top 10으로 fallback
   const hasRank = loaded && books.some(b => b.rank_recent || b.rank_steady);
   const top10 = loaded
     ? hasRank
       ? books.filter(b => tab === 'recent' ? (parseInt(b.rank_recent) || 999) < 11 : (parseInt(b.rank_steady) || 999) < 11)
           .sort((a, b) => (parseInt(a['rank_' + tab]) || 999) - (parseInt(b['rank_' + tab]) || 999))
           .slice(0, 10)
-      : books.slice(0, 10)
+      : (() => {
+          const titles = tab === 'recent' ? TOP10_RECENT : TOP10_STEADY;
+          return titles.map(t => books.find(b => b.title.includes(t) || t.includes(b.title))).filter(Boolean);
+        })()
     : [];
 
   const display = query.trim() ? results : top10;
