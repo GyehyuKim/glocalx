@@ -164,9 +164,7 @@ const ScreenC2 = ({ book, isManual, onBack, onConfirm }) => {
     onConfirm(b, parseInt(page) || 0);
   };
 
-  const inputStyle = { width: '100%', border: '2px solid #E5E5E5', borderRadius: 14,
-    padding: '12px 16px', fontSize: 15, fontWeight: 600, outline: 'none',
-    fontFamily: 'Nunito', marginBottom: 12, transition: 'border-color .2s' };
+  const inputStyle = { marginBottom: 12 };
   const focus = e => e.target.style.borderColor = '#58CC02';
   const blur  = e => e.target.style.borderColor = '#E5E5E5';
 
@@ -192,11 +190,11 @@ const ScreenC2 = ({ book, isManual, onBack, onConfirm }) => {
         {isManual ? (
           <>
             <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', marginBottom: 6 }}>제목 *</p>
-            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="책 제목" style={inputStyle} onFocus={focus} onBlur={blur}/>
+            <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="책 제목" className="rg-input" style={inputStyle} onFocus={focus} onBlur={blur}/>
             <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', marginBottom: 6 }}>저자</p>
-            <input value={author} onChange={e=>setAuthor(e.target.value)} placeholder="저자명" style={inputStyle} onFocus={focus} onBlur={blur}/>
+            <input value={author} onChange={e=>setAuthor(e.target.value)} placeholder="저자명" className="rg-input" style={inputStyle} onFocus={focus} onBlur={blur}/>
             <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', marginBottom: 6 }}>총 페이지 *</p>
-            <input type="number" value={totalPages} onChange={e=>setTotalPages(e.target.value)} placeholder="예: 300" style={inputStyle} onFocus={focus} onBlur={blur}/>
+            <input type="number" value={totalPages} onChange={e=>setTotalPages(e.target.value)} placeholder="예: 300" className="rg-input" style={inputStyle} onFocus={focus} onBlur={blur}/>
           </>
         ) : (
           <div style={{ background: '#F0FDF4', border: '2px solid #D7F0BF', borderRadius: 16, padding: 16, marginBottom: 16 }}>
@@ -210,10 +208,10 @@ const ScreenC2 = ({ book, isManual, onBack, onConfirm }) => {
         </p>
         <input type="number" value={page} onChange={e=>setPage(e.target.value)} placeholder="0"
           min={0} max={isManual ? parseInt(totalPages) || 9999 : book.total_pages}
-          style={inputStyle} onFocus={focus} onBlur={blur}/>
+          className="rg-input" style={inputStyle} onFocus={focus} onBlur={blur}/>
       </div>
 
-      <div style={{ padding: '12px 16px 24px', borderTop: '2px solid #E5E5E5' }}>
+      <div className="rg-bottom-bar">
         <button onClick={handleConfirm} disabled={!valid}
           className={`btn-duo ${valid ? 'btn-green' : 'btn-off'}`}
           style={{ width: '100%' }}>
@@ -273,7 +271,7 @@ const ScreenD1 = ({ book, initPage, onNext }) => {
         </div>
       </div>
 
-      <div style={{ padding: '12px 16px 24px', borderTop: '2px solid #E5E5E5' }}>
+      <div className="rg-bottom-bar">
         <button onClick={() => onNext(page)} className="btn-duo btn-green" style={{ width: '100%' }}>
           다음
         </button>
@@ -299,10 +297,11 @@ const ScreenD1 = ({ book, initPage, onNext }) => {
 };
 
 // ── Screen D-2: 오늘의 문장 ───────────────────────────────────────────────────
-const ScreenD2 = ({ onBack, onNext }) => {
+const ScreenD2 = ({ initPage, onBack, onNext }) => {
   const [text, setText] = React.useState(() => {
     try { return localStorage.getItem('rg_pending_sentence') || ''; } catch { return ''; }
   });
+  const [sentencePage, setSentencePage] = React.useState(initPage || 0);
   const valid = text.trim().length > 0;
 
   React.useEffect(() => {
@@ -319,22 +318,36 @@ const ScreenD2 = ({ onBack, onNext }) => {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '28px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+          <button onClick={onBack} className="rg-btn-icon">
             <BackIcon s={20} style={{ color: '#AFAFAF' }}/>
           </button>
           <p style={{ fontWeight: 900, fontSize: 18, color: '#1F1F1F', margin: 0 }}>
             오늘의 문장
           </p>
         </div>
-        <p style={{ fontSize: 13, color: '#AFAFAF', fontWeight: 600, marginBottom: 20 }}>
+        <p style={{ fontSize: 13, color: '#AFAFAF', fontWeight: 600, marginBottom: 16 }}>
           오늘 읽은 내용 중 마음에 남는 한 문장을 적어주세요.
         </p>
 
+        {/* 문장 페이지 입력 */}
+        <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', marginBottom: 6 }}>어느 페이지에서?</p>
+        <input
+          type="number"
+          value={sentencePage}
+          onChange={e => setSentencePage(e.target.value)}
+          placeholder="페이지 번호"
+          className="rg-input"
+          style={{ marginBottom: 16 }}
+          onFocus={e => e.target.style.borderColor = '#58CC02'}
+          onBlur={e => e.target.style.borderColor  = '#E5E5E5'}
+        />
+
+        <p style={{ fontWeight: 800, fontSize: 13, color: '#1F1F1F', marginBottom: 6 }}>문장</p>
         <textarea
           value={text}
           onChange={e => { if (e.target.value.length <= 200) setText(e.target.value); }}
           placeholder="마음에 든 한 줄을 적어주세요 (최대 200자)"
-          rows={5}
+          rows={4}
           autoFocus
           style={{ flex: 1, border: '2px solid #E5E5E5', borderRadius: 16, padding: '14px 16px',
             fontSize: 15, fontWeight: 600, outline: 'none', resize: 'none',
@@ -349,8 +362,8 @@ const ScreenD2 = ({ onBack, onNext }) => {
         </div>
       </div>
 
-      <div style={{ padding: '12px 16px 24px', borderTop: '2px solid #E5E5E5' }}>
-        <button onClick={() => valid && onNext(text.trim())}
+      <div className="rg-bottom-bar">
+        <button onClick={() => valid && onNext(text.trim(), parseInt(sentencePage) || 0)}
           className={`btn-duo ${valid ? 'btn-green' : 'btn-off'}`}
           style={{ width: '100%' }} disabled={!valid}>
           기록 완료 🔥
@@ -454,8 +467,8 @@ const OnboardingFlow = ({ state, onStateChange, onDone }) => {
   const handlePage = page => {
     onStateChange(prev => ({ ...prev, onboardingPage: page, onboardingStep: 'D2' }));
   };
-  const handleSentence = text => {
-    onStateChange(prev => ({ ...prev, onboardingText: text, onboardingStep: 'D3' }));
+  const handleSentence = (text, page) => {
+    onStateChange(prev => ({ ...prev, onboardingText: text, onboardingSentencePage: page, onboardingStep: 'D3' }));
   };
   const handleContinue = () => {
     // Phase 0: 가입 전이면 E, 이미 핸들 있으면 홈으로
@@ -493,6 +506,7 @@ const OnboardingFlow = ({ state, onStateChange, onDone }) => {
   );
   if (step === 'D2') return (
     <ScreenD2
+      initPage={state.onboardingPage}
       onBack={() => go('D1')}
       onNext={handleSentence}
     />

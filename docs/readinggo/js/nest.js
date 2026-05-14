@@ -171,9 +171,7 @@ const ActiveBookSheet = ({ userBooks, activeId, onSelect, onClose }) => {
                 </div>
               </div>
               {isActive && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#58CC02',
-                  background: '#F0FDF4', border: '1.5px solid #D7F0BF',
-                  borderRadius: 8, padding: '2px 8px' }}>읽는 중</span>
+                <span className="rg-badge-green">읽는 중</span>
               )}
             </button>
           );
@@ -190,7 +188,11 @@ const ActiveBookSheet = ({ userBooks, activeId, onSelect, onClose }) => {
 const MissionModal = ({ userBook, onClose, onSubmit }) => {
   const [step, setStep] = React.useState('page'); // 'page' | 'sentence'
   const [page, setPage] = React.useState(userBook.currentPage);
+  const [sentencePage, setSentencePage] = React.useState(userBook.currentPage);
   const [text, setText] = React.useState('');
+
+  // sentencePage defaults to page value when entering sentence step
+  const goToSentence = () => { setSentencePage(page); setStep('sentence'); };
 
   const bump = d => setPage(p => Math.max(0, Math.min(p + d, userBook.book.total_pages)));
   const textValid = text.trim().length > 0;
@@ -235,11 +237,24 @@ const MissionModal = ({ userBook, onClose, onSubmit }) => {
                 <button onClick={() => bump(1)}  className="btn-duo btn-green" style={{ width: 60, height: 60, padding: 0, fontSize: 18, borderRadius: 16 }}>+1</button>
                 <button onClick={() => bump(10)} className="btn-duo btn-yellow" style={{ width: 68, height: 60, padding: 0, fontSize: 15, borderRadius: 16 }}>+10</button>
               </div>
-              <button onClick={() => setStep('sentence')} className="btn-duo btn-green" style={{ width: '100%' }}>다음</button>
+              <button onClick={goToSentence} className="btn-duo btn-green" style={{ width: '100%' }}>다음</button>
             </>
           ) : (
             <>
-              <p style={{ fontWeight: 800, fontSize: 13, marginBottom: 8 }}>기억하고 싶은 한 문장</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 800, fontSize: 13, marginBottom: 6 }}>어느 페이지에서?</p>
+                  <input
+                    type="number" value={sentencePage}
+                    onChange={e => setSentencePage(e.target.value)}
+                    className="rg-input"
+                    style={{ padding: '8px 12px', fontSize: 14 }}
+                    onFocus={e => e.target.style.borderColor = '#58CC02'}
+                    onBlur={e => e.target.style.borderColor  = '#E5E5E5'}
+                  />
+                </div>
+              </div>
+              <p style={{ fontWeight: 800, fontSize: 13, marginBottom: 6 }}>기억하고 싶은 한 문장</p>
               <textarea value={text} onChange={e => { if (e.target.value.length <= 200) setText(e.target.value); }}
                 placeholder="마음에 든 한 줄을 적어주세요 (최대 200자)"
                 rows={4} autoFocus
@@ -254,7 +269,7 @@ const MissionModal = ({ userBook, onClose, onSubmit }) => {
                   color:'#AFAFAF',fontWeight:700,fontSize:13 }}>← 이전</button>
                 <span style={{ fontSize: 11, color: '#AFAFAF', fontWeight: 700 }}>{text.length}/200</span>
               </div>
-              <button onClick={() => textValid && onSubmit(page, text.trim())}
+              <button onClick={() => textValid && onSubmit(page, text.trim(), parseInt(sentencePage) || page)}
                 className={`btn-duo ${textValid ? 'btn-green' : 'btn-off'}`}
                 style={{ width: '100%' }} disabled={!textValid}>
                 기록 완료 🔥
@@ -334,7 +349,7 @@ const NestView = ({ state, onStateChange }) => {
   const activeBook = getActiveBook(state);
   const todayDone  = hasDoneToday(activeBook);
 
-  const handleRecord = (page, text) => {
+  const handleRecord = (page, text, sentencePage) => {
     const xpGained = 10;
     const isComplete = page >= (activeBook?.book.total_pages || Infinity);
     const sessionId  = genId();
@@ -349,7 +364,8 @@ const NestView = ({ state, onStateChange }) => {
           xpEarned: xpGained, createdAt: new Date().toISOString(), date: dateLabel, sentence: text,
         };
         const newSentence = {
-          id: genId(), text, page, sessionId, createdAt: new Date().toISOString(),
+          id: genId(), text, page: sentencePage != null ? sentencePage : page,
+          sessionId, createdAt: new Date().toISOString(),
         };
         return {
           ...ub, currentPage: page,

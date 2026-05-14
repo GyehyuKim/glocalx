@@ -103,9 +103,10 @@ function calcLevel(xp) {
 const INITIAL_STATE = {
   appPhase: 'onboarding',   // 'onboarding' | 'home'
   onboardingStep: 'A',      // A | C1 | C2 | D1 | D2 | D3 | E
-  onboardingBook: null,     // book object from C1
-  onboardingPage: 0,        // page number from D1
-  onboardingText: '',       // sentence text from D2
+  onboardingBook: null,          // book object from C1
+  onboardingPage: 0,             // session last page from D1
+  onboardingText: '',            // sentence text from D2
+  onboardingSentencePage: null,  // sentence-specific page from D2 (null = use onboardingPage)
   user: { handle: '', displayName: '나', xp: 0, level: 1, streak: 0, shields: 0 },
   userBooks: [],
   activeUserBookId: null,

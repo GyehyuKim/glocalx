@@ -27,7 +27,7 @@ const App = () => {
   // 온보딩 완료 → 책 등록 + 첫 세션 처리
   const handleOnboardingDone = React.useCallback(() => {
     setStateRaw(prev => {
-      const { onboardingBook, onboardingPage, onboardingText } = prev;
+      const { onboardingBook, onboardingPage, onboardingText, onboardingSentencePage } = prev;
       if (!onboardingBook) return { ...prev, appPhase: 'home' };
 
       const ubId      = genId();
@@ -43,7 +43,8 @@ const App = () => {
         date: todayLabel(), sentence: onboardingText,
       };
       const newSentence = {
-        id: genId(), text: onboardingText, page: onboardingPage,
+        id: genId(), text: onboardingText,
+        page: onboardingSentencePage != null ? onboardingSentencePage : onboardingPage,
         sessionId, createdAt: new Date().toISOString(),
       };
       const newUb = {
