@@ -88,6 +88,15 @@ const BookDetail = ({ userBook, onBack, onDelete }) => {
           </div>
         )}
 
+        {/* 교보문고 링크 (§5.7) */}
+        <a href={`https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(book.isbn || book.title)}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{ display: 'block', textAlign: 'center', marginTop: 16, padding: '12px 0',
+            background: '#FFF9F0', border: '1.5px solid #FFE0A0', borderRadius: 14,
+            fontSize: 13, fontWeight: 800, color: '#C8901C', textDecoration: 'none' }}>
+          교보문고에서 보기 →
+        </a>
+
         {/* 삭제 (§5.7: soft delete) */}
         <button onClick={() => window.confirm('이 책을 삭제할까요? 기록은 보존됩니다.') && onDelete(userBook.id)}
           style={{ marginTop: 20, width: '100%', background: 'none', border: '2px solid #E5E5E5',
