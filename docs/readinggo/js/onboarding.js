@@ -23,8 +23,7 @@ const ScreenA = ({ onStart }) => (
         "하루 한 페이지,<br/>한 문장에서 시작해요."
       </p>
       <p style={{ fontSize: 15, color: '#AFAFAF', fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
-        독서습관 앱계의 듀오링고 🐦<br/>
-        1페이지만 읽어도 오늘은 성공이에요.
+        1페이지만 읽어도 오늘은 성공이에요 🐦
       </p>
     </div>
 
