@@ -284,7 +284,7 @@ const MissionModal = ({ userBook, onClose, onSubmit }) => {
 
 // ── 보상 모달 (D-3 세리머니, 홈 진입 후) ─────────────────────────────────────
 const RewardModal = ({ sessionNum, xpGained, isComplete, bookTitle, onClose }) => {
-  const colors = ['#58CC02', '#FFC800', '#1CB0F6', '#FF4B4B', '#CE82FF'];
+  const colors = ['#3FD17F','#FFC233','#FF8A3D','#5AB5F0','#F08A9A','#B690F0','#2EB867','#FFD66B'];
   if (isComplete) return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex',
       alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.7)' }}>
@@ -293,8 +293,8 @@ const RewardModal = ({ sessionNum, xpGained, isComplete, bookTitle, onClose }) =
         {Array.from({ length: 18 }, (_, i) => (
           <div key={i} style={{
             position: 'absolute', left: `${4 + i * 5.5}%`, top: -16, width: 9, height: 9,
-            borderRadius: 3, background: colors[i % 5],
-            animation: `confetti ${1 + Math.random()}s ${Math.random() * 0.5}s ease-in forwards`
+            borderRadius: 3, background: colors[i % 8],
+            animation: `confetti 2.4s ${i * 0.014}s cubic-bezier(.25,.5,.5,1) forwards`
           }}/>
         ))}
         <div style={{ fontSize: 72, marginBottom: 8 }}>🏰</div>
@@ -334,7 +334,7 @@ const RewardModal = ({ sessionNum, xpGained, isComplete, bookTitle, onClose }) =
               </div>
           ))}
         </div>
-        <button onClick={onClose} className="btn-duo btn-green" style={{ width: '100%' }}>계속하기</button>
+        <button onClick={onClose} className="btn-duo btn-green" style={{ width: '100%' }}>내일도 짹 →</button>
       </div>
     </div>
   );
