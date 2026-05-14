@@ -375,7 +375,7 @@ const ScreenD2 = ({ initPage, onBack, onNext }) => {
 
 // ── Screen D-3: 세리머니 ──────────────────────────────────────────────────────
 const ScreenD3 = ({ sessionNum, xpGained, onContinue, isLoggedIn }) => {
-  const colors = ['#58CC02', '#FFC800', '#1CB0F6', '#FF4B4B', '#CE82FF'];
+  const colors = ['#3FD17F','#FFC233','#FF8A3D','#5AB5F0','#F08A9A','#B690F0','#2EB867','#FFD66B'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', height: '100%', background: '#fff', padding: '0 24px',
@@ -386,8 +386,8 @@ const ScreenD3 = ({ sessionNum, xpGained, onContinue, isLoggedIn }) => {
         <div key={i} style={{
           position: 'absolute', left: `${4 + i * 5.5}%`, top: -16,
           width: 9, height: 9, borderRadius: 3,
-          background: colors[i % 5],
-          animation: `confetti ${1 + Math.random() * 1}s ${Math.random() * 0.5}s ease-in forwards`,
+          background: colors[i % 8],
+          animation: `confetti 2.4s ${i * 0.014}s cubic-bezier(.25,.5,.5,1) forwards`,
         }}/>
       ))}
 
@@ -418,7 +418,7 @@ const ScreenD3 = ({ sessionNum, xpGained, onContinue, isLoggedIn }) => {
       </div>
 
       <button onClick={onContinue} className="btn-duo btn-green" style={{ width: '100%', maxWidth: 280, fontSize: 16 }}>
-        {isLoggedIn ? '홈으로' : '계속하려면 로그인'}
+        {isLoggedIn ? '내일도 짹 →' : '계속하려면 로그인'}
       </button>
     </div>
   );
