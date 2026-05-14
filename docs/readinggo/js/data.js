@@ -17,6 +17,28 @@ const NEST_STAGES = [
 ];
 const getNestStage = pct => NEST_STAGES.find(s => pct <= s.max) || NEST_STAGES[4];
 
+// ── NPC 검색 풀 (소셜 탭 친구 찾기) ───────────────────────────────────────────
+const NPC_SEARCH_USERS = [
+  { id: 'npc1', handle: 'book_bear',        name: '책읽는곰돌이', stage: 3, isLit: true,  isNpc: true,
+    sentence: '"역사는 언제나 승자의 기록이다."',         bio: '매일 아침 30분 독서',   books: ['사피엔스', '데미안'] },
+  { id: 'npc2', handle: 'activist_raccoon', name: '활자라쿤',    stage: 4, isLit: true,  isNpc: true,
+    sentence: '"빅브라더는 당신을 지켜보고 있다."',       bio: '분석적 인용 독서인',    books: ['1984', '총균쇠'] },
+  { id: 'npc3', handle: 'reading_owl',      name: '독서올빼미',  stage: 2, isLit: false, isNpc: true,
+    sentence: '"밤에 읽는 책이 더 깊이 스며든다."',       bio: '야간 독서 전문가',      books: ['호밀밭의 파수꾼'] },
+  { id: 'npc4', handle: 'page_fox',         name: '한페이지여우', stage: 1, isLit: true,  isNpc: true,
+    sentence: '"한 문장이 삶을 바꿀 수 있다."',           bio: '하루 한 페이지 실천 중', books: ['어린 왕자'] },
+];
+
+// ── 마을 게시판 시드 ────────────────────────────────────────────────────────────
+const SEED_BOARD_POSTS = [
+  { id: 'bp1', handle: 'activist_raccoon', name: '활자라쿤',    time: '어제',     isNpc: true,
+    text: '1984 다 읽고 나니 SNS가 다르게 보임. 빅브라더가 스마트폰이었나요 우리.' },
+  { id: 'bp2', handle: 'book_bear',        name: '책읽는곰돌이', time: '2일 전',   isNpc: true,
+    text: '사피엔스 3장 - 인지혁명 파트 읽다가 멍해짐. 스토리텔링이 인류를 만들었다는 게 너무 와닿아서.' },
+  { id: 'bp3', handle: 'reading_owl',      name: '독서올빼미',  time: '3일 전',   isNpc: true,
+    text: '오늘부터 호밀밭의 파수꾼 시작! 홀든 콜필드 이름이 왜 이렇게 귀엽지' },
+];
+
 // ── Seed data (Phase 0 시뮬레이션) ────────────────────────────────────────────
 const SEED_FRIENDS = [
   { id: 'npc1', handle: 'book_bear',        name: '책읽는곰돌이', stage: 3, isLit: true,
@@ -117,6 +139,7 @@ const INITIAL_STATE = {
   sympathyFeed: {},         // feedId -> bool
   savedFeed: {},            // feedId -> bool
   pokes: {},                // friendId -> bool (오늘 보냈는지)
+  simDate: null,            // 날짜 시뮬레이터 (null = 오늘)
 };
 
 function loadAppState() {
@@ -138,13 +161,27 @@ function getActiveBook(state) {
   return state.userBooks.find(ub => ub.id === state.activeUserBookId) || null;
 }
 
-function hasDoneToday(userBook) {
+function hasDoneToday(userBook, activeDate) {
   if (!userBook) return false;
-  const today = todayISO();
+  const today = activeDate || todayISO();
   return (userBook.sessions || []).some(s => s.sessionDate === today);
 }
 
+function getSessionDates(userBooks) {
+  const dates = new Set();
+  (userBooks || []).forEach(ub => (ub.sessions || []).forEach(s => dates.add(s.sessionDate)));
+  return dates;
+}
+
+function advanceSimDate(simDate) {
+  const d = simDate ? new Date(simDate) : new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 // ── window exports ─────────────────────────────────────────────────────────────
+window.NPC_SEARCH_USERS  = NPC_SEARCH_USERS;
+window.SEED_BOARD_POSTS  = SEED_BOARD_POSTS;
 window.LS            = LS;
 window.NEST_STAGES   = NEST_STAGES;
 window.getNestStage  = getNestStage;
@@ -159,5 +196,7 @@ window.todayLabel    = todayLabel;
 window.calcLevel     = calcLevel;
 window.INITIAL_STATE = INITIAL_STATE;
 window.loadAppState  = loadAppState;
-window.getActiveBook = getActiveBook;
-window.hasDoneToday  = hasDoneToday;
+window.getActiveBook      = getActiveBook;
+window.hasDoneToday       = hasDoneToday;
+window.getSessionDates    = getSessionDates;
+window.advanceSimDate     = advanceSimDate;
