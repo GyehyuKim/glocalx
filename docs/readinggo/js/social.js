@@ -2,20 +2,28 @@
 // 의존: data.js, components.js
 
 const SocialView = ({ state, onStateChange }) => {
-  const feed      = state.feed       || [];
-  const league    = state.leagueData || SEED_LEAGUE;
-  const clapped   = state.clappedFeed || {};
+  const feed      = state.feed        || [];
+  const league    = state.leagueData  || SEED_LEAGUE;
+  const clapped   = state.clappedFeed  || {};
+  const sympathied = state.sympathyFeed || {};
+  const saved      = state.savedFeed    || {};
 
-  const doClap = id => {
-    if (clapped[id]) return;
+  const doReact = (id, type) => {
+    const fieldMap = { clap: 'clappedFeed', sympathy: 'sympathyFeed', save: 'savedFeed' };
+    const countMap = { clap: 'claps', sympathy: 'sympathy', save: 'saves' };
+    const stateMap = { clap: clapped, sympathy: sympathied, save: saved };
+    const field = fieldMap[type], count = countMap[type], already = stateMap[type][id];
     onStateChange(prev => ({
       ...prev,
-      clappedFeed: { ...prev.clappedFeed, [id]: true },
-      feed: prev.feed.map(item => item.id === id ? { ...item, claps: item.claps + 1 } : item),
+      [field]: { ...prev[field], [id]: !already },
+      feed: prev.feed.map(item => item.id === id
+        ? { ...item, [count]: item[count] + (already ? -1 : 1) }
+        : item),
     }));
   };
 
-  // 리그 배지 (§6.5)
+  // 리그 순위 색상 (§5.6)
+  const rankColor = rank => rank === 1 ? '#C8901C' : rank === 2 ? '#8E939B' : rank === 3 ? '#B17142' : '#1F1F1F';
   const badge = rank => rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : String(rank);
 
   return (
@@ -32,7 +40,7 @@ const SocialView = ({ state, onStateChange }) => {
         {/* ── 주간 리그 (§6.5 / §5.6) ─────────────────────────────────────── */}
         <div className="rg-card" style={{ marginBottom: 16 }}>
           <p style={{ fontWeight: 800, fontSize: 14, color: '#1F1F1F', margin: '0 0 12px' }}>
-            🏆 이번 주 리그
+            🏆 민트 리그 · 이번 주
           </p>
           {league.map((item, idx) => {
             const rank = idx + 1;
@@ -40,12 +48,13 @@ const SocialView = ({ state, onStateChange }) => {
               <div key={item.handle} style={{
                 display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
                 padding: '8px 10px', borderRadius: 12,
-                background: item.isMe ? '#F0FDF4' : 'transparent',
-                border: item.isMe ? '1.5px solid #D7F0BF' : '1.5px solid transparent',
+                background: item.isMe ? '#F1FBF5' : 'transparent',
+                border: item.isMe ? '1.5px solid #DFF6EA' : '1.5px solid transparent',
               }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>{badge(rank)}</span>
-                <span style={{ flex: 1, fontWeight: 700, fontSize: 13, color: '#1F1F1F' }}>
-                  {item.name}{item.isMe && <span style={{ fontSize: 11, color: '#58CC02', marginLeft: 4 }}>← 나</span>}
+                <span style={{ flex: 1, fontWeight: 700, fontSize: 13, color: rankColor(rank) }}>
+                  {item.name}{item.isNpc && <span style={{ fontSize: 10, color: '#AFAFAF', fontWeight: 600 }}> · NPC</span>}
+                  {item.isMe && <span style={{ fontSize: 11, color: '#3FD17F', marginLeft: 4 }}>← 나</span>}
                 </span>
                 <span style={{ fontWeight: 800, fontSize: 13, color: '#1CB0F6' }}>{item.xp} XP</span>
               </div>
@@ -88,21 +97,29 @@ const SocialView = ({ state, onStateChange }) => {
                   lineHeight: 1.6, margin: '0 0 10px' }}>
                   {item.sentence}
                 </p>
-                {/* 박수 버튼 (§5.6: 1버튼, 본인 카드 비활성) */}
-                <button
-                  onClick={() => item.handle !== 'me' && doClap(item.id)}
-                  disabled={item.handle === 'me'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    padding: '6px 14px', borderRadius: 20, border: 'none', cursor: item.handle === 'me' ? 'default' : 'pointer',
-                    fontWeight: 800, fontSize: 12, fontFamily: 'Nunito',
-                    background: clapped[item.id] ? '#FFF3E0' : '#F7F7F7',
-                    color:      clapped[item.id] ? '#FF9600' : '#AFAFAF',
-                    border: `2px solid ${clapped[item.id] ? '#FFC800' : '#E5E5E5'}`,
-                    opacity:    item.handle === 'me' ? 0.4 : 1,
-                  }}>
-                  👏 {item.claps}
-                </button>
+                {/* 리액션 칩 3종 (§5.6: 👏🥹🔖) */}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[
+                    { type: 'clap',    emoji: '👏', count: item.claps,    active: clapped[item.id],   activeColor: '#FF9600', activeBg: '#FFF3E0', activeBorder: '#FFC800' },
+                    { type: 'sympathy',emoji: '🥹', count: item.sympathy, active: sympathied[item.id], activeColor: '#1CB0F6', activeBg: '#E0F4FF', activeBorder: '#85D8F8' },
+                    { type: 'save',    emoji: '🔖', count: item.saves,    active: saved[item.id],     activeColor: '#CE82FF', activeBg: '#FAF0FF', activeBorder: '#D9B5FF' },
+                  ].map(chip => (
+                    <button key={chip.type}
+                      onClick={() => item.handle !== 'me' && doReact(item.id, chip.type)}
+                      disabled={item.handle === 'me'}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 3,
+                        padding: '5px 10px', borderRadius: 16, cursor: item.handle === 'me' ? 'default' : 'pointer',
+                        fontWeight: 800, fontSize: 11, fontFamily: 'inherit',
+                        background: chip.active ? chip.activeBg : '#F7F7F7',
+                        color:      chip.active ? chip.activeColor : '#AFAFAF',
+                        border:    `1.5px solid ${chip.active ? chip.activeBorder : '#E5E5E5'}`,
+                        opacity:    item.handle === 'me' ? 0.4 : 1,
+                      }}>
+                      {chip.emoji} {chip.count}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
