@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>리딩고 — 하루 한 페이지</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Moneygraphy Rounded';src:url('fonts/Moneygraphy-Rounded.otf') format('opentype')}
+@font-face{font-family:'Moneygraphy Pixel';src:url('fonts/Moneygraphy-Pixel.otf') format('opentype')}
+</style>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,8 +27,18 @@ tailwind.config = {
 }
 </script>
 <style>
+/* ── CSS 커스텀 토큰 (§11.2) ──────────────────────────────────── */
+:root{
+  --paper:#FAF6F0;--paper-2:#F4EFE6;--card:#FFFFFF;--card-soft:#FFF9F0;
+  --ink:#2A2D33;--ink-2:#5A5F69;--ink-3:#9097A0;--ink-4:#C7CCD3;--line:#ECE6DA;
+  --brand:#3FD17F;--brand-2:#2EB867;--brand-3:#1F8E4D;
+  --brand-soft:#DFF6EA;--brand-tint:#F1FBF5;--brand-shadow:#1F8E4D;
+  --fire:#FF8A3D;--fire-shadow:#D8651F;--fire-soft:#FFE6D4;
+  --gold:#FFC233;--gold-shadow:#C8901C;--gold-soft:#FFF1C7;
+  --blue:#5AB5F0;--rose:#F08A9A;--violet:#B690F0;
+}
 /* ── Reset & base ─────────────────────────────────────────────── */
-*{font-family:'Nunito',sans-serif;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{font-family:'Moneygraphy Rounded','Nunito',sans-serif;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:#e5e7eb;display:flex;justify-content:center;min-height:100vh;margin:0}
 #root{width:100%;max-width:390px;min-height:100vh;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}
 ::-webkit-scrollbar{width:0}
@@ -73,10 +87,11 @@ body{background:#e5e7eb;display:flex;justify-content:center;min-height:100vh;mar
 .rg-badge-green{font-size:11px;font-weight:800;color:#58CC02;background:#F0FDF4;
   border:1.5px solid #D7F0BF;border-radius:8px;padding:2px 8px}
 .rg-input{width:100%;border:2px solid #E5E5E5;border-radius:14px;padding:12px 16px;
-  font-size:15px;font-weight:600;outline:none;font-family:'Nunito',sans-serif;
+  font-size:15px;font-weight:600;outline:none;font-family:'Moneygraphy Rounded','Nunito',sans-serif;
   transition:border-color .2s}
 .rg-bottom-bar{padding:12px 16px 24px;border-top:2px solid #E5E5E5}
 .rg-btn-icon{background:none;border:none;cursor:pointer;padding:4px}
+.rg-pixel{font-family:'Moneygraphy Pixel','Moneygraphy Rounded',monospace;letter-spacing:0.5px}
 </style>
 </head>
 <body>
