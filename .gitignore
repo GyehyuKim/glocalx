@@ -31,6 +31,12 @@ node_modules/
 # gstack local data (security reports, analytics)
 .gstack/
 
+# Claude Code local memory
+.claude/
+
+# Netlify CLI cache
+.netlify/
+
 # Personal notices
 notice-*.txt
 
