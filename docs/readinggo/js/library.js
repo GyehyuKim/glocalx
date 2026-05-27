@@ -564,7 +564,7 @@ const LibraryView = ({ state, onStateChange, onAddBook }) => {
 
   const handleReset = () => {
     if (window.confirm('모든 데이터를 초기화할까요?')) {
-      localStorage.removeItem('rg_v41');
+      localStorage.removeItem('rg_v42');
       localStorage.removeItem('rg_pending_sentence');
       window.location.reload();
     }
