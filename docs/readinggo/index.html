@@ -113,7 +113,7 @@ body{background:#e5e7eb;display:flex;justify-content:center;min-height:100vh;mar
 <script>
 // 순차적 Babel 로더 — 파일당 eval 보장
 async function loadBabel(src) {
-  const res = await fetch(src + '?v=3');
+  const res = await fetch(src + '?v=4');
   if (!res.ok) throw new Error(src + ' 로드 실패: ' + res.status);
   const code = await res.text();
   const { code: js } = Babel.transform(code, { presets: ['react'] });
