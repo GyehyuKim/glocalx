@@ -18,6 +18,20 @@ const getMemberPartPct = (member, part) => {
   ));
 };
 
+// ── 자동 공개 체크 (모든 멤버가 파트 완독 시 revealed → true) ────────────────
+const checkAndRevealParts = (village) => {
+  const updatedReviews = village.reviews.map(review => {
+    if (review.revealed) return review; // 이미 공개됨
+    const part = (village.parts || []).find(p => p.order === review.partOrder);
+    if (!part) return review;
+    const allDone = village.members.every(m => m.currentPage >= part.endPage);
+    return allDone ? { ...review, revealed: true } : review;
+  });
+  // 변경 여부 확인
+  const changed = updatedReviews.some((r, i) => r.revealed !== village.reviews[i].revealed);
+  return changed ? { ...village, reviews: updatedReviews } : village;
+};
+
 // ── 독서평 카드: 공개 ─────────────────────────────────────────────────────────
 const RevealedReviewCard = ({ review, stage }) => (
   <div style={{
@@ -66,8 +80,44 @@ const LockedReviewCard = ({ review }) => (
   </div>
 );
 
+// ── 독서평 공개 축하 모달 ──────────────────────────────────────────────────────
+const RevealUnlockModal = ({ partTitle, count, onClose }) => (
+  <div style={{
+    position: 'absolute', inset: 0, zIndex: 90,
+    background: 'rgba(0,0,0,.6)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', padding: '0 28px',
+  }} onClick={onClose}>
+    <div style={{
+      background: '#fff', borderRadius: 24, padding: '32px 24px 28px',
+      textAlign: 'center', width: '100%',
+      animation: 'popIn .4s cubic-bezier(.34,1.56,.64,1)',
+    }} onClick={e => e.stopPropagation()}>
+      <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
+      <p style={{ fontWeight: 900, fontSize: 20, color: 'var(--ink)', margin: '0 0 8px' }}>
+        독서평 공개!
+      </p>
+      <p style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 6px' }}>
+        모든 멤버가 <strong>{partTitle}</strong>을<br />완독했어요
+      </p>
+      <p style={{ fontSize: 13, color: 'var(--brand-3)', fontWeight: 700, margin: '0 0 24px' }}>
+        🔓 독서평 <span style={{ fontFamily: "'Moneygraphy Pixel', monospace" }}>{count}</span>개가 지금 공개됩니다
+      </p>
+      <button
+        onClick={onClose}
+        style={{
+          width: '100%', padding: '14px 0', borderRadius: 14, border: 'none',
+          background: 'var(--brand)', color: '#fff',
+          fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit',
+          borderBottom: '5px solid var(--brand-shadow)',
+        }}>
+        독서평 보기 →
+      </button>
+    </div>
+  </div>
+);
+
 // ── 파트 칩 바 (헤더 바로 아래) ──────────────────────────────────────────────
-const PartChipBar = ({ parts, members, selectedPart, onSelect }) => {
+const PartChipBar = ({ parts, members, reviews, selectedPart, onSelect }) => {
   const getStatus = part => {
     if (members.every(m => m.currentPage >= part.endPage)) return 'done';
     if (members.some(m => m.currentPage >= part.startPage && m.currentPage < part.endPage)) return 'active';
@@ -101,6 +151,18 @@ const PartChipBar = ({ parts, members, selectedPart, onSelect }) => {
           }}>
             <span className="rg-pixel" style={{ fontSize: 11 }}>{part.order}</span>
             <span style={{ fontSize: 11 }}>{ICON[status]}</span>
+            {(() => {
+              const cnt = (reviews || []).filter(r => r.partOrder === part.order).length;
+              return cnt > 0 ? (
+                <span style={{
+                  background: sel ? 'rgba(255,255,255,.3)' : (status === 'done' ? 'var(--brand-soft)' : status === 'active' ? 'var(--gold-soft)' : 'var(--line)'),
+                  color: sel ? '#fff' : FG[status],
+                  borderRadius: 8, padding: '1px 5px',
+                  fontSize: 10, fontWeight: 800,
+                  fontFamily: "'Moneygraphy Pixel', monospace",
+                }}>{cnt}</span>
+              ) : null;
+            })()}
           </button>
         );
       })}
@@ -112,7 +174,8 @@ const PartChipBar = ({ parts, members, selectedPart, onSelect }) => {
 const PartReviewSheet = ({ village, part, pokes, onPoke, onWriteReview, onClose }) => {
   const partReviews = village.reviews.filter(r => r.partOrder === part.order);
   const revealedCnt = partReviews.filter(r => r.revealed).length;
-  const allRevealed = partReviews.length > 0 && revealedCnt === partReviews.length;
+  const allMembersDone = village.members.every(m => m.currentPage >= part.endPage);
+  const allRevealed = allMembersDone && (partReviews.length === 0 || revealedCnt === partReviews.length);
   const blockers    = village.members.filter(m => m.currentPage < part.endPage);
   const myReview    = partReviews.find(r => r.handle === 'me');
 
@@ -148,12 +211,14 @@ const PartReviewSheet = ({ village, part, pokes, onPoke, onWriteReview, onClose 
               borderRadius: 10, padding: '4px 10px',
               background: allRevealed ? 'var(--brand-soft)' : 'rgba(63,209,127,.12)',
             }}>
-              <span className="rg-pixel" style={{
-                fontSize: 13, fontWeight: 800,
-                color: allRevealed ? 'var(--brand-3)' : 'var(--brand)',
-              }}>
-                {revealedCnt}/{partReviews.length}
-              </span>
+              {partReviews.length === 0
+                ? <span className="rg-pixel" style={{ fontSize: 13, fontWeight: 800, color: allMembersDone ? 'var(--brand)' : 'var(--ink-3)' }}>
+                    {allMembersDone ? '✓' : '—'}
+                  </span>
+                : <span className="rg-pixel" style={{ fontSize: 13, fontWeight: 800, color: allRevealed ? 'var(--brand-3)' : 'var(--brand)' }}>
+                    {revealedCnt}/{partReviews.length}
+                  </span>
+              }
             </div>
           </div>
         </div>
@@ -209,7 +274,17 @@ const PartReviewSheet = ({ village, part, pokes, onPoke, onWriteReview, onClose 
           })}
 
           {/* 상태 메시지 */}
-          {!allRevealed && blockers.length > 0 && (
+          {allMembersDone && partReviews.length === 0 && (
+            <div style={{
+              background: 'var(--brand-tint)', borderRadius: 12,
+              padding: '10px 14px', margin: '4px 0 16px',
+            }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-3)', margin: 0 }}>
+                ✅ 모든 멤버 완독! 첫 독서평을 남겨보세요
+              </p>
+            </div>
+          )}
+          {!allMembersDone && blockers.length > 0 && (
             <div style={{
               background: '#1F1F1F', borderRadius: 12,
               padding: '10px 14px', margin: '4px 0 16px',
@@ -223,7 +298,7 @@ const PartReviewSheet = ({ village, part, pokes, onPoke, onWriteReview, onClose 
               </p>
             </div>
           )}
-          {allRevealed && (
+          {allRevealed && partReviews.length > 0 && (
             <div style={{
               background: 'var(--brand-soft)', borderRadius: 12,
               padding: '10px 14px', margin: '4px 0 16px',
@@ -357,7 +432,7 @@ const MyProgressSheet = ({ village, onClose, onUpdate }) => {
 };
 
 // ── 독서평 작성 시트 ──────────────────────────────────────────────────────────
-const WriteReviewSheet = ({ partTitle, onClose, onSubmit }) => {
+const WriteReviewSheet = ({ partTitle, allDone, onClose, onSubmit }) => {
   const [text, setText] = React.useState('');
   const canSubmit = text.trim().length >= 10;
 
@@ -398,11 +473,12 @@ const WriteReviewSheet = ({ partTitle, onClose, onSubmit }) => {
           {text.length}/300
         </p>
         <div style={{
-          background: 'var(--brand-tint)', borderRadius: 10,
-          padding: '8px 12px', marginBottom: 14,
+          background: allDone ? 'var(--brand-tint)' : 'rgba(63,209,127,.08)',
+          border: allDone ? 'none' : '1.5px solid var(--line)',
+          borderRadius: 10, padding: '8px 12px', marginBottom: 14,
         }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-3)', margin: 0 }}>
-            🔒 모든 멤버가 이 파트를 완독해야 독서평이 공개돼요
+          <p style={{ fontSize: 11, fontWeight: 700, color: allDone ? 'var(--brand-3)' : 'var(--ink-3)', margin: 0 }}>
+            {allDone ? '✅ 모든 멤버 완독 — 저장 즉시 공개돼요!' : '🔒 모든 멤버가 이 파트를 완독해야 독서평이 공개돼요'}
           </p>
         </div>
         <button
@@ -582,6 +658,7 @@ const VillageInternal = ({ village, pokes, onStateChange }) => {
   const [selectedPart,    setSelectedPart]    = React.useState(null);
   const [writeReviewPart, setWriteReviewPart] = React.useState(null);
   const [showMyProgress,  setShowMyProgress]  = React.useState(false);
+  const [revealModal,     setRevealModal]     = React.useState(null); // { partTitle, count }
 
   const onPoke = handle => {
     onStateChange(prev => ({
@@ -592,38 +669,55 @@ const VillageInternal = ({ village, pokes, onStateChange }) => {
   };
 
   const onUpdateMyPage = page => {
+    let revealInfo = null;
     onStateChange(prev => {
       const v = prev.village || SEED_VILLAGE;
-      return {
-        ...prev,
-        village: {
-          ...v,
-          members: v.members.map(m => m.isMe ? { ...m, currentPage: page } : m),
-        },
+      const updated = {
+        ...v,
+        members: v.members.map(m => m.isMe ? { ...m, currentPage: page } : m),
       };
+      const revealed = checkAndRevealParts(updated);
+      // 새로 공개된 파트 찾기
+      const newlyRevealedParts = (revealed.parts || []).filter(part => {
+        const before = (v.reviews || []).filter(r => r.partOrder === part.order && !r.revealed).length;
+        const after  = (revealed.reviews || []).filter(r => r.partOrder === part.order && !r.revealed).length;
+        return before > 0 && after === 0;
+      });
+      if (newlyRevealedParts.length > 0) {
+        const p = newlyRevealedParts[0];
+        const cnt = (revealed.reviews || []).filter(r => r.partOrder === p.order).length;
+        revealInfo = { partTitle: `파트 ${p.order}: ${p.title}`, count: cnt };
+      }
+      return { ...prev, village: revealed };
     });
     setShowMyProgress(false);
-    window._showToast && window._showToast('📖 진도가 업데이트됐어요!');
+    if (revealInfo) {
+      setTimeout(() => setRevealModal(revealInfo), 350);
+    } else {
+      window._showToast && window._showToast('📖 진도가 업데이트됐어요!');
+    }
   };
 
   const onSubmitReview = (text, partOrder) => {
     onStateChange(prev => {
       const v = prev.village || SEED_VILLAGE;
+      const part = (v.parts || []).find(p => p.order === partOrder);
+      // 이미 모든 멤버가 완독했으면 즉시 공개
+      const allDone = part ? v.members.every(m => m.currentPage >= part.endPage) : false;
       const filtered = v.reviews.filter(
         r => !(r.handle === 'me' && r.partOrder === partOrder)
       );
+      const newReview = {
+        handle: 'me', name: '나', partOrder, text, revealed: allDone,
+      };
       return {
         ...prev,
-        village: {
-          ...v,
-          reviews: [...filtered, {
-            handle: 'me', name: '나', partOrder, text, revealed: false,
-          }],
-        },
+        village: { ...v, reviews: [...filtered, newReview] },
       };
     });
     setWriteReviewPart(null);
-    window._showToast && window._showToast('📝 독서평 저장! 모두 완독하면 공개돼요.');
+    const msg = '📝 독서평 저장! 모두 완독하면 공개돼요.';
+    window._showToast && window._showToast(msg);
   };
 
   return (
@@ -657,6 +751,7 @@ const VillageInternal = ({ village, pokes, onStateChange }) => {
       <PartChipBar
         parts={village.parts}
         members={village.members}
+        reviews={village.reviews}
         selectedPart={selectedPart}
         onSelect={p => setSelectedPart(prev => prev?.order === p.order ? null : p)}
       />
@@ -689,6 +784,7 @@ const VillageInternal = ({ village, pokes, onStateChange }) => {
       {writeReviewPart && (
         <WriteReviewSheet
           partTitle={`파트 ${writeReviewPart.order}: ${writeReviewPart.title}`}
+          allDone={village.members.every(m => m.currentPage >= writeReviewPart.endPage)}
           onClose={() => setWriteReviewPart(null)}
           onSubmit={text => onSubmitReview(text, writeReviewPart.order)}
         />
@@ -700,6 +796,18 @@ const VillageInternal = ({ village, pokes, onStateChange }) => {
           village={village}
           onClose={() => setShowMyProgress(false)}
           onUpdate={onUpdateMyPage}
+        />
+      )}
+
+      {/* 독서평 공개 축하 모달 */}
+      {revealModal && (
+        <RevealUnlockModal
+          partTitle={revealModal.partTitle}
+          count={revealModal.count}
+          onClose={() => {
+            setRevealModal(null);
+            window._showToast && window._showToast('🎉 독서평이 공개됐어요!');
+          }}
         />
       )}
     </div>
