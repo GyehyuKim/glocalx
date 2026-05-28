@@ -192,6 +192,36 @@ async function loadBooks() {
   } catch { return []; }
 }
 
+// ── TOC loader (books_toc.csv) ─────────────────────────────────────────────────
+// 반환: { [isbn]: [{order, title, startPage, endPage}] }  (isbn 지정 시 해당 배열)
+let _tocCache = null;
+async function loadTOC(isbn) {
+  if (!_tocCache) {
+    try {
+      const res  = await fetch('data/books_toc.csv');
+      const text = await res.text();
+      const byIsbn = {};
+      text.trim().split('\n').slice(1).forEach(line => {
+        if (!line.trim()) return;
+        const cols = line.split(',');
+        if (cols.length < 10) return;
+        const rowIsbn  = cols[1].trim();
+        const chOrder  = parseInt(cols[6]) || 0;
+        // chapter_title 은 col[7] ~ col[cols.length-3] (start/end_page 가 마지막 2열)
+        const chTitle  = cols.slice(7, cols.length - 2).join(',').trim();
+        const startPg  = parseInt(cols[cols.length - 2]) || 0;
+        const endPg    = parseInt(cols[cols.length - 1]) || 0;
+        if (!byIsbn[rowIsbn]) byIsbn[rowIsbn] = [];
+        byIsbn[rowIsbn].push({ order: chOrder, title: chTitle, startPage: startPg, endPage: endPg });
+      });
+      Object.values(byIsbn).forEach(arr => arr.sort((a, b) => a.order - b.order));
+      _tocCache = byIsbn;
+    } catch { _tocCache = {}; }
+  }
+  if (isbn) return _tocCache[isbn] || [];
+  return _tocCache;
+}
+
 // 클라이언트 fuzzy 검색 (Phase 0 — Fuse.js 없이 includes 기반)
 function fuzzySearch(books, q) {
   if (!q.trim()) return books;
@@ -217,6 +247,55 @@ function todayLabel() {
 function calcLevel(xp) {
   return Math.floor(Math.sqrt(xp / 100)) + 1;
 }
+
+// ── 시드 마을 (사피엔스 독서 마을 — demo) ─────────────────────────────────────
+const SEED_VILLAGE = {
+  id: 'v001',
+  bookIsbn: '9788934972464',
+  bookTitle: '사피엔스',
+  bookAuthor: '유발 하라리',
+  totalPages: 648,
+  parts: [
+    { order:1, title:'프롤로그',           startPage:1,   endPage:20  },
+    { order:2, title:'1부: 인지혁명',       startPage:21,  endPage:138 },
+    { order:3, title:'2부: 농업혁명',       startPage:139, endPage:270 },
+    { order:4, title:'3부: 인류의 통합',    startPage:271, endPage:444 },
+    { order:5, title:'4부: 과학혁명',       startPage:445, endPage:630 },
+    { order:6, title:'에필로그',            startPage:631, endPage:648 },
+  ],
+  members: [
+    { handle:'me',               name:'나',           stage:3, currentPage:85,  isMe:true  },
+    { handle:'book_bear',        name:'책읽는곰돌이',  stage:3, currentPage:120, isNpc:true },
+    { handle:'activist_raccoon', name:'활자라쿤',     stage:4, currentPage:138, isNpc:true },
+    { handle:'reading_owl',      name:'독서올빼미',   stage:2, currentPage:42,  isNpc:true },
+  ],
+  reviews: [
+    { handle:'me',               name:'나',           partOrder:1, revealed:true,
+      text:'프롤로그인데 벌써 충격. 인류가 생태계 최상위 포식자가 된 건 불과 10만 년 전이라는 게 믿기지 않는다.' },
+    { handle:'book_bear',        name:'책읽는곰돌이',  partOrder:1, revealed:true,
+      text:'처음 읽을 때도 그렇고 다시 읽어도 프롤로그에서 소름. 우리가 그냥 유인원이었다는 사실을 잊고 살았네.' },
+    { handle:'activist_raccoon', name:'활자라쿤',     partOrder:1, revealed:true,
+      text:'하라리의 서술 방식이 탁월함. 거대 역사를 단 20페이지로 압축하는 건 대단한 편집력이다.' },
+    { handle:'reading_owl',      name:'독서올빼미',   partOrder:1, revealed:true,
+      text:'야밤에 읽기 시작했다가 새벽까지 읽었음. 이 책은 밤에 읽어야 제맛이에요.' },
+    { handle:'me',               name:'나',           partOrder:2, revealed:false,
+      text:'"허구를 믿는 능력"이 인류의 핵심이라는 주장이 가장 인상적. 돈, 국가, 종교 모두 함께 믿는 이야기라는 게.' },
+    { handle:'book_bear',        name:'책읽는곰돌이',  partOrder:2, revealed:false,
+      text:'언어가 의사소통이 아니라 "없는 것에 대한 이야기"를 가능하게 했다는 부분이 핵심. 인간만의 능력.' },
+    { handle:'activist_raccoon', name:'활자라쿤',     partOrder:2, revealed:false,
+      text:'인지혁명이 농업혁명보다 훨씬 중요했다는 논지에 동의. 지식의 혁명이 모든 것을 바꿨다.' },
+    { handle:'reading_owl',      name:'독서올빼미',   partOrder:2, revealed:false,
+      text:'아직 다 못 읽었어요 ㅠ 오늘 밤 마저 읽겠습니다...' },
+  ],
+  board: [
+    { id:'vb1', handle:'activist_raccoon', name:'활자라쿤',    time:'어제',   isNpc:true,
+      text:'사피엔스 1부 진입! 인지혁명이 농업혁명보다 중요했다는 논지가 흥미로움.' },
+    { id:'vb2', handle:'book_bear',        name:'책읽는곰돌이', time:'2일 전', isNpc:true,
+      text:'1부 읽으면서 계속 멈추게 됨. 밑줄 긋다가 손목 아플 지경.' },
+    { id:'vb3', handle:'me',               name:'나',           time:'3일 전',
+      text:'마을 만들어줘서 고마워요! 같이 읽으니까 포기를 못하겠네요 ㅋㅋ' },
+  ],
+};
 
 // ── App state schema (Phase 0 localStorage) ────────────────────────────────────
 //
@@ -244,6 +323,7 @@ const INITIAL_STATE = {
   bookmarks: [],            // [{id,name,handle,book,isbn,page,sentence,time,jaeks,bookmarkedAt}]
   wishBooks: [],            // [{bookTitle,isbn,addedAt}]
   pokes: {},                // friendId -> bool (오늘 보냈는지)
+  village: SEED_VILLAGE,    // 마을 (null = 미참여)
   simDate: null,            // 날짜 시뮬레이터 (null = 오늘)
   joinedGroupIds: ['sub1'], // 사용자가 이미 가입한 서브 모임 ID 목록 (§5.5 신설)
   pendingGroupIds: [],      // 가입 신청 대기 중인 모임 ID 목록 (§5.5 신설)
@@ -265,6 +345,8 @@ function loadAppState() {
     wishBooks: s.wishBooks || [],
     joinedGroupIds: s.joinedGroupIds || ['sub1'],
     pendingGroupIds: s.pendingGroupIds || [],
+    village:   'village' in s ? s.village : SEED_VILLAGE,
+    pokes:     s.pokes    || {},
   };
 }
 
@@ -324,4 +406,5 @@ window.advanceSimDate     = advanceSimDate;
 window.SEED_MEGA_STREAMS  = SEED_MEGA_STREAMS;
 window.SEED_SUB_GROUPS    = SEED_SUB_GROUPS;
 window.SEED_GROUP_FEEDS   = SEED_GROUP_FEEDS;
-
+window.loadTOC            = loadTOC;
+window.SEED_VILLAGE       = SEED_VILLAGE;
