@@ -1,0 +1,46 @@
+// markdownlint-cli2 설정 — Korean docs + table-heavy spec 친화 룰셋
+// 적용 범위: docs/readinggo/specs/, docs/readinggo/CLAUDE.md, 루트 *.md
+// 제외: docs/2. specifications/ (legacy + autopilot), docs/1. research_and_lectures/, docs/4. user_interviews/, old/
+{
+  "config": {
+    "default": true,
+    // 비활성: 스타일 nits (한국어 docs · 표 중심 spec · 의도적 들여쓰기와 충돌)
+    "MD001": false,  // heading level skip
+    "MD007": false,  // ul-indent
+    "MD012": { "maximum": 3 },
+    "MD013": false,  // line length
+    "MD022": false,  // blanks around headings
+    "MD024": { "siblings_only": true },
+    "MD025": false,  // multiple h1
+    "MD031": false,  // blanks around fences
+    "MD032": false,  // blanks around lists
+    "MD033": false,  // inline HTML (<a id=>, <details>)
+    "MD036": false,  // emphasis as heading
+    "MD038": false,  // spaces in code span (spec describes literal UI strings like "` · NPC`")
+    "MD040": false,  // fenced code lang
+    "MD041": false,  // first line h1
+    "MD046": false,  // code block style
+    "MD058": false,  // blanks around tables
+    "MD060": false   // table column style
+    // 유지: MD009 trailing-spaces, MD010 hard-tabs, MD019 multi-space-atx,
+    //        MD034 bare-urls, MD042 empty-links, MD045 image-alt,
+    //        MD047 single-trailing-newline 등 진짜 문제만
+  },
+  "globs": [
+    "docs/readinggo/specs/**/*.md",
+    "docs/readinggo/CLAUDE.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "ignores": [
+    "node_modules/**",
+    "old/**",
+    "docs/2. specifications/**",
+    "docs/1. research_and_lectures/**",
+    "docs/4. user_interviews/**",
+    "docs/3. peer_feedback_analysis/**",
+    "docs/0. pitch_and_concept/**"
+  ]
+}
