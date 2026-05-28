@@ -108,6 +108,25 @@ Key routing rules:
 - Code quality dashboard → invoke /health
 - Mine session patterns to update CLAUDE.md → invoke /insights (마일스톤마다, 최소 월 1회. 근거: [LF: /insights](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week6-insights))
 
+## Health Stack
+
+`/health` 가 측정하는 도구 등록. 자동 감지 우회 — 이 섹션이 source of truth.
+
+- lint: `npx -y markdownlint-cli2`
+- test: `python tests/spec-align/nest.py`
+
+### 현재 측정 표면
+
+- **lint (md)** — `.markdownlint-cli2.jsonc` globs 범위 (active spec + 루트 docs, 18 files)
+- **test (spec-align)** — `tests/spec-align/nest.py` 13개 invariant
+- TYPECHECK / 코드 LINT / DEADCODE / SHELL → SKIPPED (Phase 0 정적 HTML/JS, 빌드 도구 미도입 — Stack Lock)
+
+### 추가 등록 후보 (도입 시)
+
+- `tests/spec-align/drift.py` — 현재 `.github/workflows/spec-drift.yml` 부재로 단독 실패. CI 워크플로우 생성 후 등록
+- ESLint (vanilla JS 린트) — `package.json` 도입 동반, 별도 spec PR 필요
+- Phase 1 Vite/TypeScript 마이그레이션 시 typecheck/vitest 추가
+
 ## PR 머지 전 체크리스트
 
 PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
