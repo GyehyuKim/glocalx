@@ -1,327 +1,300 @@
-// data.js — localStorage helpers, seed data, TSV loader, state schema
-// window exports at bottom
+/* =========================================================
+   ReadingGo — data.js
+   책 데이터, NEST_TWIGS, 초기 상태, 헬퍼 함수
+   window.* 으로 export → 다음 파일에서 참조 가능
+   ========================================================= */
 
-// ── localStorage helper ────────────────────────────────────────────────────────
-const LS = {
-  get: (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+const RG_BOOKS = [
+  {id:"b001",isbn:"9788934972464",title:"사피엔스",author:"유발 하라리",pub:"김영사",total:648,cover:"https://image.aladin.co.kr/product/31424/4/cover500/k482832219_1.jpg",fb:["#F4D9A8","#E8B473"],toc:[[1,"프롤로그",1,20],[2,"1부: 인지혁명",21,138],[3,"2부: 농업혁명",139,270],[4,"3부: 인류의 통합",271,444],[5,"4부: 과학혁명",445,630],[6,"에필로그",631,648]]},
+  {id:"b002",isbn:"9788983711892",title:"코스모스",author:"칼 세이건",pub:"사이언스북스",total:719,cover:"https://image.aladin.co.kr/product/87/9/cover500/s412032094_1.jpg",fb:["#1A3A6E","#3A6FB0"],toc:[[1,"코스모스의 바닷가에서",1,54],[2,"우주 생명의 씨앗",55,108],[3,"지상과 천상의 조화",109,162],[4,"천국과 지옥",163,212],[5,"붉은 행성을 위한 블루스",213,262],[6,"여행자의 이야기",263,316],[7,"밤하늘의 등뼈",317,368],[8,"시간과 공간을 가르는 여행",369,428],[9,"별들의 삶과 죽음",429,484],[10,"영원의 벼랑 끝",485,540],[11,"미래로 가는 편지",541,592],[12,"은하 대백과사전",593,656],[13,"누가 우리 지구를 대변하는가",657,719]]},
+  {id:"b008",isbn:"9788937460449",title:"데미안",author:"헤르만 헤세",pub:"민음사",total:248,cover:"https://image.aladin.co.kr/product/26/0/cover500/s742633278_2.jpg",fb:["#3A2E22","#7A5A38"],toc:[[1,"두 세계",1,24],[2,"카인",25,50],[3,"강도",51,76],[4,"베아트리체",77,100],[5,"새는 알에서 나오려고 투쟁한다",101,126],[6,"야콥 크노아워",127,150],[7,"에바 부인",151,176],[8,"최후",177,248]]},
+  {id:"b010",isbn:"9788937460777",title:"1984",author:"조지 오웰",pub:"민음사",total:452,cover:"https://image.aladin.co.kr/product/41/89/cover500/s122531356_2.jpg",fb:["#C82F2F","#7E1A1A"],toc:[[1,"본문",1,452]]},
+  {id:"b104",isbn:"9788937460043",title:"변신, 시골의사",author:"프란츠 카프카",pub:"민음사",total:288,cover:"https://image.aladin.co.kr/product/6/4/cover500/s972932230_1.jpg",fb:["#2A3F4F","#5A7388"],toc:[[1,"본문",1,288]]},
+  {id:"b105",isbn:"9788937460050",title:"동물농장",author:"조지 오웰",pub:"민음사",total:184,cover:"https://image.aladin.co.kr/product/4/6/cover500/s93746005x_3.jpg",fb:["#E8B473","#A87844"],toc:[[1,"본문",1,184]]},
+  {id:"b037",isbn:"9788937460471",title:"호밀밭의 파수꾼",author:"제롬 데이비드 샐린저",pub:"민음사",total:320,cover:"https://image.aladin.co.kr/product/30882/22/cover500/8937460475_2.jpg",fb:["#E8A53B","#B5722E"],toc:[[1,"본문",1,320]]},
+  {id:"b093",isbn:"9788937460753",title:"위대한 개츠비",author:"프랜시스 스콧 피츠제럴드",pub:"민음사",total:308,cover:"https://image.aladin.co.kr/product/41/79/cover500/s582934787_1.jpg",fb:["#0B1F4D","#1E3A6F"],toc:[[1,"본문",1,308]]},
+  {id:"b103",isbn:"9788937460036",title:"햄릿",author:"윌리엄 셰익스피어",pub:"민음사",total:248,cover:"https://image.aladin.co.kr/product/16/80/cover500/s962932230_1.jpg",fb:["#3A2E55","#6E5398"],toc:[[1,"본문",1,248]]},
+  {id:"b325",isbn:"9788937443848",title:"이방인",author:"알베르 카뮈",pub:"민음사",total:280,cover:"https://image.aladin.co.kr/product/21224/66/cover500/8937443848_1.jpg",fb:["#E8E1C7","#B8AC7E"],toc:[[1,"본문",1,280]]},
+  {id:"b337",isbn:"9788937462788",title:"노인과 바다",author:"어니스트 헤밍웨이",pub:"민음사",total:204,cover:"https://image.aladin.co.kr/product/1452/24/cover500/8937462788_3.jpg",fb:["#1E5C7B","#2F8AB5"],toc:[[1,"본문",1,204]]},
+  {id:"b172",isbn:"9788937460883",title:"오만과 편견",author:"제인 오스틴",pub:"민음사",total:560,cover:"https://image.aladin.co.kr/product/43/68/cover500/s937460882_1.jpg",fb:["#8C2E48","#C45A77"],toc:[[1,"본문",1,560]]},
+];
+
+const BOOK_BY_ID = Object.fromEntries(RG_BOOKS.map(b => [b.id, b]));
+function getBook(id){ return BOOK_BY_ID[id] || RG_BOOKS[0]; }
+
+const INITIAL_PROGRESS = {
+  "b008": { cur: 102, days: 12 },
+  "b105": { cur: 88,  days: 5  },
+  "b337": { cur: 64,  days: 3  },
+  "b001": { cur: 21,  days: 8  },
 };
 
-// ── Nest evolution stages (§5.2) ───────────────────────────────────────────────
-const NEST_STAGES = [
-  { max: 20,  name: '나뭇가지 자리', emoji: '🪵', color: '#AFAFAF', bg: '#f3f4f6' },
-  { max: 50,  name: '빈 둥지',       emoji: '🪹', color: '#F59E0B', bg: '#FEF3C7' },
-  { max: 80,  name: '따뜻한 둥지',   emoji: '🏠', color: '#58CC02', bg: '#F0FDF4' },
-  { max: 99,  name: '다정한 집',     emoji: '🏡', color: '#1CB0F6', bg: '#EFF6FF' },
-  { max: 100, name: '참새의 성',     emoji: '🏰', color: '#CE82FF', bg: '#FAF5FF' },
-];
-const getNestStage = pct => NEST_STAGES.find(s => pct <= s.max) || NEST_STAGES[4];
-
-// 둥지 진화 마이크로카피 (§5.2) — 단계 전환 시 노출
-// from / to 는 NEST_STAGES 인덱스 (1-based).
-const NEST_STAGE_TRANSITIONS = [
-  { from: 1, to: 2, text: '참새가 자리를 잡았어요!' },
-  { from: 2, to: 3, text: '참새가 살림을 차렸어요!' },
-  { from: 3, to: 4, text: '다정한 이웃이 되었어요!' },
-  { from: 4, to: 5, text: '전설의 참새 성주!' },
-];
-const getEvolutionCopy = (fromLv, toLv) => {
-  const t = NEST_STAGE_TRANSITIONS.find(x => x.from === fromLv && x.to === toLv);
-  return t ? t.text : null;
-};
-
-// ── NPC 검색 풀 (소셜 탭 친구 찾기) ───────────────────────────────────────────
-const NPC_SEARCH_USERS = [
-  { id: 'npc1', handle: 'book_bear',        name: '책읽는곰돌이', stage: 3, isLit: true,  isNpc: true,
-    sentence: '"역사는 언제나 승자의 기록이다."',         bio: '매일 아침 30분 독서',   books: ['사피엔스', '데미안'] },
-  { id: 'npc2', handle: 'activist_raccoon', name: '활자라쿤',    stage: 4, isLit: true,  isNpc: true,
-    sentence: '"빅브라더는 당신을 지켜보고 있다."',       bio: '분석적 인용 독서인',    books: ['1984', '총균쇠'] },
-  { id: 'npc3', handle: 'reading_owl',      name: '독서올빼미',  stage: 2, isLit: false, isNpc: true,
-    sentence: '"밤에 읽는 책이 더 깊이 스며든다."',       bio: '야간 독서 전문가',      books: ['호밀밭의 파수꾼'] },
-  { id: 'npc4', handle: 'page_fox',         name: '한페이지여우', stage: 1, isLit: true,  isNpc: true,
-    sentence: '"한 문장이 삶을 바꿀 수 있다."',           bio: '하루 한 페이지 실천 중', books: ['어린 왕자'] },
+const NEST_LADDER = [
+  { lv: 1, name: "시작",         short: "🪵" },
+  { lv: 2, name: "가지 수집",    short: "🪹" },
+  { lv: 3, name: "둥지 확장",    short: "🏠" },
+  { lv: 4, name: "바닥 보강",    short: "✨" },
+  { lv: 5, name: "벽체 완성",    short: "🏡" },
+  { lv: 6, name: "지붕 구조",    short: "🛖" },
+  { lv: 7, name: "지붕 완성",    short: "🌿" },
+  { lv: 8, name: "우리 집 완성!", short: "🏰" },
 ];
 
-// ── 마을 게시판 시드 ────────────────────────────────────────────────────────────
-const SEED_BOARD_POSTS = [
-  { id: 'bp1', handle: 'activist_raccoon', name: '활자라쿤',    time: '어제',     isNpc: true,
-    text: '1984 다 읽고 나니 SNS가 다르게 보임. 빅브라더가 스마트폰이었나요 우리.' },
-  { id: 'bp2', handle: 'book_bear',        name: '책읽는곰돌이', time: '2일 전',   isNpc: true,
-    text: '사피엔스 3장 - 인지혁명 파트 읽다가 멍해짐. 스토리텔링이 인류를 만들었다는 게 너무 와닿아서.' },
-  { id: 'bp3', handle: 'reading_owl',      name: '독서올빼미',  time: '3일 전',   isNpc: true,
-    text: '오늘부터 호밀밭의 파수꾼 시작! 홀든 콜필드 이름이 왜 이렇게 귀엽지' },
-];
-
-// ── 독서모임 탭 시드 데이터 (§5.5 신설) ───────────────────────────────────────
-const SEED_MEGA_STREAMS = [
-  { id: 'mega1', title: '사피엔스', isbn: '9788934972464', membersCount: 42, todayPages: 154, emoji: '🐒' },
-  { id: 'mega2', title: '어린 왕자', isbn: '9788937460449', membersCount: 18, todayPages: 45, emoji: '🌹' },
-  { id: 'mega3', title: '1984', isbn: '9788937460319', membersCount: 29, todayPages: 82, emoji: '👁️' },
-  { id: 'mega4', title: '데미안', isbn: '9788937460647', membersCount: 22, todayPages: 38, emoji: '🥚' },
-];
-
-const SEED_SUB_GROUPS = [
-  {
-    id: 'sub1',
-    name: '🔥 사피엔스 30일 완독 레이스',
-    bookTitle: '사피엔스',
-    isbn: '9788934972464',
-    type: 'public', // 누구나 가입 신청 후 즉시 가입 또는 신청제
-    privacy: 'open',
-    targetDate: '2026-06-25',
-    membersCount: 5,
-    maxMembers: 10,
-    targetPages: 460,
-    description: '사피엔스를 매일 읽고 하루 한 줄 문장을 기록하는 끝장 레이스 모임입니다! 완독 가자!',
-    host: 'gyehyu',
-    members: [
-      { id: 'f1', handle: 'gyehyu', name: '계휴', stage: 4, isLit: true, sentence: '"별은 아름답다, 모래들이 아름답듯이."' },
-      { id: 'npc1', handle: 'book_bear', name: '책읽는곰돌이', stage: 3, isLit: true, sentence: '"역사는 언제나 승자의 기록이다."', isNpc: true },
-      { id: 'npc2', handle: 'activist_raccoon', name: '활자라쿤', stage: 4, isLit: true, sentence: '"빅브라더는 당신을 지켜보고 있다. 그것도 당신 안에서."', isNpc: true },
-      { id: 'f2', handle: 'seungwon', name: '승원', stage: 2, isLit: false, sentence: '' },
-      { id: 'me', handle: 'me', name: '나', stage: 1, isLit: false, sentence: '' }
-    ]
-  },
-  {
-    id: 'sub2',
-    name: '🔒 도파민 인류 극복 모임 (2주 집중)',
-    bookTitle: '도파민네이션',
-    isbn: '9788950997486',
-    type: 'private', // 비공개
-    privacy: 'code',
-    entryCode: 'DOPAMINE',
-    targetDate: '2026-06-10',
-    membersCount: 3,
-    maxMembers: 8,
-    targetPages: 312,
-    description: '도파민 중독에서 벗어나기 위해 도파민네이션을 치열하게 읽는 소수정예 비밀 모임.',
-    host: 'reading_owl',
-    members: [
-      { id: 'npc3', handle: 'reading_owl', name: '독서올빼미', stage: 2, isLit: false, sentence: '"밤에 읽는 책이 더 깊이 스며든다."', isNpc: true },
-      { id: 'npc4', handle: 'page_fox', name: '한페이지여우', stage: 1, isLit: true, sentence: '"한 문장이 삶을 바꿀 수 있다."', isNpc: true },
-      { id: 'f1', handle: 'gyehyu', name: '계휴', stage: 3, isLit: true, sentence: '"몰입의 기쁨을 찾아서."' }
-    ]
-  },
-  {
-    id: 'sub3',
-    name: '👑 IT경영 AI 비즈니스 스터디',
-    bookTitle: 'AI 경영학',
-    isbn: '9788934988779',
-    type: 'approve', // 승인제
-    privacy: 'approve',
-    targetDate: '2026-06-20',
-    membersCount: 4,
-    maxMembers: 15,
-    targetPages: 380,
-    description: '비즈니스에 어떻게 AI를 적용할지, 전략 사례를 깊이 파고들며 공유하는 학구적인 모임입니다.',
-    host: 'activist_raccoon',
-    members: [
-      { id: 'npc2', handle: 'activist_raccoon', name: '활자라쿤', stage: 4, isLit: true, sentence: '"인공지능 비즈니스는 전략의 게임이다."', isNpc: true },
-      { id: 'npc1', handle: 'book_bear', name: '책읽는곰돌이', stage: 3, isLit: true, sentence: '"데이터 플라이휠이 비즈니스를 주도한다."', isNpc: true },
-      { id: 'f2', handle: 'seungwon', name: '승원', stage: 2, isLit: false, sentence: '' }
-    ]
-  }
-];
-
-const SEED_GROUP_FEEDS = {
-  'sub1': [
-    { id: 'gf1', handle: 'gyehyu', name: '계휴', page: 120, sentence: '역사는 단지 한 줌의 지배자들이 만든 이야기일 뿐이다.', time: '2시간 전' },
-    { id: 'gf2', handle: 'book_bear', name: '책읽는곰돌이', page: 85, sentence: '인류가 지구를 지배하게 된 원동력은 오직 허구의 믿음이다.', time: '5시간 전' },
-    { id: 'gf3', handle: 'activist_raccoon', name: '활자라쿤', page: 198, sentence: '돈은 상호 신뢰 시스템 중 가장 위대하고 효율적인 발명품이다.', time: '어제' }
+const NPC_QUOTES = {
+  "b008": [
+    { nick:"@activist_raccoon", avatar:"🦝", page:120, q:"새는 알에서 나오려고 투쟁한다. 알은 세계다. 태어나려는 자는 한 세계를 깨뜨려야 한다.", time:"2시간 전", claps:34, tears:8, marks:21 },
+    { nick:"@fox_c", avatar:"🦊", page:88, q:"우리가 한 인간을 미워한다면, 우리는 그의 모습 속에서 우리 자신 안에 들어앉아 있는 무엇인가를 보고 미워하는 것이다.", time:"어제", claps:18, tears:3, marks:9 },
+    { nick:"@quiet_rabbit", avatar:"🐰", page:152, q:"운명과 마음은 같은 개념의 두 이름이다.", time:"이틀 전", claps:11, tears:1, marks:5 },
   ],
-  'sub2': [
-    { id: 'gf4', handle: 'page_fox', name: '한페이지여우', page: 45, sentence: '우리가 느끼는 쾌락과 고통은 저울의 양팔 저울과 같다.', time: '3시간 전' },
-    { id: 'gf5', handle: 'reading_owl', name: '독서올빼미', page: 92, sentence: '끊임없는 자극은 우리 뇌의 도파민 수용체를 마비시킨다.', time: '어제' }
-  ]
+  "b001": [
+    { nick:"@book_bear", avatar:"🐻", page:412, q:"역사는 한 가지 철칙을 따른다 — 사후에 보면 모든 것이 필연이지만, 그 순간에는 우연이었다.", time:"3시간 전", claps:21, tears:0, marks:14 },
+  ],
+  "b002": [
+    { nick:"@owl_n", avatar:"🦉", page:540, q:"우리는 별의 먼지로 만들어져 있다. 우주가 자기 자신을 들여다보는 한 방식이다.", time:"5시간 전", claps:29, tears:6, marks:18 },
+  ],
+  "b010": [
+    { nick:"@quiet_rabbit", avatar:"🐰", page:120, q:"누가 과거를 지배하는가가 미래를 지배한다. 누가 현재를 지배하는가가 과거를 지배한다.", time:"어제", claps:24, tears:2, marks:13 },
+  ],
+  "b105": [
+    { nick:"@raccoon_a", avatar:"🦝", page:22, q:"모든 동물은 평등하다. 그러나 어떤 동물은 더 평등하다.", time:"이틀 전", claps:42, tears:1, marks:25 },
+  ],
+  "b093": [
+    { nick:"@curious_fox", avatar:"🦊", page:156, q:"그래서 우리는 더 앞으로 나아간다, 흐름을 거슬러 끊임없이 과거로 떠밀려 가면서.", time:"4시간 전", claps:33, tears:9, marks:20 },
+  ],
+  "b337": [
+    { nick:"@deer_s", avatar:"🦌", page:88, q:"인간은 파괴될 수는 있어도, 패배할 수는 없다.", time:"오늘 아침", claps:45, tears:2, marks:28 },
+  ],
+  "b325": [
+    { nick:"@fox_c", avatar:"🦊", page:140, q:"오늘 엄마가 죽었다. 아니, 어쩌면 어제. 잘 모르겠다.", time:"3일 전", claps:19, tears:7, marks:11 },
+  ],
+  "b103": [
+    { nick:"@book_bear", avatar:"🐻", page:88, q:"죽느냐 사느냐, 그것이 문제로다.", time:"오늘", claps:55, tears:3, marks:32 },
+  ],
+  "b104": [
+    { nick:"@activist_raccoon", avatar:"🦝", page:42, q:"어느 날 아침 그레고르 잠자가 불안한 꿈에서 깨어났을 때, 자신이 침대에서 한 마리 거대한 해충으로 변해 있음을 발견했다.", time:"어제", claps:27, tears:4, marks:16 },
+  ],
+  "b037": [
+    { nick:"@curious_fox", avatar:"🦊", page:198, q:"미성숙한 인간의 특징은 어떤 명분을 위해 고결하게 죽으려 하는 것이고, 성숙한 인간의 특징은 그 명분을 위해 비겁하게 살아가려 하는 것이다.", time:"이틀 전", claps:22, tears:5, marks:14 },
+  ],
+  "b172": [
+    { nick:"@quiet_rabbit", avatar:"🐰", page:240, q:"나는 그 자존심을 미워할 정도로 마음에 두지 않았다. 그것은 또한 정당한 자존심이었으므로.", time:"3일 전", claps:14, tears:1, marks:8 },
+  ],
 };
 
-// ── Seed data (Phase 0 시뮬레이션) ────────────────────────────────────────────
-const SEED_FRIENDS = [
-  { id: 'npc1', handle: 'book_bear',        name: '책읽는곰돌이', stage: 3, isLit: true,
-    sentence: '"역사는 언제나 승자의 기록이다. 그러나 우리는 그 너머를 봐야 한다."', isNpc: true },
-  { id: 'npc2', handle: 'activist_raccoon', name: '활자라쿤',     stage: 4, isLit: true,
-    sentence: '"빅브라더는 당신을 지켜보고 있다. 그것도 당신 안에서."',             isNpc: true },
-  { id: 'f1',   handle: 'gyehyu',           name: '계휴',         stage: 4, isLit: true,
-    sentence: '"별은 아름답다, 모래들이 아름답듯이."' },
-  { id: 'f2',   handle: 'seungwon',         name: '승원',         stage: 2, isLit: false, sentence: '' },
-];
+const _ab = getBook("b008");
+const _ap = INITIAL_PROGRESS["b008"];
+const INITIAL_STATE = {
+  book: {
+    id: _ab.id, title: _ab.title,
+    author: _ab.author + " · " + _ab.pub,
+    cur: _ap.cur, total: _ab.total, days: _ap.days,
+    cover: _ab.cover, fb: _ab.fb, toc: _ab.toc,
+  },
+  streak: 12,
+  xp: 340,
+  nest: { lv: 3, progress: 62 },
+  nestHealth: 80,
+  daysSinceRead: 0,
+  myQuotes: [
+    { text: "내가 갖고 싶었던 것은 사람이 아니라 진실이었다.", bookId: "b008", page: 87, when: "어제" },
+    { text: "두 세계 사이의 경계는, 결국 내 안에 있었다.",       bookId: "b008", page: 22, when: "3일 전" },
+  ],
+  league: [
+    { rank: 1, name: "@book_bear · NPC",       avatar: "🐻", xp: 920 },
+    { rank: 2, name: "@quiet_rabbit",           avatar: "🐰", xp: 740 },
+    { rank: 3, name: "@curious_fox",            avatar: "🦊", xp: 510 },
+    { rank: 4, name: "나 (jerome)",             avatar: "🐦", xp: 340, me: true },
+    { rank: 5, name: "@activist_raccoon · NPC", avatar: "🦝", xp: 280 },
+  ],
+  village: [
+    { name: "book_bear", nest: "🏰", on: true,  streak: 64, sent: false, bookId: "b001", page: 412 },
+    { name: "rabbit_q",  nest: "🏡", on: true,  streak: 21, sent: false, bookId: "b093", page: 156 },
+    { name: "fox_c",     nest: "🏠", on: true,  streak: 9,  sent: false, bookId: "b008", page: 88  },
+    { name: "raccoon_a", nest: "🪹", on: false, streak: 0,  sent: false, bookId: "b105", page: 22  },
+    { name: "owl_n",     nest: "🏰", on: true,  streak: 88, sent: true,  bookId: "b002", page: 540 },
+    { name: "deer_s",    nest: "🪵", on: false, streak: 0,  sent: false, bookId: "b337", page: 12  },
+  ],
+  pathNodes: [
+    { type: "done",  label: "✓", title: "5/7 · 14p"  },
+    { type: "done",  label: "✓", title: "5/8 · 22p"  },
+    { type: "done",  label: "✓", title: "5/9 · 8p"   },
+    { type: "done",  label: "✓", title: "5/10 · 30p" },
+    { type: "done",  label: "✓", title: "5/12 · 18p" },
+    { type: "today", label: "★", title: "오늘! 짹"    },
+    { type: "ghost", label: "＋", title: "내일"       },
+  ],
+};
 
-const SEED_LEAGUE = [
-  { handle: 'gyehyu',           name: '계휴',         xp: 420 },
-  { handle: 'activist_raccoon', name: '활자라쿤',     xp: 380, isNpc: true },
-  { handle: 'me',               name: '나',           xp: 240, isMe: true },
-  { handle: 'seungwon',         name: '승원',         xp: 180 },
-  { handle: 'book_bear',        name: '책읽는곰돌이',  xp: 120, isNpc: true },
-];
+/* ── NEST_TWIGS 사전 계산 ─────────────────────── */
+const NEST_GEO = { cx: 110, cy: 132, rx: 60, ry: 22, irx: 44, iry: 13 };
 
-const SEED_FEED = [
-  { id: 'fd1', handle: 'gyehyu',           name: '계휴',
-    book: '어린 왕자', isbn: '9788937460449', page: 72,
-    sentence: '"별은 아름답다, 모래들이 아름답듯이."',   time: '2시간 전', jaeks: 3 },
-  { id: 'fd2', handle: 'activist_raccoon', name: '활자라쿤',
-    book: '1984',     isbn: '9788937460319', page: 156,
-    sentence: '"빅브라더는 당신을 지켜보고 있다."',      time: '4시간 전', jaeks: 7 },
-  { id: 'fd3', handle: 'book_bear',        name: '책읽는곰돌이',
-    book: '사피엔스', isbn: '9788934972464', page: 89,
-    sentence: '"역사는 언제나 승자의 기록이다."',        time: '어제',     jaeks: 5 },
-  { id: 'fd4', handle: 'reading_owl',      name: '독서올빼미',
-    book: '데미안',   isbn: '9788937460647', page: 114,
-    sentence: '"새는 알을 깨고 나온다. 알은 세계다."',   time: '3시간 전', jaeks: 12 },
-  { id: 'fd5', handle: 'page_fox',         name: '한페이지여우',
-    book: '어린 왕자', isbn: '9788937460449', page: 38,
-    sentence: '"가장 중요한 것은 눈에 보이지 않아."',    time: '5시간 전', jaeks: 9 },
-];
+const NEST_TWIGS = (function(){
+  const G = NEST_GEO;
+  const palette = ['#E6C49B','#D4A574','#C19660','#B0834E','#9D6D3C','#8C5E33','#7A4F2C','#6B4423','#A07043','#915E2D'];
+  const phi = 137.508;
+  function rimPt(a, rs){ const t=a*Math.PI/180; return {x:G.cx+G.rx*rs*Math.cos(t),y:G.cy+G.ry*rs*Math.sin(t)}; }
+  const bases=[];
+  for(let i=0;i<4;i++){
+    const sa=200+i*30,sp=140-i*10,ea=sa+sp;
+    const s=rimPt(sa,1.02),e=rimPt(ea,1.02),cp=rimPt(sa+sp/2,1.18);
+    bases.push({type:'base',path:`M ${s.x.toFixed(1)} ${s.y.toFixed(1)} Q ${cp.x.toFixed(1)} ${cp.y.toFixed(1)} ${e.x.toFixed(1)} ${e.y.toFixed(1)}`,col:['#4E3120','#5A3A1F','#6B4423','#7A4F2C'][i],sw:3.6-i*0.3,op:0.88,front:true});
+  }
+  const fibers=[];
+  for(let i=0;i<130;i++){
+    const sa=(i*phi)%360,sp=50+((i*23)%80),ea=sa+sp;
+    const rs=0.92+((i*7)%6)*0.02,re=0.92+((i*5+3)%6)*0.02;
+    const s=rimPt(sa,rs),e=rimPt(ea,re);
+    const ar=sp*Math.PI/180,bulge=0.04+0.28*Math.sin(ar/2),ma=sa+sp/2;
+    const cp=rimPt(ma,1.0+bulge);
+    const front=Math.sin(ma*Math.PI/180)>-0.18;
+    fibers.push({type:'fiber',path:`M ${s.x.toFixed(1)} ${s.y.toFixed(1)} Q ${cp.x.toFixed(1)} ${cp.y.toFixed(1)} ${e.x.toFixed(1)} ${e.y.toFixed(1)}`,col:palette[i%palette.length],sw:front?(1.1+(i%4)*0.25):(0.85+(i%4)*0.18),op:front?(0.72+(i%3)*0.07):(0.42+(i%3)*0.05),front});
+  }
+  const tendrils=[];
+  for(let i=0;i<30;i++){
+    const sa=(i*17+5)%360,s=rimPt(sa,1.0);
+    const tipR=1.20+((i*7)%6)*0.025,drift=((i*13)%40)-20;
+    const tip=rimPt(sa+drift,tipR),cp=rimPt(sa+drift/2,1.10);
+    const front=Math.sin(sa*Math.PI/180)>-0.18;
+    tendrils.push({type:'tendril',path:`M ${s.x.toFixed(1)} ${s.y.toFixed(1)} Q ${cp.x.toFixed(1)} ${cp.y.toFixed(1)} ${tip.x.toFixed(1)} ${tip.y.toFixed(1)}`,col:palette[(i+3)%palette.length],sw:0.85+(i%3)*0.18,op:0.55+(i%3)*0.05,front});
+  }
+  function interleave(...arrays){const out=[];let idx=0,added=true;while(added){added=false;for(const a of arrays){if(idx<a.length){out.push(a[idx]);added=true;}}idx++;}return out;}
+  return [...bases,...interleave(fibers,tendrils)];
+})();
 
-// ── TSV loader ─────────────────────────────────────────────────────────────────
+/* ── 헬퍼 함수 ──────────────────────────────── */
+function twigCountFromState(lv, health){
+  const ranges=[[4,14],[15,28],[29,55],[56,85],[86,115],[116,135],[136,155],[156,164]];
+  const r=ranges[Math.min(7,Math.max(0,lv-1))];
+  return r[0]+Math.round((health/100)*(r[1]-r[0]));
+}
+function healthClass(h){ if(h>=70)return'h-strong'; if(h>=40)return'h-shaky'; if(h>=20)return'h-cracked'; return'h-ruin'; }
+function healthCopy(h){
+  if(h>=85)return{cls:'',      text:'💪 둥지가 단단해요. 오늘 한 쪽이면 +14 체력.'};
+  if(h>=70)return{cls:'',      text:'🌿 따뜻해요. 오늘도 한 쪽으로 둥지를 더 키워봐요.'};
+  if(h>=55)return{cls:'warn',  text:'🍃 가지 한두 개가 흔들려요. 짧게라도 짹.'};
+  if(h>=40)return{cls:'warn',  text:'🍂 둥지가 헐거워졌어요. 한 쪽으로 다시 단단해져요.'};
+  if(h>=25)return{cls:'danger',text:'⚠️ 가지들이 떨어지고 있어요. 오늘은 꼭 한 쪽!'};
+  if(h>=10)return{cls:'danger',text:'🚨 둥지에 균열이 생겼어요. 한 쪽이면 살릴 수 있어요.'};
+  if(h>0)  return{cls:'crisis',text:'💔 둥지가 무너지기 직전이에요. 짹 한 번에 +14.'};
+  return         {cls:'crisis',text:'💔 둥지가 무너졌어요. 다시 가지 한 개부터 쌓아봐요.'};
+}
+function nestInfo(lv){
+  const cur =NEST_LADDER[Math.max(0,Math.min(NEST_LADDER.length-1,lv-1))];
+  const next=NEST_LADDER[Math.min(NEST_LADDER.length-1,lv)];
+  return{cur,next};
+}
+
+function drawNest(twigCount, nestLv, prevTwigCount){
+  prevTwigCount = prevTwigCount||0;
+  twigCount=Math.max(0,Math.min(NEST_TWIGS.length,twigCount));
+  const G=NEST_GEO, lvNow=nestLv;
+  const visible=NEST_TWIGS.slice(0,twigCount).map((t,i)=>({...t,_origIdx:i}));
+  const backTwigs=visible.filter(t=>!t.front);
+  const frontTwigs=visible.filter(t=>t.front);
+  function rt(t){const isNew=t._origIdx>=prevTwigCount,ni=isNew?(t._origIdx-prevTwigCount):0,cls=isNew?'twig twig-new':'twig';return`<path class="${cls}" style="--i:${t._origIdx};--new-i:${ni}" d="${t.path}" stroke="${t.col}" stroke-width="${t.sw.toFixed(2)}" fill="none" stroke-linecap="round" opacity="${t.op.toFixed(2)}"/>`;}
+  function rimPt(a,rs){const t=a*Math.PI/180;return{x:G.cx+G.rx*rs*Math.cos(t),y:G.cy+G.ry*rs*Math.sin(t)};}
+  const defs=`<defs><radialGradient id="g_sun" cx="50%" cy="30%" r="55%"><stop offset="0%" stop-color="#FFE9A8"/><stop offset="100%" stop-color="#FFFCEF" stop-opacity="0"/></radialGradient><radialGradient id="g_inner" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#1A0E06"/><stop offset="45%" stop-color="#3A2410"/><stop offset="100%" stop-color="#6B4423" stop-opacity="0"/></radialGradient></defs>`;
+  const sky=`<circle cx="110" cy="36" r="55" fill="url(#g_sun)"/>`;
+  const ground=`<ellipse cx="${G.cx}" cy="${G.cy+G.ry+18}" rx="${G.rx*1.1}" ry="7" fill="rgba(30,15,5,.32)"/>`;
+  const bowlOutline=twigCount>=8?`<ellipse cx="${G.cx}" cy="${G.cy+2}" rx="${G.rx+2}" ry="${G.ry+3}" fill="none" stroke="#3A2410" stroke-width="2.5" opacity="0.18"/>`:'';
+  const cavity=twigCount>=25?`<ellipse cx="${G.cx}" cy="${G.cy+2}" rx="${G.irx}" ry="${G.iry}" fill="url(#g_inner)"/>`:'';
+  const rim=twigCount>=30?`<ellipse cx="${G.cx}" cy="${G.cy}" rx="${G.rx}" ry="${G.ry}" fill="none" stroke="#2A1810" stroke-width="0.5" opacity="0.20"/>`:'';
+  const holdingTwig=lvNow===2,winking=lvNow===8,cheekHi=lvNow>=3;
+  const sparrowBody=`<g class="sparrow-body"><ellipse cx="110" cy="128" rx="24" ry="16" fill="#F3CD9E" stroke="#C49460" stroke-width="1.2"/><ellipse cx="110" cy="133" rx="15" ry="10" fill="#FBE7C8"/><ellipse cx="90" cy="128" rx="6.5" ry="9.5" fill="#A07043" transform="rotate(-14 90 128)"/><ellipse cx="130" cy="128" rx="6.5" ry="9.5" fill="#A07043" transform="rotate(14 130 128)"/></g>`;
+  const leftEye=winking?`<path d="M 99 102 Q 103 100 105 102" stroke="#2A2D33" stroke-width="1.8" fill="none" stroke-linecap="round"/>`:`<circle cx="102" cy="101" r="2.6" fill="#2A2D33"/><circle cx="103" cy="100" r="0.9" fill="#FFF"/>`;
+  const rightEye=`<circle cx="118" cy="101" r="2.6" fill="#2A2D33"/><circle cx="119" cy="100" r="0.9" fill="#FFF"/>`;
+  const beak=`<polygon points="105,108 115,108 110,114" fill="#F4B400" stroke="#C8901C" stroke-width="0.6"/>`+(holdingTwig?`<path d="M 115 110 Q 132 100 158 92" stroke="#6B4423" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="138" cy="100" rx="4.2" ry="2.1" fill="#5FAB5C" transform="rotate(-22 138 100)"/><ellipse cx="150" cy="93" rx="4.5" ry="2.3" fill="#3E7C3B" transform="rotate(-30 150 93)"/><ellipse cx="160" cy="89" rx="3.5" ry="1.8" fill="#5FAB5C" transform="rotate(-18 160 89)"/>`:'');
+  const sparrowHead=`<g class="sparrow-head"><circle cx="110" cy="100" r="22" fill="#F3CD9E" stroke="#C49460" stroke-width="1.2"/><path d="M 88 95 Q 88 78 110 76 Q 132 78 132 95 Q 110 88 88 95 Z" fill="#7A4F2C" stroke="#5A3A1F" stroke-width="0.9"/><path d="M 103 76 L 100 67 L 106 75 Z" fill="#5A3A1F"/><path d="M 110 76 L 108 64 L 112 64 L 113 76 Z" fill="#5A3A1F"/><path d="M 117 76 L 120 67 L 114 75 Z" fill="#5A3A1F"/>${leftEye}${rightEye}${beak}<ellipse cx="93" cy="108" rx="4.2" ry="3.2" fill="#FFA8B8" opacity="${cheekHi?'0.88':'0.7'}"/><ellipse cx="127" cy="108" rx="4.2" ry="3.2" fill="#FFA8B8" opacity="${cheekHi?'0.88':'0.7'}"/></g>`;
+  const leafAccents=lvNow>=4?`<g><ellipse cx="56" cy="138" rx="4" ry="2" fill="#5FAB5C" transform="rotate(-30 56 138)"/><ellipse cx="68" cy="148" rx="3" ry="1.6" fill="#3E7C3B" transform="rotate(-15 68 148)"/><ellipse cx="164" cy="138" rx="4" ry="2" fill="#5FAB5C" transform="rotate(30 164 138)"/><ellipse cx="152" cy="148" rx="3" ry="1.6" fill="#3E7C3B" transform="rotate(15 152 148)"/></g>`:'';
+  let sparkles='';
+  if(lvNow>=4)sparkles+=`<g fill="#FFD66B"><polygon points="178,84 180,90 186,90 181,93 183,99 178,95 173,99 175,93 170,90 176,90"/></g>`;
+  if(lvNow>=7)sparkles+=`<g fill="#FFD66B"><polygon points="40,90 42,96 48,96 43,99 45,105 40,101 35,105 37,99 32,96 38,96"/></g>`;
+  if(lvNow>=8)sparkles+=`<g fill="#FFD66B" opacity="0.9"><polygon points="195,128 197,134 203,134 198,137 200,143 195,139 190,143 192,137 187,134 193,134"/><polygon points="22,128 24,134 30,134 25,137 27,143 22,139 17,143 19,137 14,134 20,134"/></g>`;
+  const roofFrame=lvNow===6?`<g><line x1="64" y1="118" x2="110" y2="64" stroke="#7A4F2C" stroke-width="3.5" stroke-linecap="round"/><line x1="156" y1="118" x2="110" y2="64" stroke="#7A4F2C" stroke-width="3.5" stroke-linecap="round"/><line x1="80" y1="100" x2="140" y2="100" stroke="#7A4F2C" stroke-width="2.5" stroke-linecap="round"/><circle cx="110" cy="64" r="3.5" fill="#5A3A1F"/></g>`:'';
+  const leafyRoof=lvNow>=7?`<g><path d="M 54 102 Q 76 60 110 54 Q 144 60 166 102 Q 110 92 54 102 Z" fill="#6BB562" stroke="#3E7C3B" stroke-width="1.5"/><ellipse cx="76" cy="92" rx="5" ry="3" fill="#7CBF7A" transform="rotate(-22 76 92)"/><ellipse cx="110" cy="68" rx="6" ry="3.5" fill="#7CBF7A"/><ellipse cx="144" cy="92" rx="5" ry="3" fill="#7CBF7A" transform="rotate(22 144 92)"/><g><circle cx="78" cy="80" r="2" fill="#fff" opacity="0.92"/><circle cx="74" cy="78" r="1.8" fill="#fff" opacity="0.92"/><circle cx="82" cy="78" r="1.8" fill="#fff" opacity="0.92"/><circle cx="74" cy="82" r="1.8" fill="#fff" opacity="0.92"/><circle cx="82" cy="82" r="1.8" fill="#fff" opacity="0.92"/><circle cx="78" cy="80" r="1.3" fill="#FFD66B"/></g></g>`:'';
+  const chimney=lvNow===8?`<g><rect x="130" y="56" width="9" height="14" fill="#7A4F2C" stroke="#5A3A1F" stroke-width="0.8" rx="1"/><ellipse cx="134.5" cy="56" rx="5" ry="1.2" fill="#3E7C3B"/></g>`:'';
+  const branchBase=lvNow===8?`<g><path d="M 28 174 Q 110 170 202 176" stroke="#6B4423" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M 30 172 Q 110 168 200 174" stroke="#A87544" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/></g>`:'';
+  const standMode=lvNow<=2,birdY=lvNow===1?20:(lvNow===2?12:0),birdT=standMode?`transform="translate(0 ${birdY})"`:'';
+  const feet=standMode?`<g ${birdT}><ellipse cx="102" cy="146" rx="2.6" ry="1.4" fill="#F4B400" stroke="#C8901C" stroke-width="0.5"/><ellipse cx="118" cy="146" rx="2.6" ry="1.4" fill="#F4B400" stroke="#C8901C" stroke-width="0.5"/><line x1="100" y1="146" x2="102" y2="148.5" stroke="#C8901C" stroke-width="0.6"/><line x1="104" y1="146" x2="102" y2="148.5" stroke="#C8901C" stroke-width="0.6"/><line x1="116" y1="146" x2="118" y2="148.5" stroke="#C8901C" stroke-width="0.6"/><line x1="120" y1="146" x2="118" y2="148.5" stroke="#C8901C" stroke-width="0.6"/></g>`:'';
+  const motionMarks=lvNow===1?`<g stroke="#7A4F2C" stroke-width="2" stroke-linecap="round" fill="none"><line x1="48" y1="118" x2="40" y2="110"/><line x1="44" y1="126" x2="34" y2="124"/></g>`:'';
+  const useTwigRing=lvNow===1;
+  const twigRing=useTwigRing?`<g><ellipse cx="110" cy="186" rx="48" ry="5" fill="rgba(60,40,20,.22)"/><path d="M 64 170 Q 110 158 156 170" stroke="#6B4423" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/><path d="M 62 178 Q 110 186 158 178" stroke="#6B4423" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="62" cy="174" rx="4.5" ry="2.2" fill="#5FAB5C" transform="rotate(-30 62 174)"/><ellipse cx="158" cy="174" rx="4.5" ry="2.2" fill="#3E7C3B" transform="rotate(30 158 174)"/></g>`:'';
+  const wrap=(c)=>standMode?`<g ${birdT}>${c}</g>`:c;
+  const bodyLayer=wrap(sparrowBody);
+  const headW=wrap(sparrowHead);
+  let dec=lvNow>=7?(leafAccents+headW+leafyRoof+chimney+sparkles):lvNow===6?(leafAccents+headW+roofFrame+sparkles):(leafAccents+headW+sparkles+motionMarks);
+  return `<svg class="nest-art" viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">${defs}${sky}${ground}${branchBase}${useTwigRing?twigRing:`${bowlOutline}<g class="twig-layer back">${backTwigs.map(rt).join('')}</g>${cavity}`}${bodyLayer}${feet}${useTwigRing?'':`${rim}<g class="twig-layer front">${frontTwigs.map(rt).join('')}</g>`}${dec}</svg>`;
+}
+
+/* ── TSV 책 로더 ──────────────────────────────────── */
+// 표지 그라데이션 팔레트 (TSV에 fb 없으므로 book_id 해시로 선택)
+const _FB_PALETTE = [
+  ['#F4D9A8','#E8B473'],['#1A3A6E','#3A6FB0'],['#3A2E22','#7A5A38'],
+  ['#C82F2F','#7E1A1A'],['#2A3F4F','#5A7388'],['#E8B473','#A87844'],
+  ['#E8A53B','#B5722E'],['#0B1F4D','#1E3A6F'],['#3A2E55','#6E5398'],
+  ['#E8E1C7','#B8AC7E'],['#1E5C7B','#2F8AB5'],['#8C2E48','#C45A77'],
+  ['#4A6741','#2D4A2A'],['#6B3A2A','#9E5C42'],['#2A4A6B','#4A7A9B'],
+  ['#5A3A6B','#8B6B9B'],['#6B5A2A','#9B8542'],['#3A6B5A','#5A9B8B'],
+];
+function _fbForId(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+  return _FB_PALETTE[h % _FB_PALETTE.length];
+}
+
+// 인라인 12권의 fb/toc 오버라이드 맵
+const _SEED_META = Object.fromEntries(RG_BOOKS.map(b => [b.id, { fb: b.fb, toc: b.toc }]));
+
 let _booksCache = null;
+
 async function loadBooks() {
   if (_booksCache) return _booksCache;
   try {
-    const res = await fetch('data/books.tsv');
+    const res = await fetch('data/books.tsv?v=1');
+    if (!res.ok) throw new Error('books.tsv HTTP ' + res.status);
     const text = await res.text();
     const lines = text.trim().split('\n');
-    const headers = lines[0].split('\t').map(h => h.trim());
-    _booksCache = lines.slice(1).filter(l => l.trim()).map(line => {
-      const vals = line.split('\t');
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
-      obj.total_pages = parseInt(obj.total_pages) || 0;
-      return obj;
-    });
+    // 첫 줄 헤더 skip
+    _booksCache = lines.slice(1).map(line => {
+      const [book_id, isbn, title, author, publisher, total_pages, cover_url] = line.split('\t');
+      const id = book_id.trim();
+      const seed = _SEED_META[id];
+      return {
+        id,
+        isbn: (isbn||'').trim(),
+        title: (title||'').trim(),
+        author: (author||'').trim(),
+        pub: (publisher||'').trim(),
+        total: parseInt(total_pages, 10) || 0,
+        cover: (cover_url||'').trim(),
+        fb: seed ? seed.fb : _fbForId(id),
+        toc: seed ? seed.toc : [],
+      };
+    }).filter(b => b.id && b.title);
+    // BOOK_BY_ID 갱신 (TSV 로드 후 전체 목록 참조 가능)
+    _booksCache.forEach(b => { window.BOOK_BY_ID[b.id] = b; });
     return _booksCache;
-  } catch { return []; }
+  } catch (e) {
+    console.warn('[ReadingGo] books.tsv 로드 실패, 인라인 12권 사용:', e.message);
+    _booksCache = RG_BOOKS;
+    return _booksCache;
+  }
 }
 
-// 클라이언트 fuzzy 검색 (Phase 0 — Fuse.js 없이 includes 기반)
-function fuzzySearch(books, q) {
-  if (!q.trim()) return books;
-  const low = q.toLowerCase().trim();
+function fuzzySearch(books, query) {
+  if (!query || !query.trim()) return books;
+  const q = query.trim().toLowerCase();
   return books.filter(b =>
-    b.title.toLowerCase().includes(low) ||
-    b.author.toLowerCase().includes(low) ||
-    (b.isbn || '').includes(low)
+    b.title.toLowerCase().includes(q) ||
+    b.author.toLowerCase().includes(q) ||
+    b.pub.toLowerCase().includes(q)
   );
 }
 
-// ── Utils ──────────────────────────────────────────────────────────────────────
-function genId() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-function todayISO() {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
-function todayLabel() {
-  const d = new Date();
-  return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-function calcLevel(xp) {
-  return Math.floor(Math.sqrt(xp / 100)) + 1;
-}
-
-// ── App state schema (Phase 0 localStorage) ────────────────────────────────────
-//
-// userBooks[] = [{
-//   id, book:{book_id,isbn,title,author,total_pages,cover_url,...},
-//   currentPage, status:'reading'|'completed',
-//   sessions:[{id,sessionDate,currentPage,xpEarned,createdAt}],
-//   sentences:[{id,text,page,sessionId,createdAt}]
-// }]
-
-const INITIAL_STATE = {
-  appPhase: 'onboarding',   // 'onboarding' | 'home'
-  onboardingStep: 'A',      // A | C1 | C2 | D1 | D2 | D3 | E
-  onboardingBook: null,          // book object from C1
-  onboardingPage: 0,             // session last page from D1
-  onboardingText: '',            // sentence text from D2
-  onboardingSentencePage: null,  // sentence-specific page from D2 (null = use onboardingPage)
-  user: { handle: '', displayName: '나', xp: 0, level: 1, streak: 0, shields: 0 },
-  userBooks: [],
-  activeUserBookId: null,
-  feed: SEED_FEED,
-  friends: SEED_FRIENDS,
-  leagueData: SEED_LEAGUE,
-  jaekFeed: {},             // feedId -> bool (짹 여부)
-  bookmarks: [],            // [{id,name,handle,book,isbn,page,sentence,time,jaeks,bookmarkedAt}]
-  wishBooks: [],            // [{bookTitle,isbn,addedAt}]
-  pokes: {},                // friendId -> bool (오늘 보냈는지)
-  simDate: null,            // 날짜 시뮬레이터 (null = 오늘)
-  joinedGroupIds: ['sub1'], // 사용자가 이미 가입한 서브 모임 ID 목록 (§5.5 신설)
-  pendingGroupIds: [],      // 가입 신청 대기 중인 모임 ID 목록 (§5.5 신설)
-};
-
-function loadAppState() {
-  const s = LS.get('rg_v42', null);
-  if (!s) return { ...INITIAL_STATE };
-  // 새 필드 merge
-  return {
-    ...INITIAL_STATE,
-    ...s,
-    user: { ...INITIAL_STATE.user, ...(s.user || {}) },
-    feed: s.feed || SEED_FEED,
-    friends: s.friends || SEED_FRIENDS,
-    leagueData: s.leagueData || SEED_LEAGUE,
-    jaekFeed:  s.jaekFeed  || {},
-    bookmarks: s.bookmarks || [],
-    wishBooks: s.wishBooks || [],
-    joinedGroupIds: s.joinedGroupIds || ['sub1'],
-    pendingGroupIds: s.pendingGroupIds || [],
-  };
-}
-
-function getActiveBook(state) {
-  if (!state.activeUserBookId) return null;
-  return state.userBooks.find(ub => ub.id === state.activeUserBookId) || null;
-}
-
-function hasDoneToday(userBook, activeDate) {
-  if (!userBook) return false;
-  const today = activeDate || todayISO();
-  return (userBook.sessions || []).some(s => s.sessionDate === today);
-}
-
-function getSessionDates(userBooks) {
-  const dates = new Set();
-  (userBooks || []).forEach(ub => (ub.sessions || []).forEach(s => dates.add(s.sessionDate)));
-  return dates;
-}
-
-function advanceSimDate(simDate) {
-  const d = simDate ? new Date(simDate) : new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
-// ── 교보문고 직접 링크 (ISBN → product URL) ────────────────────────────────────
-// ISBN으로 자동 생성 불가 — 확인된 URL만 추가
-const KYOBO_URLS = {
-  '9788934972464': 'https://product.kyobobook.co.kr/detail/S000000597165', // 사피엔스
-};
-
-// ── window exports ─────────────────────────────────────────────────────────────
-window.NPC_SEARCH_USERS  = NPC_SEARCH_USERS;
-window.SEED_BOARD_POSTS  = SEED_BOARD_POSTS;
-window.LS            = LS;
-window.NEST_STAGES   = NEST_STAGES;
-window.getNestStage  = getNestStage;
-window.NEST_STAGE_TRANSITIONS = NEST_STAGE_TRANSITIONS;
-window.getEvolutionCopy       = getEvolutionCopy;
-window.SEED_FRIENDS  = SEED_FRIENDS;
-window.SEED_LEAGUE   = SEED_LEAGUE;
-window.SEED_FEED     = SEED_FEED;
-window.loadBooks     = loadBooks;
-window.fuzzySearch   = fuzzySearch;
-window.genId         = genId;
-window.todayISO      = todayISO;
-window.todayLabel    = todayLabel;
-window.calcLevel     = calcLevel;
-window.INITIAL_STATE = INITIAL_STATE;
-window.loadAppState  = loadAppState;
-window.KYOBO_URLS         = KYOBO_URLS;
-window.getActiveBook      = getActiveBook;
-window.hasDoneToday       = hasDoneToday;
-window.getSessionDates    = getSessionDates;
-window.advanceSimDate     = advanceSimDate;
-window.SEED_MEGA_STREAMS  = SEED_MEGA_STREAMS;
-window.SEED_SUB_GROUPS    = SEED_SUB_GROUPS;
-window.SEED_GROUP_FEEDS   = SEED_GROUP_FEEDS;
-
+window.RG_BOOKS=RG_BOOKS; window.BOOK_BY_ID=BOOK_BY_ID; window.getBook=getBook;
+window.INITIAL_PROGRESS=INITIAL_PROGRESS; window.NEST_LADDER=NEST_LADDER;
+window.NPC_QUOTES=NPC_QUOTES; window.INITIAL_STATE=INITIAL_STATE;
+window.NEST_TWIGS=NEST_TWIGS; window.NEST_GEO=NEST_GEO;
+window.twigCountFromState=twigCountFromState; window.healthClass=healthClass;
+window.healthCopy=healthCopy; window.nestInfo=nestInfo; window.drawNest=drawNest;
+window.loadBooks=loadBooks; window.fuzzySearch=fuzzySearch;
