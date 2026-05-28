@@ -1,0 +1,22 @@
+## US-001 — §5.2 진화 마이크로카피 4종 정합 (2026-05-28)
+
+### What
+- `docs/readinggo/js/data.js` 에 `NEST_EVOLUTION_COPY` 객체 추가
+  - `'1->2'`: 참새가 자리를 잡았어요!
+  - `'2->3'`: 참새가 살림을 차렸어요!
+  - `'3->4'`: 다정한 이웃이 되었어요!
+  - `'4->5'`: 전설의 참새 성주!
+- `getEvolutionCopy(fromLv, toLv)` helper 추가
+- `window.NEST_EVOLUTION_COPY`, `window.getEvolutionCopy` export
+
+### Verifier
+- Before: 12/13 (FAIL §5.2 진화 마이크로카피)
+- After:  13/13 (exit 0)
+
+### Out of scope (carried to follow-up)
+- UI wire-up (단계 전환 감지 + 출력 위치) — GAP-ANALYSIS Open Q "토스트 vs 배너" 미결.
+  RewardModal 은 세션 단위 트리거라 단계 전환 시점과 mismatch. 후속 PR 에서 NestBanner 또는 별도 토스트 큐로 wire-up 필요.
+
+### Pattern note
+- 둥지 진화 카피는 fromLv → toLv 키 패턴. NEST_STAGES 인덱스(1-based)와 일치.
+- 미래 카피 추가 시 같은 객체에 키 추가.
