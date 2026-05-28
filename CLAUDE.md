@@ -32,18 +32,18 @@ Other agents (Cursor, Continue, Aider) should enter via [`AGENTS.md`](./AGENTS.m
 
 ## Stack Lock
 
-근거: [LF: Lock Stack in CLAUDE.md](./docs/lecture-frameworks.md#lf-week9-lock-stack).
+근거: [LF: Lock Stack in CLAUDE.md](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week9-lock-stack).
 
 - **iOS**: Capacitor로 점진 마이그레이션 (v5.1 결정). Swift/React Native 등 새 네이티브 프레임워크 도입 금지.
 - **웹/Phase 0-1**: 정적 HTML/JS (현재) → Phase 1 풀스택은 결정 시 spec PR 경유.
 - **데이터**: 책 데이터셋 TSV 포맷 유지 (#90 결정).
-- 변경 제안 시 `docs/readinggo-spec.md` spec PR 먼저, 코드 PR 나중 ([LF: Spec only PR](./docs/lecture-frameworks.md#lf-week6-spec-only-pr)).
+- 변경 제안 시 `docs/2. specifications/readinggo-spec.md` (또는 PR #108 머지 후 `docs/readinggo/specs/`) spec PR 먼저, 코드 PR 나중 ([LF: Spec only PR](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week6-spec-only-pr)).
 
 새 프레임워크/라이브러리/언어 도입 제안이 들어오면 위 룰을 먼저 안내하고 사용자에게 확인.
 
 ## Product Principle: SLC > MVP
 
-근거: [LF: SLC > MVP](./docs/lecture-frameworks.md#lf-week6-slc-over-mvp).
+근거: [LF: SLC > MVP](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week6-slc-over-mvp).
 
 새 기능 제안·평가 시 *Simple · Lovable · Complete* 기준 적용. "ugly but functional" (MVP) 대신 "small but delightful" (SLC). 다듬은 한 기능 > 반쯤 만든 다섯 개. 자문 질문: "이게 lovable한가? 이번 주에 *complete*할 수 있는 최소 단위는?"
 
@@ -106,7 +106,7 @@ Key routing rules:
 - Review what gstack has learned → invoke /learn
 - Tune question sensitivity → invoke /plan-tune
 - Code quality dashboard → invoke /health
-- Mine session patterns to update CLAUDE.md → invoke /insights (마일스톤마다, 최소 월 1회. 근거: [LF: /insights](./docs/lecture-frameworks.md#lf-week6-insights))
+- Mine session patterns to update CLAUDE.md → invoke /insights (마일스톤마다, 최소 월 1회. 근거: [LF: /insights](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week6-insights))
 
 ## PR 머지 전 체크리스트
 
