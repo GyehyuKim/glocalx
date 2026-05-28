@@ -369,7 +369,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
       />
 
       {/* 데모 거르기 */}
-      <div className="demo-decay" aria-hidden="true">
+      <div className="demo-decay">
         <button onClick={handleSimSkip}>⏩ 데모: 하루 거르기 (−15)</button>
       </div>
 
@@ -431,25 +431,30 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
         ))
       )}
 
-      {/* 체크인 모달 */}
-      {modalOpen && (
+      {/* 체크인 모달 — portal로 document.body에 마운트 (overflow 클리핑 회피) */}
+      {modalOpen && ReactDOM.createPortal(
         <CheckinModal
           book={nestState.book}
           onClose={() => setModalOpen(false)}
           onSubmit={handleCheckin}
-        />
+        />,
+        document.body
       )}
 
-      {/* 세리머니 */}
-      {ceremony && (
+      {/* 세리머니 — portal */}
+      {ceremony && ReactDOM.createPortal(
         <Ceremony
           data={ceremony}
           onClose={() => setCeremony(null)}
-        />
+        />,
+        document.body
       )}
 
-      {/* 컨페티 */}
-      <Confetti active={showConfetti} nestUp={ceremony?.nestUp} />
+      {/* 컨페티 — portal */}
+      {showConfetti && ReactDOM.createPortal(
+        <Confetti active={showConfetti} nestUp={ceremony ? ceremony.nestUp : false} />,
+        document.body
+      )}
     </section>
   );
 }
