@@ -226,9 +226,75 @@ function drawNest(twigCount, nestLv, prevTwigCount){
   return `<svg class="nest-art" viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">${defs}${sky}${ground}${branchBase}${useTwigRing?twigRing:`${bowlOutline}<g class="twig-layer back">${backTwigs.map(rt).join('')}</g>${cavity}`}${bodyLayer}${feet}${useTwigRing?'':`${rim}<g class="twig-layer front">${frontTwigs.map(rt).join('')}</g>`}${dec}</svg>`;
 }
 
+/* ── TSV 책 로더 ──────────────────────────────────── */
+// 표지 그라데이션 팔레트 (TSV에 fb 없으므로 book_id 해시로 선택)
+const _FB_PALETTE = [
+  ['#F4D9A8','#E8B473'],['#1A3A6E','#3A6FB0'],['#3A2E22','#7A5A38'],
+  ['#C82F2F','#7E1A1A'],['#2A3F4F','#5A7388'],['#E8B473','#A87844'],
+  ['#E8A53B','#B5722E'],['#0B1F4D','#1E3A6F'],['#3A2E55','#6E5398'],
+  ['#E8E1C7','#B8AC7E'],['#1E5C7B','#2F8AB5'],['#8C2E48','#C45A77'],
+  ['#4A6741','#2D4A2A'],['#6B3A2A','#9E5C42'],['#2A4A6B','#4A7A9B'],
+  ['#5A3A6B','#8B6B9B'],['#6B5A2A','#9B8542'],['#3A6B5A','#5A9B8B'],
+];
+function _fbForId(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+  return _FB_PALETTE[h % _FB_PALETTE.length];
+}
+
+// 인라인 12권의 fb/toc 오버라이드 맵
+const _SEED_META = Object.fromEntries(RG_BOOKS.map(b => [b.id, { fb: b.fb, toc: b.toc }]));
+
+let _booksCache = null;
+
+async function loadBooks() {
+  if (_booksCache) return _booksCache;
+  try {
+    const res = await fetch('data/books.tsv?v=1');
+    if (!res.ok) throw new Error('books.tsv HTTP ' + res.status);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    // 첫 줄 헤더 skip
+    _booksCache = lines.slice(1).map(line => {
+      const [book_id, isbn, title, author, publisher, total_pages, cover_url] = line.split('\t');
+      const id = book_id.trim();
+      const seed = _SEED_META[id];
+      return {
+        id,
+        isbn: (isbn||'').trim(),
+        title: (title||'').trim(),
+        author: (author||'').trim(),
+        pub: (publisher||'').trim(),
+        total: parseInt(total_pages, 10) || 0,
+        cover: (cover_url||'').trim(),
+        fb: seed ? seed.fb : _fbForId(id),
+        toc: seed ? seed.toc : [],
+      };
+    }).filter(b => b.id && b.title);
+    // BOOK_BY_ID 갱신 (TSV 로드 후 전체 목록 참조 가능)
+    _booksCache.forEach(b => { window.BOOK_BY_ID[b.id] = b; });
+    return _booksCache;
+  } catch (e) {
+    console.warn('[ReadingGo] books.tsv 로드 실패, 인라인 12권 사용:', e.message);
+    _booksCache = RG_BOOKS;
+    return _booksCache;
+  }
+}
+
+function fuzzySearch(books, query) {
+  if (!query || !query.trim()) return books;
+  const q = query.trim().toLowerCase();
+  return books.filter(b =>
+    b.title.toLowerCase().includes(q) ||
+    b.author.toLowerCase().includes(q) ||
+    b.pub.toLowerCase().includes(q)
+  );
+}
+
 window.RG_BOOKS=RG_BOOKS; window.BOOK_BY_ID=BOOK_BY_ID; window.getBook=getBook;
 window.INITIAL_PROGRESS=INITIAL_PROGRESS; window.NEST_LADDER=NEST_LADDER;
 window.NPC_QUOTES=NPC_QUOTES; window.INITIAL_STATE=INITIAL_STATE;
 window.NEST_TWIGS=NEST_TWIGS; window.NEST_GEO=NEST_GEO;
 window.twigCountFromState=twigCountFromState; window.healthClass=healthClass;
 window.healthCopy=healthCopy; window.nestInfo=nestInfo; window.drawNest=drawNest;
+window.loadBooks=loadBooks; window.fuzzySearch=fuzzySearch;
