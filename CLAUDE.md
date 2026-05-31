@@ -25,7 +25,7 @@ Other agents (Cursor, Continue, Aider) should enter via [`AGENTS.md`](./AGENTS.m
 
 ## Active Workspace Boundaries
 
-- `docs/` — MANIFESTO, whytree, pitch, GitHub Pages 데모
+- `docs/` — MANIFESTO, whytree, pitch, Netlify 데모
 - `old/` — 이전 아이디어 아카이브 (기프타로, GosiOps, 트렌드 패치노트, 찍먹). 읽기 전용.
 
 새 작업은 `docs/` 에만 한다. `old/` 는 레퍼런스 용도로만 열람.
@@ -34,8 +34,10 @@ Other agents (Cursor, Continue, Aider) should enter via [`AGENTS.md`](./AGENTS.m
 
 근거: [LF: Lock Stack in CLAUDE.md](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week9-lock-stack).
 
-- **iOS**: Capacitor로 점진 마이그레이션 (v5.1 결정). Swift/React Native 등 새 네이티브 프레임워크 도입 금지.
-- **웹/Phase 0-1**: 정적 HTML/JS (현재) → Phase 1 풀스택은 결정 시 spec PR 경유.
+- **플랫폼**: Phase 0/1 **순수 웹 (반응형)**. **Capacitor·네이티브 앱 보류** — OCR·STT·앱스토어가 필요한 Phase 3에서 재도입 검토 (v7 결정, 2026-06-01). 새 네이티브 프레임워크 도입 금지.
+- **빌드**: 현행 React 18 CDN + Babel 유지. Vite 전환은 **PWA 전환 시 재검토** (현재 보류).
+- **백엔드**: Phase 0 `localStorage` / Phase 1+ **Supabase** (Google OAuth). **DataStore 계약**으로 추상화 — 피처 코드는 저장소를 직접 호출하지 않음 (`docs/readinggo/specs/backend.md` §7.2).
+- **AI**: 도서 추천은 **Gemini Flash 무료 티어 + 서버리스 프록시** (Phase 1+). 클라이언트에 API 키 노출 금지.
 - **데이터**: 책 데이터셋 TSV 포맷 유지 (#90 결정).
 - 변경 제안 시 해당 피처의 `docs/readinggo/specs/<feature>.md` spec PR 먼저, 코드 PR 나중 ([LF: Spec only PR](./docs/1. research_and_lectures/lecture-frameworks.md#lf-week6-spec-only-pr)).
 
@@ -146,7 +148,9 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 
 ## Pages / Demo
 
-GitHub Pages serves from `main /docs`.
+**Netlify**에서 배포 (GitHub Pages 폐기, v7 결정).
 
-- Demo URL: `https://gyehyukim.github.io/glocalx/readinggo/` (예정)
-- Demo entrypoint: `docs/readinggo/index.html` (예정)
+- 사이트: `resilient-licorice-f4b889`
+- Demo URL: `https://resilient-licorice-f4b889.netlify.app`
+- Demo entrypoint: `docs/readinggo/index.html`
+- 재배포: `npx netlify-cli deploy --dir=docs/readinggo` (프로덕션 `--prod`)
