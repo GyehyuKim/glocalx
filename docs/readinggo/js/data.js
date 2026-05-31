@@ -92,12 +92,13 @@ const INITIAL_STATE = {
   },
   streak: 12,
   xp: 340,
+  shield: 2,
   nest: { lv: 3, progress: 62 },
   nestHealth: 80,
   daysSinceRead: 0,
   myQuotes: [
-    { text: "내가 갖고 싶었던 것은 사람이 아니라 진실이었다.", bookId: "b008", page: 87, when: "어제" },
-    { text: "두 세계 사이의 경계는, 결국 내 안에 있었다.",       bookId: "b008", page: 22, when: "3일 전" },
+    { text: "내가 갖고 싶었던 것은 사람이 아니라 진실이었다.", bookId: "b008", page: 87, when: "어제", isSpoiler: false },
+    { text: "두 세계 사이의 경계는, 결국 내 안에 있었다.",       bookId: "b008", page: 22, when: "3일 전", isSpoiler: false },
   ],
   league: [
     { rank: 1, name: "@book_bear · NPC",       avatar: "🐻", xp: 920 },
@@ -207,6 +208,16 @@ const INITIAL_STATE = {
     },
   ],
 };
+
+/* ── 완독 기록 (책장) ─────────────────────────── */
+const INITIAL_BOOKSHELF = {
+  "b008": { rating: 5, comment: "나의 성장을 보는 듯한 경험. 삶의 의미를 생각하게 해준 책.", completedDate: "2026-05-20" },
+  "b105": { rating: 4, comment: "사회 비판의 대표작. 간결하면서도 강력한 메시지.", completedDate: "2026-05-18" },
+  "b037": { rating: 5, comment: "청춘의 방황과 성장. 모든 세대의 공감을 받을 책.", completedDate: "2026-05-15" },
+};
+
+/* ── 찜 목록 (읽고 싶은 책) ──────────────────────── */
+const WISHLIST = ["b002", "b010", "b093"];
 
 /* ── NEST_TWIGS 사전 계산 ─────────────────────── */
 const NEST_GEO = { cx: 110, cy: 132, rx: 60, ry: 22, irx: 44, iry: 13 };
@@ -374,9 +385,22 @@ function fuzzySearch(books, query) {
   );
 }
 
+// 검색용 ALL_BOOKS: books.tsv 형식으로 변환
+const ALL_BOOKS = RG_BOOKS.map(b => ({
+  book_id: b.id,
+  isbn: b.isbn,
+  title: b.title,
+  author: b.author,
+  publisher: b.pub,
+  total_pages: b.total,
+  cover_url: b.cover,
+}));
+
 window.RG_BOOKS=RG_BOOKS; window.BOOK_BY_ID=BOOK_BY_ID; window.getBook=getBook;
 window.INITIAL_PROGRESS=INITIAL_PROGRESS; window.NEST_LADDER=NEST_LADDER;
 window.NPC_QUOTES=NPC_QUOTES; window.INITIAL_STATE=INITIAL_STATE;
+window.INITIAL_BOOKSHELF=INITIAL_BOOKSHELF; window.WISHLIST=WISHLIST;
+window.ALL_BOOKS=ALL_BOOKS;
 window.NEST_TWIGS=NEST_TWIGS; window.NEST_GEO=NEST_GEO;
 window.twigCountFromState=twigCountFromState; window.healthClass=healthClass;
 window.healthCopy=healthCopy; window.nestInfo=nestInfo; window.drawNest=drawNest;
