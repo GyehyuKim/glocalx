@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd \\\"C:/Users/gangs/Documents/정윤지/claude/glocalx\\\" && git rebase origin/main\",\"description\":\"origin/main을 현재 브랜치에 rebase\"}",
-  "error": "Exit code 1\nerror: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.",
-  "timestamp": "2026-06-01T10:37:05.385Z",
-  "retry_count": 1
-}

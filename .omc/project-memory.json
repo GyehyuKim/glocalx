@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780225025247,
+  "lastScanned": 1780314300316,
   "projectRoot": "C:\\Users\\gangs\\Documents\\정윤지\\claude\\glocalx",
   "techStack": {
     "languages": [],
@@ -39,21 +39,21 @@
       "path": "40. Development",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1780225024465,
+      "lastAccessed": 1780314300257,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 0,
-      "lastAccessed": 1780225024466,
+      "lastAccessed": 1780314300259,
       "keyFiles": []
     },
     "loop": {
       "path": "loop",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1780225024467,
+      "lastAccessed": 1780314300260,
       "keyFiles": [
         "README.md"
       ]
@@ -62,14 +62,14 @@
       "path": "old",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1780225024531,
+      "lastAccessed": 1780314300260,
       "keyFiles": []
     },
     "tests": {
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 1,
-      "lastAccessed": 1780225024653,
+      "lastAccessed": 1780314300261,
       "keyFiles": [
         "README.md"
       ]
@@ -78,13 +78,19 @@
       "path": "tests\\data",
       "purpose": "Data files",
       "fileCount": 1,
-      "lastAccessed": 1780225024661,
+      "lastAccessed": 1780314300264,
       "keyFiles": [
         "validate-books.py"
       ]
     }
   },
   "hotPaths": [
+    {
+      "path": "docs\\readinggo\\specs\\village.md",
+      "accessCount": 35,
+      "lastAccessed": 1780324529249,
+      "type": "file"
+    },
     {
       "path": "docs\\readinggo\\demo-index.html",
       "accessCount": 14,
@@ -134,6 +140,12 @@
       "type": "file"
     },
     {
+      "path": "AGENTS.md",
+      "accessCount": 3,
+      "lastAccessed": 1780310501573,
+      "type": "file"
+    },
+    {
       "path": "docs\\readinggo-spec.md",
       "accessCount": 2,
       "lastAccessed": 1779762057674,
@@ -170,12 +182,6 @@
       "type": "file"
     },
     {
-      "path": "AGENTS.md",
-      "accessCount": 2,
-      "lastAccessed": 1780236875957,
-      "type": "file"
-    },
-    {
       "path": "tests\\README.md",
       "accessCount": 1,
       "lastAccessed": 1779952831422,
@@ -191,6 +197,24 @@
       "path": "docs\\readinggo\\data\\books.tsv",
       "accessCount": 1,
       "lastAccessed": 1779979067065,
+      "type": "file"
+    },
+    {
+      "path": "docs\\3. peer_feedback_analysis\\my_team_feedback.json",
+      "accessCount": 1,
+      "lastAccessed": 1780310704311,
+      "type": "file"
+    },
+    {
+      "path": "docs\\readinggo\\specs\\systems.md",
+      "accessCount": 1,
+      "lastAccessed": 1780314242031,
+      "type": "file"
+    },
+    {
+      "path": "docs\\readinggo\\specs\\nest.md",
+      "accessCount": 1,
+      "lastAccessed": 1780314242601,
       "type": "file"
     }
   ],
