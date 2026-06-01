@@ -1,6 +1,6 @@
 /* =========================================================
    ReadingGo — nest.js
-   둥지 탭: 책 카드, The Path, NestTheatre, 체크인 CTA,
+   둥지 탭: 책 카드, NestTheatre, 체크인 CTA,
             내 한 문장, 같은 책 피드, CheckinModal, Ceremony
    ========================================================= */
 const { useState: _useState, useEffect: _useEffect, useRef: _useRef, useMemo: _useMemo } = React;
@@ -217,7 +217,6 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
     nestHealth: state.nestHealth,
     streak: state.streak,
     xp: state.xp,
-    pathNodes: state.pathNodes,
     myQuotes: state.myQuotes,
     book: state.book,
     daysSinceRead: state.daysSinceRead,
@@ -233,7 +232,6 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
       nestHealth: state.nestHealth,
       streak: state.streak,
       xp: state.xp,
-      pathNodes: state.pathNodes,
       myQuotes: state.myQuotes,
       book: state.book,
       daysSinceRead: state.daysSinceRead,
@@ -272,14 +270,6 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
     if (sentence) {
       ns.myQuotes = [{ text: sentence, bookId: ns.book.id, page, when: '방금' }, ...ns.myQuotes];
     }
-
-    // advance The Path: today → done, ghost → today
-    const nodes = ns.pathNodes.map(n => ({ ...n }));
-    const todayIdx = nodes.findIndex(n => n.type === 'today');
-    if (todayIdx >= 0) { nodes[todayIdx].type = 'done'; nodes[todayIdx].label = '✓'; }
-    const ghostIdx = nodes.findIndex(n => n.type === 'ghost');
-    if (ghostIdx >= 0) { nodes[ghostIdx].type = 'today'; nodes[ghostIdx].label = '★'; }
-    ns.pathNodes = nodes;
 
     prevTwigCountRef.current = twigCountFromState(prevLv, nestState.nestHealth);
     setNestState(ns);
@@ -343,19 +333,6 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
               </div>
               <span className="book-progress-num">{nestState.book.cur} / {nestState.book.total}p</span>
             </div>
-          </div>
-        </div>
-
-        {/* The Path */}
-        <div className="path-wrap">
-          <div className="path-label">
-            <span>🌿 The Path</span>
-            <span style={{marginLeft:'auto', color:'var(--ink-3)', fontWeight:700, textTransform:'none'}}>최근 7일</span>
-          </div>
-          <div className="path">
-            {nestState.pathNodes.map((n, i) => (
-              <div key={i} className={`node ${n.type}`} title={n.title}>{n.label}</div>
-            ))}
           </div>
         </div>
       </div>

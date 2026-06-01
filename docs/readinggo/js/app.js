@@ -41,7 +41,6 @@ function App() {
       nestHealth: ns.nestHealth,
       daysSinceRead: ns.daysSinceRead,
       myQuotes: ns.myQuotes,
-      pathNodes: ns.pathNodes,
     }));
   }, []);
 
@@ -94,13 +93,6 @@ function App() {
     handleSetActiveBook(book.book_id);
   }, [handleSetActiveBook]);
 
-  // 리그 XP 업데이트 (체크인 후 나(jerome) XP 동기화)
-  const league = appState.league.map(p =>
-    p.me ? { ...p, xp: appState.xp } : p
-  ).sort((a, b) => b.xp - a.xp).map((p, i) => ({ ...p, rank: i + 1 }));
-
-  const myRank = league.find(p => p.me);
-
   return (
     <div className="stage">
       <div className="app">
@@ -148,7 +140,7 @@ function App() {
           {activeTab === 'nest' && (
             <NestView
               key="nest"
-              state={{ ...appState, league }}
+              state={appState}
               onCheckin={handleCheckin}
               onSimSkip={handleSimSkip}
               onGoLibrary={() => switchTab('library')}
@@ -173,7 +165,7 @@ function App() {
           {activeTab === 'social' && (
             <SocialView
               key="social"
-              state={{ ...appState, league }}
+              state={appState}
             />
           )}
           {activeTab === 'profile' && (

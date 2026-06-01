@@ -100,13 +100,6 @@ const INITIAL_STATE = {
     { text: "내가 갖고 싶었던 것은 사람이 아니라 진실이었다.", bookId: "b008", page: 87, when: "어제", isSpoiler: false },
     { text: "두 세계 사이의 경계는, 결국 내 안에 있었다.",       bookId: "b008", page: 22, when: "3일 전", isSpoiler: false },
   ],
-  league: [
-    { rank: 1, name: "@book_bear · NPC",       avatar: "🐻", xp: 920 },
-    { rank: 2, name: "@quiet_rabbit",           avatar: "🐰", xp: 740 },
-    { rank: 3, name: "@curious_fox",            avatar: "🦊", xp: 510 },
-    { rank: 4, name: "나 (jerome)",             avatar: "🐦", xp: 340, me: true },
-    { rank: 5, name: "@activist_raccoon · NPC", avatar: "🦝", xp: 280 },
-  ],
   village: [
     { name: "book_bear", nest: "🏰", on: true,  streak: 64, sent: false, bookId: "b001", page: 412 },
     { name: "rabbit_q",  nest: "🏡", on: true,  streak: 21, sent: false, bookId: "b093", page: 156 },
@@ -114,15 +107,6 @@ const INITIAL_STATE = {
     { name: "raccoon_a", nest: "🪹", on: false, streak: 0,  sent: false, bookId: "b105", page: 22  },
     { name: "owl_n",     nest: "🏰", on: true,  streak: 88, sent: true,  bookId: "b002", page: 540 },
     { name: "deer_s",    nest: "🪵", on: false, streak: 0,  sent: false, bookId: "b337", page: 12  },
-  ],
-  pathNodes: [
-    { type: "done",  label: "✓", title: "5/7 · 14p"  },
-    { type: "done",  label: "✓", title: "5/8 · 22p"  },
-    { type: "done",  label: "✓", title: "5/9 · 8p"   },
-    { type: "done",  label: "✓", title: "5/10 · 30p" },
-    { type: "done",  label: "✓", title: "5/12 · 18p" },
-    { type: "today", label: "★", title: "오늘! 짹"    },
-    { type: "ghost", label: "＋", title: "내일"       },
   ],
   towns: [
     {
