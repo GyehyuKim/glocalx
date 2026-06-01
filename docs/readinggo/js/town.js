@@ -69,8 +69,8 @@ function TownDetailView({ state, townId, onBack }) {
       </div>
 
       {/* 마일스톤 진행 바 */}
-      <div className="path-wrap" style={{ marginTop: 0 }}>
-        <div className="path-label">
+      <div className="town-milestone" style={{ marginTop: 0 }}>
+        <div className="town-milestone-label">
           <span>📖 파트 {town.currentPart}/{town.totalParts}</span>
           <span style={{ marginLeft: 'auto', color: 'var(--brand-3)' }}>{ddayText}</span>
         </div>
@@ -135,16 +135,16 @@ function TownDetailView({ state, townId, onBack }) {
       <div className="section-head">
         <h3>🏅 파트 랭킹</h3>
       </div>
-      <div className="league-list">
+      <div className="trank-list">
         {ranking.map((m, i) => {
           const done = m.cumulativePage >= book.total;
           const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
           return (
-            <div key={m.name} className={'league-row' + (m.name === 'jerome' ? ' me' : '')}>
-              <span className={'league-rank' + (rankClass ? ' ' + rankClass : '')}>{done ? '🏆' : i + 1}</span>
-              <span className="league-avatar">{m.avatar}</span>
-              <span className="league-name">@{m.name}</span>
-              <span className="league-xp">{m.cumulativePage}p</span>
+            <div key={m.name} className={'trank-row' + (m.name === 'jerome' ? ' me' : '')}>
+              <span className={'trank-rank' + (rankClass ? ' ' + rankClass : '')}>{done ? '🏆' : i + 1}</span>
+              <span className="trank-avatar">{m.avatar}</span>
+              <span className="trank-name">@{m.name}</span>
+              <span className="trank-page">{m.cumulativePage}p</span>
             </div>
           );
         })}
