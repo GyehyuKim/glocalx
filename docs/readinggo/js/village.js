@@ -61,7 +61,7 @@ function VillageView({ state, onSelectTown }) {
               <div
                 key={town.id}
                 className="card"
-                onClick={() => onSelectTown(town.id)}
+                onClick={() => onSelectTown && onSelectTown(town.id)}
                 style={{
                   marginBottom:16,
                   padding:14,
