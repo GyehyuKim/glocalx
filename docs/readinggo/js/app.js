@@ -63,7 +63,7 @@ function App() {
         return s;
       }
       village[idx].sent = true;
-      showToast(`@${village[idx].name}에게 🪱 모이를 보냈어요!`);
+      showToast(`@${village[idx].name}에게 🪱 콕찌르기를 보냈어요!`);
       return { ...s, village };
     });
   }, []);
