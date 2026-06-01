@@ -52,18 +52,22 @@ function Confetti({ active, nestUp }) {
 
 /* ── SentenceCard ─────────────────────────────────────── */
 function SentenceCard({ item, bookId }) {
-  const [reactions, setReactions] = useState({
-    claps: item.claps, tears: item.tears, marks: item.marks,
-    clapActive: false, tearActive: false, markActive: false,
-  });
+  const sentenceId = `${bookId}:${item.page}:${item.nick}`;
+  // 본인 카드(짹·책갈피 비활성) — 현재 사용자 jerome(🐦) 판정 (social.md §5.7)
+  const isMine = item.nick === '@jerome' || item.nick === 'jerome';
+  const [liked, setLiked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
   const bk = getBook(bookId);
-  const toggle = (key, activeKey) => {
-    setReactions(r => ({
-      ...r,
-      [key]: r[activeKey] ? r[key] - 1 : r[key] + 1,
-      [activeKey]: !r[activeKey],
-    }));
+  const likeCount = (item.claps || 0) + (liked ? 1 : 0);
+  const toggleLike = () => {
+    if (isMine) return;
+    setLiked(DataStore.claps.toggle(sentenceId));
   };
+  const toggleBookmark = () => {
+    if (isMine) return;
+    setBookmarked(DataStore.bookmarks.toggle(sentenceId));
+  };
+  const mineStyle = isMine ? { opacity: 0.4, pointerEvents: 'none' } : undefined;
   return (
     <div className="sentence-card">
       <div className="who">
@@ -73,14 +77,11 @@ function SentenceCard({ item, bookId }) {
       </div>
       <div className="quote">"{item.q}"</div>
       <div className="react">
-        <span className={'chip' + (reactions.clapActive ? ' active' : '')} onClick={() => toggle('claps','clapActive')}>
-          👏 {reactions.claps}
+        <span className={'chip' + (liked ? ' active' : '')} style={mineStyle} onClick={toggleLike}>
+          짹 {likeCount}
         </span>
-        <span className={'chip' + (reactions.tearActive ? ' active' : '')} onClick={() => toggle('tears','tearActive')}>
-          🥹 {reactions.tears}
-        </span>
-        <span className={'chip' + (reactions.markActive ? ' active' : '')} onClick={() => toggle('marks','markActive')}>
-          🔖 {reactions.marks}
+        <span className={'chip' + (bookmarked ? ' active' : '')} style={mineStyle} onClick={toggleBookmark}>
+          🔖
         </span>
       </div>
     </div>

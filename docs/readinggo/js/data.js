@@ -42,42 +42,42 @@ const NEST_LADDER = [
 
 const NPC_QUOTES = {
   "b008": [
-    { nick:"@activist_raccoon", avatar:"🦝", page:120, q:"새는 알에서 나오려고 투쟁한다. 알은 세계다. 태어나려는 자는 한 세계를 깨뜨려야 한다.", time:"2시간 전", claps:34, tears:8, marks:21 },
-    { nick:"@fox_c", avatar:"🦊", page:88, q:"우리가 한 인간을 미워한다면, 우리는 그의 모습 속에서 우리 자신 안에 들어앉아 있는 무엇인가를 보고 미워하는 것이다.", time:"어제", claps:18, tears:3, marks:9 },
-    { nick:"@quiet_rabbit", avatar:"🐰", page:152, q:"운명과 마음은 같은 개념의 두 이름이다.", time:"이틀 전", claps:11, tears:1, marks:5 },
+    { nick:"@activist_raccoon", avatar:"🦝", page:120, q:"새는 알에서 나오려고 투쟁한다. 알은 세계다. 태어나려는 자는 한 세계를 깨뜨려야 한다.", time:"2시간 전", claps:34 },
+    { nick:"@fox_c", avatar:"🦊", page:88, q:"우리가 한 인간을 미워한다면, 우리는 그의 모습 속에서 우리 자신 안에 들어앉아 있는 무엇인가를 보고 미워하는 것이다.", time:"어제", claps:18 },
+    { nick:"@quiet_rabbit", avatar:"🐰", page:152, q:"운명과 마음은 같은 개념의 두 이름이다.", time:"이틀 전", claps:11 },
   ],
   "b001": [
-    { nick:"@book_bear", avatar:"🐻", page:412, q:"역사는 한 가지 철칙을 따른다 — 사후에 보면 모든 것이 필연이지만, 그 순간에는 우연이었다.", time:"3시간 전", claps:21, tears:0, marks:14 },
+    { nick:"@book_bear", avatar:"🐻", page:412, q:"역사는 한 가지 철칙을 따른다 — 사후에 보면 모든 것이 필연이지만, 그 순간에는 우연이었다.", time:"3시간 전", claps:21 },
   ],
   "b002": [
-    { nick:"@owl_n", avatar:"🦉", page:540, q:"우리는 별의 먼지로 만들어져 있다. 우주가 자기 자신을 들여다보는 한 방식이다.", time:"5시간 전", claps:29, tears:6, marks:18 },
+    { nick:"@owl_n", avatar:"🦉", page:540, q:"우리는 별의 먼지로 만들어져 있다. 우주가 자기 자신을 들여다보는 한 방식이다.", time:"5시간 전", claps:29 },
   ],
   "b010": [
-    { nick:"@quiet_rabbit", avatar:"🐰", page:120, q:"누가 과거를 지배하는가가 미래를 지배한다. 누가 현재를 지배하는가가 과거를 지배한다.", time:"어제", claps:24, tears:2, marks:13 },
+    { nick:"@quiet_rabbit", avatar:"🐰", page:120, q:"누가 과거를 지배하는가가 미래를 지배한다. 누가 현재를 지배하는가가 과거를 지배한다.", time:"어제", claps:24 },
   ],
   "b105": [
-    { nick:"@raccoon_a", avatar:"🦝", page:22, q:"모든 동물은 평등하다. 그러나 어떤 동물은 더 평등하다.", time:"이틀 전", claps:42, tears:1, marks:25 },
+    { nick:"@raccoon_a", avatar:"🦝", page:22, q:"모든 동물은 평등하다. 그러나 어떤 동물은 더 평등하다.", time:"이틀 전", claps:42 },
   ],
   "b093": [
-    { nick:"@curious_fox", avatar:"🦊", page:156, q:"그래서 우리는 더 앞으로 나아간다, 흐름을 거슬러 끊임없이 과거로 떠밀려 가면서.", time:"4시간 전", claps:33, tears:9, marks:20 },
+    { nick:"@curious_fox", avatar:"🦊", page:156, q:"그래서 우리는 더 앞으로 나아간다, 흐름을 거슬러 끊임없이 과거로 떠밀려 가면서.", time:"4시간 전", claps:33 },
   ],
   "b337": [
-    { nick:"@deer_s", avatar:"🦌", page:88, q:"인간은 파괴될 수는 있어도, 패배할 수는 없다.", time:"오늘 아침", claps:45, tears:2, marks:28 },
+    { nick:"@deer_s", avatar:"🦌", page:88, q:"인간은 파괴될 수는 있어도, 패배할 수는 없다.", time:"오늘 아침", claps:45 },
   ],
   "b325": [
-    { nick:"@fox_c", avatar:"🦊", page:140, q:"오늘 엄마가 죽었다. 아니, 어쩌면 어제. 잘 모르겠다.", time:"3일 전", claps:19, tears:7, marks:11 },
+    { nick:"@fox_c", avatar:"🦊", page:140, q:"오늘 엄마가 죽었다. 아니, 어쩌면 어제. 잘 모르겠다.", time:"3일 전", claps:19 },
   ],
   "b103": [
-    { nick:"@book_bear", avatar:"🐻", page:88, q:"죽느냐 사느냐, 그것이 문제로다.", time:"오늘", claps:55, tears:3, marks:32 },
+    { nick:"@book_bear", avatar:"🐻", page:88, q:"죽느냐 사느냐, 그것이 문제로다.", time:"오늘", claps:55 },
   ],
   "b104": [
-    { nick:"@activist_raccoon", avatar:"🦝", page:42, q:"어느 날 아침 그레고르 잠자가 불안한 꿈에서 깨어났을 때, 자신이 침대에서 한 마리 거대한 해충으로 변해 있음을 발견했다.", time:"어제", claps:27, tears:4, marks:16 },
+    { nick:"@activist_raccoon", avatar:"🦝", page:42, q:"어느 날 아침 그레고르 잠자가 불안한 꿈에서 깨어났을 때, 자신이 침대에서 한 마리 거대한 해충으로 변해 있음을 발견했다.", time:"어제", claps:27 },
   ],
   "b037": [
-    { nick:"@curious_fox", avatar:"🦊", page:198, q:"미성숙한 인간의 특징은 어떤 명분을 위해 고결하게 죽으려 하는 것이고, 성숙한 인간의 특징은 그 명분을 위해 비겁하게 살아가려 하는 것이다.", time:"이틀 전", claps:22, tears:5, marks:14 },
+    { nick:"@curious_fox", avatar:"🦊", page:198, q:"미성숙한 인간의 특징은 어떤 명분을 위해 고결하게 죽으려 하는 것이고, 성숙한 인간의 특징은 그 명분을 위해 비겁하게 살아가려 하는 것이다.", time:"이틀 전", claps:22 },
   ],
   "b172": [
-    { nick:"@quiet_rabbit", avatar:"🐰", page:240, q:"나는 그 자존심을 미워할 정도로 마음에 두지 않았다. 그것은 또한 정당한 자존심이었으므로.", time:"3일 전", claps:14, tears:1, marks:8 },
+    { nick:"@quiet_rabbit", avatar:"🐰", page:240, q:"나는 그 자존심을 미워할 정도로 마음에 두지 않았다. 그것은 또한 정당한 자존심이었으므로.", time:"3일 전", claps:14 },
   ],
 };
 
