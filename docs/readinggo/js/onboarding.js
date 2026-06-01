@@ -150,14 +150,14 @@ const ScreenC2 = ({ book, isManual, onBack, onConfirm }) => {
   const [page,         setPage]         = React.useState('0');
   const [sentencePage, setSentencePage] = React.useState('');
   const [sentenceText, setSentenceText] = React.useState(() => {
-    try { return localStorage.getItem('rg_pending_sentence') || ''; } catch { return ''; }
+    try { return DataStore.pending.get('sentence') || ''; } catch { return ''; }
   });
   const [title,      setTitle]      = React.useState(book ? book.title : '');
   const [author,     setAuthor]     = React.useState(book ? book.author : '');
   const [totalPages, setTotalPages] = React.useState(book ? String(book.total_pages) : '');
 
   React.useEffect(() => {
-    try { localStorage.setItem('rg_pending_sentence', sentenceText); } catch {}
+    try { DataStore.pending.set('sentence', sentenceText); } catch {}
   }, [sentenceText]);
 
   const valid = isManual
