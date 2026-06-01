@@ -3,7 +3,7 @@
    마을 탭: 마을 목록 화면 + [마을 만들기] 버튼
    ========================================================= */
 
-function VillageView({ state }) {
+function VillageView({ state, onSelectTown }) {
   const getDday = (dday) => {
     if (dday === 0) return '오늘';
     if (dday > 0) return `D+${dday}`;
@@ -67,6 +67,7 @@ function VillageView({ state }) {
               <div
                 key={town.id}
                 className="card"
+                onClick={() => onSelectTown && onSelectTown(town.id)}
                 style={{
                   marginBottom:16,
                   padding:14,
