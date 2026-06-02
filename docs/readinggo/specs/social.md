@@ -37,6 +37,7 @@
 | 책갈피 | 카드 우측 상단 🔖 → 관심 문장 저장 (`sentence_bookmarks`, [profile.md](./profile.md)) |
 | 책 자세히 | 책 제목 탭 → [profile.md](./profile.md) 책 상세 |
 | 본인 카드 | 짹·책갈피 비활성 |
+| 감상(`my_note`) | **피드 비노출** — 본인 프로필·책 상세에서만 ([profile.md §5.8.4](./profile.md)). 피드 공개 여부는 향후 |
 | 빈 상태 | "아직 한 문장이 없어요. 오늘의 문장을 남겨보세요 🐦" |
 
 > v7 폐기: ~~주간 리그~~([systems.md §6.5](./systems.md)), ~~"모이"~~.

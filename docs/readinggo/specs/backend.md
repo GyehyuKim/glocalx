@@ -62,9 +62,11 @@ activeBook.set(userBookId)                                  // = users.active_us
 sessions.addToday({userBookId, page})      → Session         // 하루 첫 기록: 세션 생성 + 스트릭/XP
 sessions.list(userBookId)                  → Session[]
 sentences.add({userBookId, sessionId, page, text, my_note?}) → Sentence
+sentences.setNote(sentenceId, my_note)                       // 사후 감상 추가·편집 (작성 시점 무관, §profile 5.8.4)
 sentences.listByBook(userBookId)           → Sentence[]
 sentences.feed({cursor})                   → Sentence[]      // 전체 공개 피드 (§social)
 sentences.listMine()                       → Sentence[]
+sentences.random()                         → Sentence        // 무작위 회상 — 내 과거 한 문장 1개 (§profile 5.8.7)
 
 // 스트릭 / XP / 성(완독)
 streak.get()                               → Streak
@@ -144,7 +146,7 @@ user_books
   book_id       uuid FK books.id
   status        text                 -- 'reading' | 'completed' | 'archived'
   current_page  int  DEFAULT 0
-  rating        int  NULL            -- v7 신설. 완독 별점 1~5 (선택)
+  rating        numeric(2,1) NULL    -- v7 신설. 완독 별점 0.5~5, 0.5 단위(반별점) (선택)
   review_text   text NULL            -- v7 신설. 완독 소감 (선택)
   started_at    timestamptz
   completed_at  timestamptz NULL
@@ -168,7 +170,7 @@ sentences                                   -- "한 문장" (DB 테이블명 유
   session_id    uuid FK reading_sessions.id NULL
   page          int                  -- 스포일러 블라인드 판정 기준 (§social)
   text          text                 -- 원문 인용. 200자 이내 (클라이언트 검증)
-  my_note       text NULL            -- 내 감상·코멘트 (선택). UI 권장 500자
+  my_note       text NULL            -- 내 감상·코멘트 (선택, 사후 추가·편집 가능). UI 권장 500자
   created_at    timestamptz
   -- v7 제거: is_private (스포일러 → 페이지 기반 블라인드로 일원화, §social)
   -- v7 제거: chapter_id (챕터 자동매핑 폐기)
