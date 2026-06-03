@@ -30,8 +30,19 @@ async function buildStateFromSupabase() {
     out.nest = { lv: getNestStage(Math.round((ub.current_page || 0) / total * 100)).lv };
   }
   if (Array.isArray(mine) && mine.length) {
-    out.myQuotes = mine.map(s => ({ text: s.text, bookId: s.book_id || '', page: s.page, when: '' }));
+    out.myQuotes = mine.map(s => ({ id: s.id, text: s.text, bookId: (s.user_book && s.user_book.book_id) || s.book_id || '', page: s.page, when: '', note: s.my_note || '' }));
   }
+  // 소셜 isMine 판정 + 스포일러 동기맵: 현재 사용자 + 내 책별 현재 페이지 preload
+  try {
+    const me = await window.RG_SB.myProfile();
+    if (me) window.RG_ME = { id: me.id, handle: me.handle, displayName: me.display_name, avatar: me.avatar_url };
+  } catch (e) {}
+  try {
+    const myb = await DS.myBooks.list();
+    const pages = {};
+    (myb || []).forEach(u => { if (u.book_id) pages[u.book_id] = u.current_page || 0; });
+    window.RG_MY_PAGES = pages;
+  } catch (e) {}
   return out;
 }
 
@@ -102,6 +113,12 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   // 스포일러 전역 토글 (§5.7.1): true 면 모든 페이지 블라인드 해제.
   const [spoilerReveal, setSpoilerReveal] = useState(false);
+  // 타인 프로필 모달(§5.8.2) — @핸들 탭으로 열림. SentenceCard 가 window.RG_openProfile 호출.
+  const [profileHandle, setProfileHandle] = useState(null);
+  useEffect(() => { window.RG_openProfile = (h) => setProfileHandle(h); return () => { window.RG_openProfile = null; }; }, []);
+  // 설정 모달(§5.8) — 프로필 ⚙️ 로 열림.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { window.RG_openSettings = () => setSettingsOpen(true); return () => { window.RG_openSettings = null; }; }, []);
   const [appState, setAppState] = useState(() => ({
     ...INITIAL_STATE,
     // village sent 상태는 로컬 복사
@@ -181,6 +198,20 @@ function App() {
         if (sentence) await Promise.resolve(DataStore.sentences.add({ userBookId: ub.id, page: ns.book.cur, text: sentence }));
         if (xpGain) await Promise.resolve(DataStore.xp.add(xpGain, 'checkin'));
         console.log('[ReadingGo] ✅ 체크인 저장 완료 (ub=' + ub.id + ')');
+        // DB 권위값으로 스트릭·XP·내 한 문장 정합 (낙관 표시 어긋남 + 새 문장 id 부재 → 감상 버튼 지연 방지, H2/§5.8.4)
+        const [stDb, xpDb, mineDb] = await Promise.all([
+          Promise.resolve(DataStore.streak.get()).catch(() => null),
+          Promise.resolve(DataStore.xp.get()).catch(() => null),
+          Promise.resolve(DataStore.sentences.listMine()).catch(() => null),
+        ]);
+        setAppState(s => ({
+          ...s,
+          streak: (stDb && typeof stDb.current === 'number') ? stDb.current : s.streak,
+          xp: (typeof xpDb === 'number') ? xpDb : s.xp,
+          myQuotes: Array.isArray(mineDb)
+            ? mineDb.map(x => ({ id: x.id, text: x.text, bookId: (x.user_book && x.user_book.book_id) || x.book_id || '', page: x.page, when: '', note: x.my_note || '' }))
+            : s.myQuotes,
+        }));
       } catch (e) { console.warn('[ReadingGo] 체크인 영속 실패:', e); }
     })();
   }, []);
@@ -249,8 +280,57 @@ function App() {
 
   const handleSearchSelectBook = useCallback((book) => {
     setIsSearchOpen(false);
-    handleSetActiveBook(book.book_id);
-  }, [handleSetActiveBook]);
+    switchTab('nest');
+    // 검색 결과(데모 or 알라딘 = 전체 책 정보) → Supabase 등록 + 활성화. 데모 getBook 비의존.
+    if (!(DataStore.myBooks && DataStore.myBooks.add)) return;
+    const isbn13 = book.isbn13 || book.isbn || '';
+    (async () => {
+      try {
+        const mine = await Promise.resolve(DataStore.myBooks.list());
+        let ub = (mine || []).find(u => u.book && ((isbn13 && u.book.isbn13 === isbn13) || u.book.title === book.title));
+        if (!ub) {
+          ub = await Promise.resolve(DataStore.myBooks.add({
+            book: { isbn13: isbn13, title: book.title, author: book.author, publisher: book.publisher, total_pages: book.total_pages, cover_url: book.cover_url },
+            current_page: 0,
+          }));
+        }
+        if (ub && ub.id) {
+          await Promise.resolve(DataStore.activeBook.set(ub.id));
+          setAppState(s => ({
+            ...s,
+            book: {
+              id: ub.book_id, title: book.title,
+              author: (book.author || '') + (book.publisher ? ' · ' + book.publisher : ''),
+              cur: ub.current_page || 0, total: book.total_pages || 1, days: 1,
+              cover: book.cover_url, fb: ['#9AA7B2', '#C7D0D8'], toc: [],
+            },
+            nest: { ...s.nest, lv: getNestStage(book.total_pages ? Math.round((ub.current_page || 0) / book.total_pages * 100) : 0).lv },
+          }));
+          showToast(`📖 ${book.title} 등록 완료`);
+        }
+      } catch (e) { console.warn('[ReadingGo] 검색 책 등록 실패:', e); }
+    })();
+  }, [switchTab]);
+
+  // 이미 등록된 user_book 으로 활성 전환 (서재에서 — 재등록 없이 activeBook.set).
+  const handleActivateUserBook = useCallback((item) => {
+    if (!item || !item.id) return;
+    setAppState(s => ({
+      ...s,
+      book: {
+        id: item.id, title: item.title,
+        author: (item.author || '') + (item.pub ? ' · ' + item.pub : ''),
+        cur: item.cur || 0, total: item.total || 1, days: 1,
+        cover: item.cover, fb: item.fb || ['#9AA7B2', '#C7D0D8'], toc: [],
+      },
+      nest: { ...s.nest, lv: getNestStage(item.total ? Math.round((item.cur || 0) / item.total * 100) : 0).lv },
+    }));
+    showToast(`📖 ${item.title} — 활성 책으로 변경`);
+    switchTab('nest');
+    if (item.ubId && DataStore.activeBook && DataStore.activeBook.set) {
+      Promise.resolve(DataStore.activeBook.set(item.ubId)).catch(e => console.warn('[ReadingGo] 활성 전환 실패:', e));
+    }
+  }, [switchTab]);
 
   // Phase 1 로그인 게이트 (Supabase 모드에서만)
   if (_supa && authUser === undefined) return (<BootSplash text="확인 중..." />);
@@ -296,25 +376,7 @@ function App() {
                 <span className="ico">🪶</span>
                 <span>{appState.shield}</span>
               </span>
-              <button
-                onClick={() => setSpoilerReveal(v => !v)}
-                aria-pressed={spoilerReveal}
-                title="스포일러 그냥 보기 — 안 읽은 부분도 모두 표시"
-                style={{
-                  background: spoilerReveal ? 'var(--brand-tint)' : 'transparent',
-                  border: spoilerReveal ? '1.5px solid var(--brand)' : '1.5px solid transparent',
-                  borderRadius:14,
-                  color: spoilerReveal ? 'var(--brand-3)' : 'var(--ink-2)',
-                  fontSize:11,
-                  fontWeight:800,
-                  cursor:'pointer',
-                  padding:'4px 8px',
-                  marginLeft:8,
-                  whiteSpace:'nowrap',
-                }}
-              >
-                🔓 스포일러 그냥 보기
-              </button>
+              {/* 스포일러 토글은 설정(프로필 ⚙️)으로 이전 (#3) */}
               <button
                 onClick={() => setIsSearchOpen(true)}
                 style={{
@@ -372,6 +434,7 @@ function App() {
               key="library"
               state={appState}
               onSetActiveBook={handleSetActiveBook}
+              onActivateUserBook={handleActivateUserBook}
             />
           )}
           </SpoilerContext.Provider>
@@ -407,6 +470,18 @@ function App() {
           onSelectBook={handleSearchSelectBook}
           topRecommendations={ALL_BOOKS.slice(0, 8)}
         />
+
+        {/* 타인 프로필 모달 (§5.8.2) — @핸들 탭으로 열림 */}
+        {profileHandle && ReactDOM.createPortal(
+          <UserProfileModal handle={profileHandle} onClose={() => setProfileHandle(null)} />,
+          document.body
+        )}
+
+        {/* 설정 모달 (§5.8) — 프로필 ⚙️ */}
+        {settingsOpen && ReactDOM.createPortal(
+          <SettingsModal onClose={() => setSettingsOpen(false)} spoilerReveal={spoilerReveal} setSpoilerReveal={setSpoilerReveal} />,
+          document.body
+        )}
 
       </div>
     </div>

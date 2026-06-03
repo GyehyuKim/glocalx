@@ -77,6 +77,11 @@
       },
       // 알라딘 결과 등 외부 책을 books 에 upsert (isbn13 기준) → 등록 흐름
       async upsert(book) {
+        // isbn13 없으면 제목으로 기존 책 매칭 (null isbn 은 conflict 안 되어 중복 생성됨, architect H1).
+        if (!book.isbn13) {
+          const found = unwrap(await sb().from('books').select('*').eq('title', book.title).limit(1).maybeSingle());
+          if (found) return found;
+        }
         return unwrap(await sb().from('books').upsert({
           isbn13: book.isbn13, title: book.title, author: book.author,
           publisher: book.publisher, total_pages: book.total_pages, cover_url: book.cover_url,
@@ -155,7 +160,8 @@
       },
       async listMine() {
         const id = await uid();
-        return unwrap(await sb().from('sentences').select('*').eq('user_id', id)
+        // book_id 는 sentences 에 없음 → user_book 임베드로 해소(무작위회상·책상세 타임라인용).
+        return unwrap(await sb().from('sentences').select('*, user_book:user_books(book_id, book:books(title))').eq('user_id', id)
           .order('created_at', { ascending: false }));
       },
       // 전체 공개 피드 (§social). 책 제목은 user_books→books 중첩 embed.
@@ -164,6 +170,27 @@
           .select('*, user:users(handle,display_name,avatar_url), user_book:user_books(book:books(id,title,cover_url))')
           .order('created_at', { ascending: false }).limit(limit || 30);
         if (cursor) q = q.lt('created_at', cursor);
+        return unwrap(await q);
+      },
+      // 팔로우 피드 — 내가 팔로우한 사용자들의 한 문장만 (#7)
+      async feedFollowing({ limit } = {}) {
+        const id = await uid();
+        const f = unwrap(await sb().from('follows').select('following_id').eq('follower_id', id)) || [];
+        const ids = f.map(x => x.following_id);
+        if (!ids.length) return [];
+        return unwrap(await sb().from('sentences')
+          .select('*, user:users(handle,display_name,avatar_url), user_book:user_books(book:books(id,title,cover_url))')
+          .in('user_id', ids).order('created_at', { ascending: false }).limit(limit || 30));
+      },
+      // 같은 책 피드 — 특정 책의 *다른* 사용자 한 문장 (둥지 '같은 책 읽는 사람들', NPC 포함, #1)
+      async byBook(bookId, { limit } = {}) {
+        if (!bookId) return [];
+        const me = await uid();
+        let q = sb().from('sentences')
+          .select('*, user:users(handle,display_name,avatar_url), user_book:user_books!inner(book_id, book:books(id,title,cover_url))')
+          .eq('user_book.book_id', bookId)
+          .order('created_at', { ascending: false }).limit(limit || 10);
+        if (me) q = q.neq('user_id', me);
         return unwrap(await q);
       },
       // 무작위 회상 — 내 과거 한 문장 1개 (profile §5.8.7)
@@ -236,7 +263,7 @@
       },
       async list() {
         const id = await uid();
-        return unwrap(await sb().from('sentence_bookmarks').select('*, sentence:sentences(*)')
+        return unwrap(await sb().from('sentence_bookmarks').select('*, sentence:sentences(*, user_book:user_books(book_id, book:books(title)))')
           .eq('user_id', id).order('created_at', { ascending: false }));
       },
     },
@@ -283,12 +310,38 @@
         await sb().from('follows').upsert({ follower_id: id, following_id: userId }, { onConflict: 'follower_id,following_id' });
         return true;
       },
+      async unfollow(userId) {
+        const id = await uid();
+        await sb().from('follows').delete().eq('follower_id', id).eq('following_id', userId);
+        return false;
+      },
+      async isFollowing(userId) {
+        const id = await uid();
+        if (!id || !userId) return false;
+        const row = unwrap(await sb().from('follows').select('follower_id')
+          .eq('follower_id', id).eq('following_id', userId).maybeSingle());
+        return !!row;
+      },
     },
     users: {
       async search(query) {
         if (!query) return [];
         return unwrap(await sb().from('users').select('id,handle,display_name,avatar_url')
           .ilike('handle', '%' + query + '%').limit(20));
+      },
+      // 타인 프로필(§5.8.2 전체 공개) — 핸들로 단건 + 공개 완독책/한문장 (RLS select using(true))
+      async getByHandle(handle) {
+        const h = (handle || '').replace(/^@/, '').trim();
+        if (!h) return null;
+        return unwrap(await sb().from('users').select('*').eq('handle', h).maybeSingle());
+      },
+      async publicBooks(userId) {
+        return unwrap(await sb().from('user_books').select('*, book:books(*)')
+          .eq('user_id', userId).eq('status', 'completed').order('completed_at', { ascending: false }));
+      },
+      async publicSentences(userId) {
+        return unwrap(await sb().from('sentences').select('*, user_book:user_books(book_id, book:books(title))')
+          .eq('user_id', userId).order('created_at', { ascending: false }).limit(50));
       },
     },
 

@@ -262,6 +262,23 @@ const DataStore = {
         _allSentences(s).slice().sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
       );
     },
+    // 사후 감상 추가·편집 (§5.8.4) — Supabase 어댑터와 표면 일치(§7.2)
+    setNote(sentenceId, my_note) {
+      return localStorageAdapter.mutate(s => {
+        const se = _findSentence(s, sentenceId);
+        if (se) se.my_note = my_note;
+        return se;
+      });
+    },
+    // 무작위 회상 (§5.8.7)
+    random() {
+      return localStorageAdapter.mutate(s => {
+        const all = _allSentences(s);
+        return all.length ? all[Math.floor(Math.random() * all.length)] : null;
+      });
+    },
+    // 같은 책 피드 (Supabase 어댑터와 표면 일치) — 로컬(Phase 0)엔 타 사용자 없음 → 빈 배열.
+    byBook() { return []; },
   },
 
   /* 스트릭 ──────────────────────────────────────── */
@@ -341,6 +358,16 @@ const DataStore = {
         if (s.bookmarks[sentenceId]) delete s.bookmarks[sentenceId];
         else s.bookmarks[sentenceId] = true;
         return !!s.bookmarks[sentenceId];
+      });
+    },
+    // Supabase 어댑터와 표면 일치 — 책갈피한 문장 목록(sentence 임베드). 좋아요 뷰용(#11).
+    list() {
+      return localStorageAdapter.mutate(s => {
+        const all = _allSentences(s);
+        return Object.keys(s.bookmarks || {}).filter(k => s.bookmarks[k]).map(sid => {
+          const se = all.find(x => x.id === sid) || null;
+          return { sentence_id: sid, sentence: se };
+        });
       });
     },
   },
