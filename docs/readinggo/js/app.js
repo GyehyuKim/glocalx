@@ -113,6 +113,9 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   // 스포일러 전역 토글 (§5.7.1): true 면 모든 페이지 블라인드 해제.
   const [spoilerReveal, setSpoilerReveal] = useState(false);
+  // 타인 프로필 모달(§5.8.2) — @핸들 탭으로 열림. SentenceCard 가 window.RG_openProfile 호출.
+  const [profileHandle, setProfileHandle] = useState(null);
+  useEffect(() => { window.RG_openProfile = (h) => setProfileHandle(h); return () => { window.RG_openProfile = null; }; }, []);
   const [appState, setAppState] = useState(() => ({
     ...INITIAL_STATE,
     // village sent 상태는 로컬 복사
@@ -466,6 +469,12 @@ function App() {
           onSelectBook={handleSearchSelectBook}
           topRecommendations={ALL_BOOKS.slice(0, 8)}
         />
+
+        {/* 타인 프로필 모달 (§5.8.2) — @핸들 탭으로 열림 */}
+        {profileHandle && ReactDOM.createPortal(
+          <UserProfileModal handle={profileHandle} onClose={() => setProfileHandle(null)} />,
+          document.body
+        )}
 
       </div>
     </div>

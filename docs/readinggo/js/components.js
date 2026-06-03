@@ -97,7 +97,9 @@ function SentenceCard({ item, bookId }) {
     <div className="sentence-card">
       <div className="who">
         <div className="avatar">{item.avatar}</div>
-        <div className="nick">{item.nick}</div>
+        <div className="nick"
+          onClick={() => { if (!isMine && item.nick && window.RG_openProfile) window.RG_openProfile(item.nick); }}
+          style={{ cursor: (!isMine && window.RG_openProfile) ? 'pointer' : 'default' }}>{item.nick}</div>
         <div className="meta">{cardTitle ? cardTitle + ' · ' : ''}{item.page}p · {item.time}</div>
       </div>
       {blinded ? (
@@ -119,9 +121,81 @@ function SentenceCard({ item, bookId }) {
   );
 }
 
+/* ── UserProfileModal: 타인 프로필 (전체 공개, §5.8.2) ──
+   핸들 탭 → 해당 사용자 공개 완독 책장 + 공개 한 문장. RLS select using(true). */
+function UserProfileModal({ handle, onClose }) {
+  const [data, setData] = useState(undefined); // undefined=로딩, null=없음
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const DS = window.SupabaseDataStore;
+        if (!DS || !DS.users || !DS.users.getByHandle) { if (alive) setData(null); return; }
+        const u = await DS.users.getByHandle(handle);
+        if (!u) { if (alive) setData(null); return; }
+        const [books, sents] = await Promise.all([
+          DS.users.publicBooks(u.id).catch(() => []),
+          DS.users.publicSentences(u.id).catch(() => []),
+        ]);
+        if (alive) setData({ user: u, books: books || [], sents: sents || [] });
+      } catch (e) { if (alive) setData(null); }
+    })();
+    return () => { alive = false; };
+  }, [handle]);
+
+  return (
+    <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet" role="dialog" aria-label={handle}>
+        <div className="sheet-grip" />
+        {data === undefined ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>불러오는 중…</div>
+        ) : data === null ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>프로필을 찾을 수 없어요</div>
+        ) : (
+          <div style={{ padding: '8px 20px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)' }}>🐦 {data.user.display_name || data.user.handle}</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>@{data.user.handle} · 완독 {data.books.length}권</div>
+              {data.user.bio && <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 6 }}>{data.user.bio}</div>}
+            </div>
+            {data.books.length > 0 && (
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>🏰 완독 책장</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
+                  {data.books.map((ub) => (
+                    <div key={ub.id} style={{ flex: '0 0 auto', width: 80 }}>
+                      <div style={{ width: 80, height: 112, borderRadius: 6, overflow: 'hidden', background: 'var(--line)', marginBottom: 4 }}>
+                        {ub.book && ub.book.cover_url && <img src={ub.book.cover_url} alt={ub.book.title} loading="lazy" referrerPolicy="no-referrer" onError={(e) => (e.target.style.display = 'none')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ub.book && ub.book.title}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>📖 공개 한 문장 {data.sents.length}개</div>
+            {data.sents.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-3)', padding: '8px 0' }}>아직 공개된 한 문장이 없어요</div>
+            ) : data.sents.map((s) => {
+              const bt = s.user_book && s.user_book.book && s.user_book.book.title;
+              return (
+                <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>{bt ? bt + ' · ' : ''}{s.page}p</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 window.showToast = showToast;
 window.Toast = Toast;
 window.Confetti = Confetti;
 window.SentenceCard = SentenceCard;
 window.SpoilerContext = SpoilerContext;
 window.isSentenceBlinded = isSentenceBlinded;
+window.UserProfileModal = UserProfileModal;

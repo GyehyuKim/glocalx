@@ -290,6 +290,20 @@
         return unwrap(await sb().from('users').select('id,handle,display_name,avatar_url')
           .ilike('handle', '%' + query + '%').limit(20));
       },
+      // 타인 프로필(§5.8.2 전체 공개) — 핸들로 단건 + 공개 완독책/한문장 (RLS select using(true))
+      async getByHandle(handle) {
+        const h = (handle || '').replace(/^@/, '').trim();
+        if (!h) return null;
+        return unwrap(await sb().from('users').select('*').eq('handle', h).maybeSingle());
+      },
+      async publicBooks(userId) {
+        return unwrap(await sb().from('user_books').select('*, book:books(*)')
+          .eq('user_id', userId).eq('status', 'completed').order('completed_at', { ascending: false }));
+      },
+      async publicSentences(userId) {
+        return unwrap(await sb().from('sentences').select('*, user_book:user_books(book:books(title))')
+          .eq('user_id', userId).order('created_at', { ascending: false }).limit(50));
+      },
     },
 
     /* 스포일러 (read-side) */
