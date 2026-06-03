@@ -242,7 +242,7 @@
       },
       async list() {
         const id = await uid();
-        return unwrap(await sb().from('sentence_bookmarks').select('*, sentence:sentences(*)')
+        return unwrap(await sb().from('sentence_bookmarks').select('*, sentence:sentences(*, user_book:user_books(book_id, book:books(title)))')
           .eq('user_id', id).order('created_at', { ascending: false }));
       },
     },

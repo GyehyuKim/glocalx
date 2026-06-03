@@ -25,6 +25,21 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
       .catch(() => {});
     setEditingId(null);
   };
+  // 내 한 문장 좋아요(즐겨찾기) — sentence_bookmarks 재활용, 토글 (#11)
+  const [bmarks, setBmarks] = _useState(null); // Set<sentenceId>
+  _useEffect(() => {
+    let alive = true;
+    Promise.resolve((DataStore.bookmarks && DataStore.bookmarks.list) ? DataStore.bookmarks.list() : [])
+      .then(rows => { if (alive) setBmarks(new Set((rows || []).map(r => r.sentence_id))); })
+      .catch(() => { if (alive) setBmarks(new Set()); });
+    return () => { alive = false; };
+  }, []);
+  const toggleFav = (q) => {
+    if (!q.id || !(DataStore.bookmarks && DataStore.bookmarks.toggle)) return;
+    Promise.resolve(DataStore.bookmarks.toggle(q.id)).then(on => {
+      setBmarks(prev => { const n = new Set(prev || []); if (on) n.add(q.id); else n.delete(q.id); return n; });
+    }).catch(() => {});
+  };
 
   // 교보 상품 상세 직접 (바코드=isbn13). isbn 없으면 제목 검색 폴백. (QA #12-A)
   const kyoboUrl = book.isbn
@@ -100,8 +115,14 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
                   isSentenceBlinded(book.id, q.page);
                 return (
                   <div key={i} style={{background:'var(--card)', border:'1.5px solid var(--line)', borderRadius:'8px', padding:12, marginBottom:10}}>
-                    <div style={{fontSize:11, color:'var(--ink-3)', fontWeight:700, marginBottom:6}}>
-                      {q.page}p · {q.when}
+                    <div style={{fontSize:11, color:'var(--ink-3)', fontWeight:700, marginBottom:6, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                      <span>{q.page}p · {q.when}</span>
+                      {q.id && (
+                        <button onClick={() => toggleFav(q)} title="좋아요(즐겨찾기)"
+                          style={{background:'none', border:'none', cursor:'pointer', fontSize:14, padding:0, lineHeight:1}}>
+                          {(bmarks && bmarks.has(q.id)) ? '❤️' : '🤍'}
+                        </button>
+                      )}
                     </div>
                     {blinded ? (
                       <div className="spoiler-blind" onClick={() => setRevealed(r => ({ ...r, [i]: true }))}>
@@ -168,6 +189,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
   const [myBooks, setMyBooks] = _useState(null);   // null=로딩
   const [wishlistBooks, setWishlistBooks] = _useState([]);
   const [recall, setRecall] = _useState(null);     // 무작위 회상 (§5.8.7)
+  const [favs, setFavs] = _useState(null);         // 좋아요한 문장 (#11)
 
   // 내 책(읽는중/완독) + 관심책 — 실 Supabase (양 어댑터 정규화). 데모 상수 미사용.
   _useEffect(() => {
@@ -199,6 +221,8 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
     }).catch(() => { if (alive) setWishlistBooks([]); });
     // 무작위 한 문장 회상 (§5.8.7)
     Promise.resolve(DataStore.sentences.random()).then(s => { if (alive) setRecall(s || null); }).catch(() => {});
+    // 좋아요한 문장 (#11)
+    Promise.resolve((DataStore.bookmarks && DataStore.bookmarks.list) ? DataStore.bookmarks.list() : []).then(rows => { if (alive) setFavs((rows || []).filter(r => r.sentence)); }).catch(() => { if (alive) setFavs([]); });
     return () => { alive = false; };
   }, []);
 
@@ -265,6 +289,23 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           <div style={{fontSize:11, color:'var(--ink-3)', fontWeight:700}}>
             {(() => { const t = recall.user_book && recall.user_book.book && recall.user_book.book.title; return t ? t + ' · ' : ''; })()}{recall.page}p
           </div>
+        </div>
+      )}
+
+      {/* 좋아요한 문장 (#11) — 즐겨찾기한 내 한 문장만 모아보기 */}
+      {favs && favs.length > 0 && (
+        <div style={{padding:'0 12px', marginBottom:20}}>
+          <div style={{fontSize:18, fontWeight:900, marginBottom:12, paddingLeft:4}}>❤️ 좋아요한 문장 <span style={{fontSize:13, color:'var(--ink-3)', fontWeight:800}}>({favs.length})</span></div>
+          {favs.map((f) => {
+            const se = f.sentence || {};
+            const bt = se.user_book && se.user_book.book && se.user_book.book.title;
+            return (
+              <div key={f.sentence_id} style={{background:'var(--card)', border:'1px solid var(--line)', borderRadius:8, padding:12, marginBottom:8}}>
+                <div style={{fontSize:11, color:'var(--ink-3)', fontWeight:700, marginBottom:4}}>{bt ? bt + ' · ' : ''}{se.page}p</div>
+                <div style={{fontSize:13, color:'var(--ink)', fontStyle:'italic', lineHeight:1.5}}>"{se.text}"</div>
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -358,6 +358,16 @@ const DataStore = {
         return !!s.bookmarks[sentenceId];
       });
     },
+    // Supabase 어댑터와 표면 일치 — 책갈피한 문장 목록(sentence 임베드). 좋아요 뷰용(#11).
+    list() {
+      return localStorageAdapter.mutate(s => {
+        const all = _allSentences(s);
+        return Object.keys(s.bookmarks || {}).filter(k => s.bookmarks[k]).map(sid => {
+          const se = all.find(x => x.id === sid) || null;
+          return { sentence_id: sid, sentence: se };
+        });
+      });
+    },
   },
   wishBooks: {
     add(bookId) {
