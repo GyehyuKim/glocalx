@@ -240,6 +240,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
   const [modalOpen, setModalOpen] = _useState(false);
   const [ceremony, setCeremony] = _useState(null);
   const [showConfetti, setShowConfetti] = _useState(false);
+  const [sameBookFeed, setSameBookFeed] = _useState([]); // 같은 책 다른 사용자 한 문장 (#1)
   // 둥지 단계 = 활성 책 진척률(book.cur/book.total). 체력/days 추적 없음.
   const _pctOf = (bk) => bk && bk.total ? Math.round(bk.cur / bk.total * 100) : 0;
   const [nestState, setNestState] = _useState({
@@ -263,6 +264,26 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
       skipStreakRisk: false,
     });
   }, [state.book.id]);
+
+  // 같은 책 읽는 사람들 — 실 sentences(타 사용자, NPC 포함). 활성 책 변경 시 재로드. (#1)
+  _useEffect(() => {
+    let alive = true;
+    const bid = nestState.book.id;
+    Promise.resolve((DataStore.sentences && DataStore.sentences.byBook) ? DataStore.sentences.byBook(bid, { limit: 5 }) : [])
+      .then(rows => {
+        if (!alive) return;
+        setSameBookFeed((rows || []).map(s => {
+          const u = s.user || {};
+          const bk = (s.user_book && s.user_book.book) || {};
+          const days = s.created_at ? Math.floor((Date.now() - new Date(s.created_at).getTime()) / 86400000) : 0;
+          return { id: s.id, page: s.page, q: s.text, nick: u.handle ? ('@' + u.handle) : '@익명',
+            avatar: (u.display_name && u.display_name[0]) || '🐦', claps: 0,
+            time: days < 1 ? '오늘' : (days + '일 전'),
+            bookTitle: bk.title || '', bookId: bk.id || bid, isMine: false };
+        }));
+      }).catch(() => { if (alive) setSameBookFeed([]); });
+    return () => { alive = false; };
+  }, [nestState.book.id]);
 
   const handleCheckin = ({ page, sentence }) => {
     setModalOpen(false);
@@ -336,7 +357,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial }) {
     showToast('🏰 성 컬렉션에 기록이 남았어요!');
   };
 
-  const sameBookFeed = (NPC_QUOTES[nestState.book.id] || []).slice(0, 3);
+  // sameBookFeed 는 위 effect 에서 실 byBook 으로 로드됨 (#1). 데모 NPC_QUOTES 미사용.
 
   return (
     <section className="view active">

@@ -277,6 +277,8 @@ const DataStore = {
         return all.length ? all[Math.floor(Math.random() * all.length)] : null;
       });
     },
+    // 같은 책 피드 (Supabase 어댑터와 표면 일치) — 로컬(Phase 0)엔 타 사용자 없음 → 빈 배열.
+    byBook() { return []; },
   },
 
   /* 스트릭 ──────────────────────────────────────── */

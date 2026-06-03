@@ -182,6 +182,17 @@
           .select('*, user:users(handle,display_name,avatar_url), user_book:user_books(book:books(id,title,cover_url))')
           .in('user_id', ids).order('created_at', { ascending: false }).limit(limit || 30));
       },
+      // 같은 책 피드 — 특정 책의 *다른* 사용자 한 문장 (둥지 '같은 책 읽는 사람들', NPC 포함, #1)
+      async byBook(bookId, { limit } = {}) {
+        if (!bookId) return [];
+        const me = await uid();
+        let q = sb().from('sentences')
+          .select('*, user:users(handle,display_name,avatar_url), user_book:user_books!inner(book_id, book:books(id,title,cover_url))')
+          .eq('user_book.book_id', bookId)
+          .order('created_at', { ascending: false }).limit(limit || 10);
+        if (me) q = q.neq('user_id', me);
+        return unwrap(await q);
+      },
       // 무작위 회상 — 내 과거 한 문장 1개 (profile §5.8.7)
       async random() {
         const mine = await A.sentences.listMine();
