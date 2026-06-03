@@ -23,6 +23,7 @@ node admin-cli.mjs auth-seturl <url>   # 배포 origin 을 site_url+redirect 로
 
 ## 1. 이미 적용됨 (자동화로 완료)
 - ✅ `schema.sql` + `02_admin.sql`(is_admin 컬럼·`is_admin()` 헬퍼) 적용
+- ✅ `04_constraints.sql`(서버측 입력 길이·범위 CHECK — 보안, `SECURITY.md` 참조)
 - ✅ **이메일 가입 autoconfirm = ON** — 확인메일 없이 가입 즉시 로그인(기본 메일러 발송한도 문제 회피). 기존 미확인 계정도 confirm 처리
 - ✅ NPC 같은-책 피드 시드(`seed_npc.mjs`, 민음사 492권 × NPC 2명)
 - ✅ 설정에서 **@아이디(handle) 변경 + 중복검사** (이 PR)
@@ -40,6 +41,7 @@ npx serve docs/readinggo -l 8888       # http://localhost:8888
 
 ## 3. Netlify 배포
 - **env 추가**: `ALADIN_TTB_KEY` = (알라딘 TTBKey) — 검색 프록시(`/.netlify/functions/aladin`)용. 없으면 알라딘 검색만 비활성(로컬 카탈로그는 동작).
+- **env 추가(권장)**: `ALLOWED_ORIGIN` = 배포 도메인(예 `https://xxx.netlify.app`) — 알라딘 프록시 CORS 제한(미설정 시 `*`, 보안 감사 Medium #3).
 - 배포: `netlify deploy --prod` (publish=`docs/readinggo`, functions=`netlify/functions` — `netlify.toml` 참조).
 
 ## 4. 배포 후 인증 URL (필수 — 안 하면 배포본 로그인 리디렉션이 localhost 로 깨짐)
