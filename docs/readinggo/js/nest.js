@@ -315,6 +315,7 @@ function ReadingMode({ book, onClose, onArchive }) {
 function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpenSearch }) {
   const [modalOpen, setModalOpen] = _useState(false);
   const [readingOpen, setReadingOpen] = _useState(false); // 읽기 모드 (#184)
+  const [readingBooks, setReadingBooks] = _useState([]);  // 캐러셀용 읽는 중 책 (#185)
   const [ceremony, setCeremony] = _useState(null);
   const [showConfetti, setShowConfetti] = _useState(false);
   const [sameBookFeed, setSameBookFeed] = _useState([]); // 같은 책 다른 사용자 한 문장 (#1)
@@ -341,6 +342,26 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
       skipStreakRisk: false,
     });
   }, [state.book.id]);
+
+  // 읽는 중 책 목록 — 활성 책 좌우 리볼빙 전환용 (#185)
+  _useEffect(() => {
+    if (!(DataStore.myBooks && DataStore.myBooks.list)) return;
+    Promise.resolve(DataStore.myBooks.list()).then((rows) => {
+      setReadingBooks((rows || []).filter((r) => (r.status || 'reading') === 'reading').map((r) => ({
+        id: r.book_id || (r.book && r.book.id) || r.id, ubId: r.id,
+        title: (r.book && r.book.title) || r.title || '', author: (r.book && r.book.author) || r.author || '',
+        pub: (r.book && r.book.publisher) || '', cur: r.current_page || r.cur || 0,
+        total: (r.book && r.book.total_pages) || r.total || 1,
+        cover: (r.book && r.book.cover_url) || r.cover || '', fb: ['#9AA7B2', '#C7D0D8'],
+      })));
+    }).catch(() => {});
+  }, [state.book.id]);
+  const switchBook = (dir) => {
+    if (!readingBooks || readingBooks.length < 2) { showToast('읽는 중인 책이 하나예요 📖'); return; }
+    const idx = readingBooks.findIndex((b) => b.id === nestState.book.id);
+    const ni = ((idx < 0 ? 0 : idx) + dir + readingBooks.length) % readingBooks.length;
+    if (window.RG_activateBook) window.RG_activateBook(readingBooks[ni]);
+  };
 
   // 같은 책 읽는 사람들 — 실 sentences(타 사용자, NPC 포함). 활성 책 변경 시 재로드. (#1)
   _useEffect(() => {
@@ -458,11 +479,20 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
 
   return (
     <section className="view active">
-      {/* 활성 책 카드 */}
-      <div className="card book-card-wrap">
+      {/* 활성 책 카드 — 좌우 리볼빙으로 활성 책 전환 (#185) */}
+      <div className="card book-card-wrap" style={{ position: 'relative' }}>
         <button className="book-jump" onClick={onGoLibrary}>
           <span>📚</span><span>내 서재</span>
         </button>
+        {readingBooks.length > 1 && (
+          <>
+            <button onClick={() => switchBook(-1)} aria-label="이전 책" style={{ position: 'absolute', left: 2, top: '50%', transform: 'translateY(-50%)', zIndex: 3, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.06)', color: 'var(--ink-2)', fontSize: 16, cursor: 'pointer' }}>‹</button>
+            <button onClick={() => switchBook(1)} aria-label="다음 책" style={{ position: 'absolute', right: 2, top: '50%', transform: 'translateY(-50%)', zIndex: 3, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.06)', color: 'var(--ink-2)', fontSize: 16, cursor: 'pointer' }}>›</button>
+            <div style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, zIndex: 3 }}>
+              {readingBooks.map((b, i) => <span key={b.id || i} style={{ width: 5, height: 5, borderRadius: '50%', background: b.id === nestState.book.id ? 'var(--brand)' : 'var(--line-2, #ccc)' }} />)}
+            </div>
+          </>
+        )}
         <div className="book-card">
           <div className="book-cover" style={{background:`linear-gradient(135deg,${nestState.book.fb[0]},${nestState.book.fb[1]})`}}>
             <img

@@ -349,6 +349,8 @@ function App() {
       Promise.resolve(DataStore.activeBook.set(item.ubId)).catch(e => console.warn('[ReadingGo] 활성 전환 실패:', e));
     }
   }, [switchTab]);
+  // 활성 책 전환을 전역 노출 — 둥지 캐러셀(#185)이 호출
+  useEffect(() => { window.RG_activateBook = handleActivateUserBook; return () => { window.RG_activateBook = null; }; }, [handleActivateUserBook]);
 
   // Phase 1 로그인 게이트 (Supabase 모드에서만)
   if (_supa && authUser === undefined) return (<BootSplash text="확인 중..." />);
