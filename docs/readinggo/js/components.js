@@ -81,12 +81,12 @@ function SentenceCard({ item, bookId }) {
   const cardTitle = item.bookTitle || (bk && bk.title) || '';
   // optimistic likeCount: item.claps(피드 로드 시점) + 현재 상태 - 초기 상태 delta (#156)
   const likeCount = (item.claps || 0) + (liked ? 1 : 0) - (initialLikedRef.current ? 1 : 0);
-  React.useEffect(function() {
+  React.useEffect(() => {
     if (!canReact || isMine) return;
-    Promise.resolve(DataStore.claps.isMine(sentenceId)).then(function(v) {
+    Promise.resolve(DataStore.claps.isMine(sentenceId)).then(v => {
       setLiked(v);
       initialLikedRef.current = v;
-    }).catch(function() {});
+    }).catch(() => {});
   }, [sentenceId]);
   const toggleLike = () => {
     if (isMine || !canReact) return;
@@ -501,19 +501,19 @@ window.SentenceCollectionModal = SentenceCollectionModal;
 /* ── AdminDashboardModal: 운영 대시보드 — is_admin=true 전용 (#161) ── */
 function AdminDashboardModal({ onClose }) {
   const [stats, setStats] = useState(null);
-  useEffect(function() {
-    var DS = window.SupabaseDataStore;
+  useEffect(() => {
+    const DS = window.SupabaseDataStore;
     if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); return; }
-    Promise.resolve(DS.admin.stats()).then(setStats).catch(function() { setStats({}); });
+    Promise.resolve(DS.admin.stats()).then(setStats).catch(() => setStats({}));
   }, []);
-  var rows = [
+  const rows = [
     ['👤 가입자', stats && stats.users],
     ['📝 한 문장', stats && stats.sentences],
     ['🏰 완독', stats && stats.completed],
     ['⚡ 오늘 체크인', stats && stats.todaySessions],
   ];
   return (
-    <div className="modal-backdrop show" onClick={function(e) { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-backdrop show" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet" role="dialog" aria-label="운영 대시보드">
         <div className="sheet-grip" />
         <button onClick={onClose} aria-label="닫기" style={{position:'absolute',top:10,right:14,background:'rgba(0,0,0,0.06)',border:'none',borderRadius:'50%',width:30,height:30,fontSize:16,cursor:'pointer',color:'var(--ink-2)',lineHeight:1,zIndex:2}}>✕</button>
@@ -523,14 +523,12 @@ function AdminDashboardModal({ onClose }) {
             <div style={{textAlign:'center',color:'var(--ink-3)',padding:20}}>불러오는 중…</div>
           ) : (
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              {rows.map(function(r) {
-                return (
-                  <div key={r[0]} style={{background:'var(--card)',border:'1px solid var(--line)',borderRadius:10,padding:'16px 12px',textAlign:'center'}}>
-                    <div style={{fontSize:24,fontWeight:900,color:'var(--brand)'}}>{r[1] != null ? r[1] : '—'}</div>
-                    <div style={{fontSize:11,color:'var(--ink-3)',fontWeight:700,marginTop:6}}>{r[0]}</div>
-                  </div>
-                );
-              })}
+              {rows.map(([label, val]) => (
+                <div key={label} style={{background:'var(--card)',border:'1px solid var(--line)',borderRadius:10,padding:'16px 12px',textAlign:'center'}}>
+                  <div style={{fontSize:24,fontWeight:900,color:'var(--brand)'}}>{val ?? '—'}</div>
+                  <div style={{fontSize:11,color:'var(--ink-3)',fontWeight:700,marginTop:6}}>{label}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>
