@@ -51,6 +51,14 @@
       return c ? c.auth.signOut() : null;
     },
 
+    // 다른 기기 세션만 무효화 (현재 기기 유지) — 멀티 디바이스 관리용.
+    // Supabase는 클라에 기기 목록 API가 없어 '다른 전부 로그아웃'까지 지원.
+    async signOutOtherDevices() {
+      const c = client();
+      if (!c) return null;
+      return c.auth.signOut({ scope: 'others' });
+    },
+
     // 현재 로그인 유저(또는 null)
     async currentUser() {
       const c = client();
