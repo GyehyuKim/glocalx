@@ -136,11 +136,12 @@ function UserProfileModal({ handle, onClose }) {
         if (!DS || !DS.users || !DS.users.getByHandle) { if (alive) setData(null); return; }
         const u = await DS.users.getByHandle(handle);
         if (!u) { if (alive) setData(null); return; }
-        const [books, sents] = await Promise.all([
+        const [books, sents, streak] = await Promise.all([
           DS.users.publicBooks(u.id).catch(() => []),
           DS.users.publicSentences(u.id).catch(() => []),
+          DS.users.publicStreak ? DS.users.publicStreak(u.id).catch(() => 0) : 0,
         ]);
-        if (alive) setData({ user: u, books: books || [], sents: sents || [] });
+        if (alive) setData({ user: u, books: books || [], sents: sents || [], streak: streak || 0 });
         const myId = window.RG_ME && window.RG_ME.id;
         if (myId && u.id !== myId && DS.friends && DS.friends.isFollowing) {
           const f = await DS.friends.isFollowing(u.id).catch(() => false);
@@ -170,7 +171,12 @@ function UserProfileModal({ handle, onClose }) {
           <div style={{ padding: '8px 20px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)' }}>🐦 {data.user.display_name || data.user.handle}</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>@{data.user.handle} · 완독 {data.books.length}권</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>@{data.user.handle}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, fontSize: 12, color: 'var(--ink-2)', fontWeight: 800 }}>
+                <span>🏰 완독 {data.books.length}</span>
+                <span>🔥 {data.streak}일</span>
+                <span>✨ XP {data.user.xp || 0}</span>
+              </div>
               {following !== null && (
                 <button onClick={toggleFollow}
                   style={{ marginTop: 10, padding: '8px 22px', borderRadius: 20, border: following ? '1.5px solid var(--line)' : 'none', background: following ? 'transparent' : 'var(--brand)', color: following ? 'var(--ink-2)' : '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
