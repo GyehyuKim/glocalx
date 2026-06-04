@@ -408,7 +408,7 @@ function App() {
               state={appState}
               onCheckin={handleCheckin}
               onSimSkip={handleSimSkip}
-              onGoLibrary={() => switchTab('library')}
+              onGoLibrary={() => switchTab('profile')}
               onGoSocial={() => switchTab('social')}
               onOpenSearch={() => setIsSearchOpen(true)}
             />

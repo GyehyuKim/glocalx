@@ -18,6 +18,17 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
   const [noteEdits, setNoteEdits] = _useState({});   // sentenceId -> 저장된 감상(override)
   const [editingId, setEditingId] = _useState(null);
   const [draft, setDraft] = _useState('');
+  // 완독 별점·소감 수정 (QA #3) — 이미 완독한 책의 rating/review 편집.
+  const [editMeta, setEditMeta] = _useState(false);
+  const [rt, setRt] = _useState(book.rating || 0);
+  const [rv, setRv] = _useState(book.comment || '');
+  const saveMeta = () => {
+    if (!book.ubId || !(DataStore.books && DataStore.books.complete)) { setEditMeta(false); return; }
+    Promise.resolve(DataStore.books.complete(book.ubId, { rating: rt || null, review_text: (rv || '').trim() || null }))
+      .then(() => showToast('완독 정보 저장됨 — 새로고침하면 반영돼요'))
+      .catch(() => showToast('저장 실패'));
+    setEditMeta(false);
+  };
   const saveNote = (q) => {
     if (!q.id || !(DataStore.sentences && DataStore.sentences.setNote)) { setEditingId(null); return; }
     Promise.resolve(DataStore.sentences.setNote(q.id, draft))
@@ -41,10 +52,8 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
     }).catch(() => {});
   };
 
-  // 교보 상품 상세 직접 (바코드=isbn13). isbn 없으면 제목 검색 폴백. (QA #12-A)
-  const kyoboUrl = book.isbn
-    ? `https://product.kyobobook.co.kr/detail/${encodeURIComponent(book.isbn)}`
-    : `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(book.title)}`;
+  // 교보 상세는 ISBN 이 아닌 교보 고유번호(S…)를 써서 ISBN 직링크가 깨짐 → 검색결과로(QA #1-B).
+  const kyoboUrl = `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(book.isbn || book.title)}`;
 
   return (
     <div className="modal-backdrop show" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -76,13 +85,35 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
           {/* 완독 정보 */}
           {bookshelfEntry && (
             <div style={{background:'var(--paper-2)', borderRadius:'8px', padding:'12px 14px', marginBottom:14}}>
-              <div style={{fontSize:12, color:'var(--ink-3)', fontWeight:800, marginBottom:6}}>완독 정보</div>
-              <div style={{fontSize:13, color:'var(--ink)', fontWeight:700, marginBottom:8}}>
-                ⭐ {bookshelfEntry.rating} / 5
+              <div style={{fontSize:12, color:'var(--ink-3)', fontWeight:800, marginBottom:6, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <span>완독 정보</span>
+                {!editMeta && <button onClick={() => { setRt(book.rating || 0); setRv(book.comment || ''); setEditMeta(true); }} style={{background:'none', border:'none', color:'var(--brand-3)', fontWeight:800, fontSize:12, cursor:'pointer'}}>✏️ 수정</button>}
               </div>
-              <div style={{fontSize:13, color:'var(--ink)', lineHeight:'1.5'}}>
-                {bookshelfEntry.comment}
-              </div>
+              {editMeta ? (
+                <div>
+                  <div role="radiogroup" aria-label="별점" style={{marginBottom:8}}>
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" aria-pressed={n <= rt} onClick={() => setRt(n === rt ? 0 : n)}
+                        style={{background:'none', border:'none', cursor:'pointer', fontSize:22, padding:'0 2px', color: n <= rt ? '#f5b301' : 'var(--line)'}}>★</button>
+                    ))}
+                  </div>
+                  <textarea value={rv} maxLength={1000} onChange={e => setRv(e.target.value)} placeholder="완독 소감 (최대 1000자)" rows={3}
+                    style={{width:'100%', boxSizing:'border-box', padding:8, borderRadius:8, border:'1.5px solid var(--line)', fontSize:13, fontFamily:'inherit', resize:'vertical'}} />
+                  <div style={{display:'flex', gap:6, marginTop:6}}>
+                    <button onClick={saveMeta} style={{padding:'6px 12px', borderRadius:8, border:'none', background:'var(--brand)', color:'#fff', fontSize:12, fontWeight:800, cursor:'pointer'}}>저장</button>
+                    <button onClick={() => setEditMeta(false)} style={{padding:'6px 12px', borderRadius:8, border:'1px solid var(--line)', background:'transparent', fontSize:12, fontWeight:700, cursor:'pointer'}}>취소</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{fontSize:13, color:'var(--ink)', fontWeight:700, marginBottom:8}}>
+                    {typeof bookshelfEntry.rating === 'number' ? `⭐ ${bookshelfEntry.rating} / 5` : '별점 없음'}
+                  </div>
+                  {bookshelfEntry.comment && (
+                    <div style={{fontSize:13, color:'var(--ink)', lineHeight:'1.5'}}>{bookshelfEntry.comment}</div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -171,7 +202,7 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
         {!bookshelfEntry && (
           <button
             className="submit-btn"
-            style={{margin:'12px 20px 20px'}}
+            style={{margin:'12px 0 20px'}}
             onClick={() => { onActivate(book); onClose(); }}
           >
             이 책으로 변경하기
@@ -351,7 +382,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
                   </div>
                 )}
                 {c.completedAt && (
-                  <div style={{fontSize:10, color:'var(--ink-3)', fontWeight:700, marginTop:2}}>{c.completedAt}</div>
+                  <div style={{fontSize:10, color:'var(--ink-3)', fontWeight:700, marginTop:2}}>{String(c.completedAt).slice(0, 10)}</div>
                 )}
               </div>
             ))}
