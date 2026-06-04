@@ -437,6 +437,11 @@
         await sb().from('village_members').upsert({ village_id: villageId, user_id: id }, { onConflict: 'village_id,user_id' });
         return true;
       },
+      async leave(villageId) {
+        const id = await uid();
+        await sb().from('village_members').delete().eq('village_id', villageId).eq('user_id', id);
+        return true;
+      },
       async listMine() {
         const id = await uid();
         const rows = unwrap(await sb().from('village_members').select('village:villages(*)').eq('user_id', id));

@@ -19,7 +19,7 @@ function CheckinModal({ book, onClose, onSubmit }) {
     setPage(Math.max(0, Math.min(book.total, v)));
   };
   const handleSentence = (e) => {
-    if (e.target.value.length <= 200) setSentence(e.target.value);
+    if (e.target.value.length <= 1000) setSentence(e.target.value);
   };
   const handleSubmit = () => {
     if (page === book.cur && sentence.trim().length === 0) {
@@ -68,7 +68,10 @@ function CheckinModal({ book, onClose, onSubmit }) {
             value={sentence}
             onChange={handleSentence}
           />
-          <div className="sentence-counter">{sentence.length} / 200</div>
+          <div className="sentence-counter" style={{display:'flex', justifyContent:'space-between'}}>
+            <span style={{color:'var(--ink-3)', fontWeight:700}}>📍 {page}p 의 문장으로 기록돼요</span>
+            <span>{sentence.length} / 1000</span>
+          </div>
         </div>
 
         <button className="submit-btn" onClick={handleSubmit}>✨ 짹 등록하기</button>

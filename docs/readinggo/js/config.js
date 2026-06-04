@@ -27,7 +27,7 @@ window.RG_VALIDATE = (function () {
     },
     sentence: function (v) {
       var s = t(v);
-      return s.length > 200 ? { ok: false, value: s.slice(0, 200), msg: '한 문장은 200자 이내로 적어주세요.' } : { ok: true, value: s };
+      return s.length > 1000 ? { ok: false, value: s.slice(0, 1000), msg: '한 문장은 1000자 이내로 적어주세요.' } : { ok: true, value: s };
     },
     note: function (v) {
       var s = t(v);
