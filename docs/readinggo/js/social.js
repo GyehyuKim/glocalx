@@ -15,17 +15,17 @@ function rgRelTime(iso) {
 
 function SocialView({ state }) {
   const { useState, useEffect } = React;
-  const [tab, setTab] = useState('all');     // 'all' | 'following' (#7)
+  const [tab, setTab] = useState('recent');  // 'following' | 'recent' | 'recommend' (#8)
   const [items, setItems] = useState(null);  // null=로딩, []=빈
-  const hasFollow = !!(DataStore.sentences && DataStore.sentences.feedFollowing);
 
   useEffect(() => {
     let alive = true;
     setItems(null);
-    // 전체 공개 피드 또는 팔로우 피드 — 양 어댑터 정규화.
-    const src = (tab === 'following' && hasFollow)
-      ? DataStore.sentences.feedFollowing({ limit: 50 })
-      : DataStore.sentences.feed({ limit: 50 });
+    // 팔로우 / 최근(전체 공개) / 추천(같은 책) — 양 어댑터 정규화.
+    const SS = DataStore.sentences || {};
+    const src = (tab === 'following' && SS.feedFollowing) ? SS.feedFollowing({ limit: 50 })
+      : (tab === 'recommend' && SS.feedRecommended) ? SS.feedRecommended({ limit: 50 })
+      : SS.feed({ limit: 50 });
     Promise.resolve(src).then(rows => {
       if (!alive) return;
       const myId = window.RG_ME && window.RG_ME.id;
@@ -54,7 +54,7 @@ function SocialView({ state }) {
       <div className="section-head"><h3>📚 한 문장 피드</h3></div>
       {/* 전체 / 팔로우 탭 (#7) */}
       <div style={{ display: 'flex', gap: 8, padding: '0 16px 10px' }}>
-        {[['all', '전체'], ['following', '팔로우']].map(([id, label]) => (
+        {[['following', '팔로우'], ['recent', '최근'], ['recommend', '추천']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             style={{ padding: '6px 14px', borderRadius: 16, border: tab === id ? 'none' : '1px solid var(--line)', background: tab === id ? 'var(--brand)' : 'transparent', color: tab === id ? '#fff' : 'var(--ink-2)', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
             {label}
@@ -67,6 +67,8 @@ function SocialView({ state }) {
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-3)', lineHeight: 1.7 }}>
           {tab === 'following'
             ? (<>🐦 팔로우한 사람의 한 문장이 아직 없어요.<br />다른 독자 프로필에서 팔로우해보세요!</>)
+            : tab === 'recommend'
+            ? (<>🐦 추천할 한 문장이 아직 없어요.<br />책을 등록하면 같은 책 독자의 문장을 추천해드려요.</>)
             : (<>🐦 아직 공개된 한 문장이 없어요.<br />둥지에서 첫 문장을 남겨보세요!</>)}
         </div>
       ) : (

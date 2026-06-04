@@ -195,6 +195,21 @@
         return unwrap(await q);
       },
       // 무작위 회상 — 내 과거 한 문장 1개 (profile §5.8.7)
+      // 추천 — 내 서재의 책을 읽는 다른 사람들의 최근(1주) 한 문장 (유사도≈공유 책). 비면 최근 피드 폴백. (#8)
+      async feedRecommended({ limit } = {}) {
+        const me = await uid();
+        const mine = unwrap(await sb().from('user_books').select('book_id').eq('user_id', me));
+        const bookIds = [...new Set((mine || []).map(r => r.book_id).filter(Boolean))];
+        if (!bookIds.length) return await A.sentences.feed({ limit });
+        const weekAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString();
+        let q = sb().from('sentences')
+          .select('*, user:users(handle,display_name,avatar_url), user_book:user_books!inner(book_id, book:books(id,title,cover_url))')
+          .in('user_book.book_id', bookIds).gte('created_at', weekAgo)
+          .order('created_at', { ascending: false }).limit(limit || 50);
+        if (me) q = q.neq('user_id', me);
+        const rows = unwrap(await q);
+        return (rows && rows.length) ? rows : await A.sentences.feed({ limit });
+      },
       async random() {
         const mine = await A.sentences.listMine();
         if (!mine || !mine.length) return null;
@@ -351,6 +366,11 @@
       async publicSentences(userId) {
         return unwrap(await sb().from('sentences').select('*, user_book:user_books(book_id, book:books(title))')
           .eq('user_id', userId).order('created_at', { ascending: false }).limit(50));
+      },
+      // 공개 스트릭(streak 테이블 select using(true)) — 타인 프로필 표시용 (#10)
+      async publicStreak(userId) {
+        const row = unwrap(await sb().from('streak').select('current').eq('user_id', userId).maybeSingle());
+        return row ? (row.current || 0) : 0;
       },
     },
 
