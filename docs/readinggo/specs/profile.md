@@ -96,11 +96,16 @@
 #### 5.8.8 한 문장 모아보기 (v7.1, #171)
 둥지 "전체 N개 보기" → 모달. **전체 / 책별 / 좋아요** 필터 + **읽었음 누적 카운터**. 문장 탭 → 책 정보(BookInfoModal).
 
-#### 5.8.9 운영 대시보드 — is_admin 전용 (#161, Phase 2 기본)
+#### 5.8.9 운영 대시보드 — is_admin 전용 (#161 / #190 A+B)
 - 프로필 헤더 우측 📊 버튼 — `users.is_admin = true` 인 계정에게만 노출
-- 클릭 → AdminDashboardModal: **가입자 수 · 한 문장 수 · 완독 수 · 오늘 체크인** 집계 4종 표시
-- DataStore: `admin.stats()` — Supabase count 쿼리 4개 병렬 ([backend.md §7.2](./backend.md))
-- 보안: RLS 우회 없음(anon 키 count 허용 범위), is_admin 체크는 클라이언트 UI 조건부 렌더
+- 클릭 → AdminDashboardModal: 가입자·**실사용자(NPC 제외)**·한 문장·완독·오늘 체크인 집계 + **최근 7일 추세 막대**(체크인)+가입(+N) + 문의 목록(상태 토글·답장)
+- DataStore: `admin.stats()` → `{users, realUsers, sentences, completed, todaySessions, trend[]}` ([backend.md §7.2](./backend.md))
+- 보안: RLS 우회 없음(anon count 허용 범위), is_admin 체크는 클라 UI 조건부 렌더. C단계(리텐션 코호트·인기책·퍼널)는 Phase 2(#190)
+
+#### 5.8.10 독서 활동 히트맵 (#195)
+- 프로필에 **GitHub식 잔디** — 최근 **26주(182일)** 일별 읽은 쪽수를 농도 4단계로 시각화
+- 데이터: `DataStore.sessions.heatmap(days)` → `[{date, pages}]`. 쪽수 원천 = `reading_sessions.pages_read_today`(`sessions.addToday`가 전일 대비 증분 누적 기록, [backend.md §7.2](./backend.md))
+- 셀 hover = 날짜·쪽수. 상단 요약 = 활동일·총 쪽수. 스트릭 캘린더(§nest 5.x)의 장기 확장판
 
 ### 5.9 닉네임 규칙 (v7.1 — Model A: 닉네임 1개 통합) — [§4](./onboarding.md) E-1 참조
 
