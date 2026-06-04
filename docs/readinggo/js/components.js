@@ -360,6 +360,20 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
       Promise.resolve(window.RG_SB.signOut()).finally(() => window.location.reload());
     }
   };
+  // 운영자 문의 (DB 저장 → admin 대시보드)
+  const [inqMsg, setInqMsg] = useState('');
+  const [inqBusy, setInqBusy] = useState(false);
+  const [inqDone, setInqDone] = useState(false);
+  const sendInquiry = () => {
+    const m = inqMsg.trim();
+    if (!m) { showToast('문의 내용을 적어주세요'); return; }
+    if (!(DataStore.inquiries && DataStore.inquiries.create)) { showToast('로그인 후 이용해주세요'); return; }
+    setInqBusy(true);
+    Promise.resolve(DataStore.inquiries.create({ message: m }))
+      .then(() => { setInqDone(true); setInqMsg(''); showToast('문의가 전송됐어요 — 운영자가 확인합니다'); })
+      .catch(() => showToast('전송 실패 — 잠시 후 다시'))
+      .finally(() => setInqBusy(false));
+  };
   // 데이터 내보내기(#172) — 데이터 주권: 내 프로필·책·한 문장을 JSON 으로.
   const exportData = async () => {
     try {
@@ -412,8 +426,24 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
           </div>
           {/* 데이터 내보내기 (#172) — 데이터 주권: 내 기록은 내 것 */}
           <button onClick={exportData} style={{ marginTop: 18, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>📦 내 데이터 내보내기 (JSON)</button>
+
+          {/* 운영자 문의 — DB 저장 → admin 대시보드 */}
+          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-2)', marginBottom: 8 }}>✉️ 운영자에게 문의</div>
+            {inqDone ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', background: 'var(--card)', borderRadius: 10, padding: 12 }}>전송됐어요. 운영자가 확인 후 답변드립니다 🐦 <button onClick={() => setInqDone(false)} style={{ marginLeft: 6, background: 'none', border: 'none', color: 'var(--brand-3)', fontWeight: 800, cursor: 'pointer' }}>다시 쓰기</button></div>
+            ) : (
+              <>
+                <textarea value={inqMsg} onChange={(e) => { if (e.target.value.length <= 2000) setInqMsg(e.target.value); }} placeholder="버그·불편·제안 무엇이든 적어주세요 (최대 2000자)" rows={3}
+                  style={{ width: '100%', boxSizing: 'border-box', borderRadius: 10, border: '1.5px solid var(--line)', padding: 10, fontSize: 14, lineHeight: 1.5, resize: 'none' }} />
+                <button onClick={sendInquiry} disabled={inqBusy} style={{ marginTop: 8, width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 14, cursor: inqBusy ? 'default' : 'pointer', opacity: inqBusy ? 0.6 : 1 }}>{inqBusy ? '보내는 중…' : '문의 보내기'}</button>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>또는 readinggo.admin@gmail.com</div>
+              </>
+            )}
+          </div>
+
           {/* 로그아웃 */}
-          <button onClick={logout} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
+          <button onClick={logout} style={{ marginTop: 14, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
         </div>
       </div>
     </div>
@@ -592,10 +622,13 @@ window.SentenceCollectionModal = SentenceCollectionModal;
 /* ── AdminDashboardModal: 운영 대시보드 — is_admin=true 전용 (#161) ── */
 function AdminDashboardModal({ onClose }) {
   const [stats, setStats] = useState(null);
+  const [inqs, setInqs] = useState(undefined); // 문의 목록
   useEffect(() => {
     const DS = window.SupabaseDataStore;
-    if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); return; }
+    if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); setInqs([]); return; }
     Promise.resolve(DS.admin.stats()).then(setStats).catch(() => setStats({}));
+    if (DS.admin.inquiries) Promise.resolve(DS.admin.inquiries()).then((r) => setInqs(r || [])).catch(() => setInqs([]));
+    else setInqs([]);
   }, []);
   const rows = [
     ['👤 가입자', stats && stats.users],
@@ -622,6 +655,20 @@ function AdminDashboardModal({ onClose }) {
               ))}
             </div>
           )}
+          {/* 문의 목록 */}
+          <div style={{ marginTop: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>✉️ 문의 {inqs && inqs.length ? '(' + inqs.length + ')' : ''}</div>
+            {inqs === undefined ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>불러오는 중…</div>
+            ) : inqs.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>접수된 문의가 없어요</div>
+            ) : inqs.map((q) => (
+              <div key={q.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>@{(q.user && q.user.handle) || '익명'} · {String(q.created_at).slice(0, 10)} · {q.status}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{q.message}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

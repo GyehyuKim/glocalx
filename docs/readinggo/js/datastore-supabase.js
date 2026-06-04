@@ -478,12 +478,12 @@
     /* 운영 대시보드 집계 — is_admin=true 전용 (#161) */
     admin: {
       async stats() {
+        const today = _today();
         const [users, sentences, completed, todaySessions] = await Promise.all([
           sb().from('users').select('*', { count: 'exact', head: true }),
           sb().from('sentences').select('*', { count: 'exact', head: true }),
           sb().from('user_books').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-          sb().from('sessions').select('*', { count: 'exact', head: true })
-            .gte('started_at', new Date(Date.now() - 86400000).toISOString()),
+          sb().from('reading_sessions').select('*', { count: 'exact', head: true }).eq('session_date', today),
         ]);
         return {
           users: users.count || 0,
@@ -491,6 +491,18 @@
           completed: completed.count || 0,
           todaySessions: todaySessions.count || 0,
         };
+      },
+      // 문의 목록 (admin 전용, RLS는 is_admin) (#문의)
+      async inquiries() {
+        return unwrap(await sb().from('inquiries').select('*, user:users(handle)').order('created_at', { ascending: false }).limit(100));
+      },
+    },
+
+    /* 문의 — 누구나(로그인) 작성 → admin이 대시보드에서 확인 */
+    inquiries: {
+      async create({ message, email }) {
+        const id = await uid();
+        return unwrap(await sb().from('inquiries').insert({ user_id: id, message: message || '', email: email || null }).select().single());
       },
     },
 
