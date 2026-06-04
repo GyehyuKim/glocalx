@@ -34,7 +34,7 @@ async function buildStateFromSupabase() {
     out.nest = { lv: 0 };
   }
   if (Array.isArray(mine) && mine.length) {
-    out.myQuotes = mine.map(s => ({ id: s.id, text: s.text, bookId: (s.user_book && s.user_book.book_id) || s.book_id || '', bookTitle: (s.user_book && s.user_book.book && s.user_book.book.title) || '', page: s.page, when: '', note: s.my_note || '' }));
+    out.myQuotes = mine.map(s => ({ id: s.id, text: s.text, bookId: (s.user_book && s.user_book.book_id) || s.book_id || '', bookTitle: (s.user_book && s.user_book.book && s.user_book.book.title) || '', page: s.page, when: '', note: s.my_note || '', isPrivate: !!s.is_private, notePrivate: !!s.note_private }));
   }
   // 소셜 isMine 판정 + 스포일러 동기맵: 현재 사용자 + 내 책별 현재 페이지 preload
   try {
@@ -123,6 +123,14 @@ function App() {
   // 설정 모달(§5.8) — 프로필 ⚙️ 로 열림.
   const [settingsOpen, setSettingsOpen] = useState(false);
   useEffect(() => { window.RG_openSettings = () => setSettingsOpen(true); return () => { window.RG_openSettings = null; }; }, []);
+  // 책 정보 모달(#11) — 한 문장의 책 제목 탭으로 열림.
+  const [bookDetailId, setBookDetailId] = useState(null);
+  useEffect(() => { window.RG_openBook = (id) => setBookDetailId(id); return () => { window.RG_openBook = null; }; }, []);
+  // 스트릭 캘린더(#173) — 🔥 탭으로 열림.
+  const [streakOpen, setStreakOpen] = useState(false);
+  // 한 문장 모아보기(#171) — 둥지 '전체 보기'로 열림.
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  useEffect(() => { window.RG_openCollection = () => setCollectionOpen(true); return () => { window.RG_openCollection = null; }; }, []);
   const [appState, setAppState] = useState(() => ({
     ...INITIAL_STATE,
     // village sent 상태는 로컬 복사
@@ -213,7 +221,7 @@ function App() {
           streak: (stDb && typeof stDb.current === 'number') ? stDb.current : s.streak,
           xp: (typeof xpDb === 'number') ? xpDb : s.xp,
           myQuotes: Array.isArray(mineDb)
-            ? mineDb.map(x => ({ id: x.id, text: x.text, bookId: (x.user_book && x.user_book.book_id) || x.book_id || '', bookTitle: (x.user_book && x.user_book.book && x.user_book.book.title) || '', page: x.page, when: '', note: x.my_note || '' }))
+            ? mineDb.map(x => ({ id: x.id, text: x.text, bookId: (x.user_book && x.user_book.book_id) || x.book_id || '', bookTitle: (x.user_book && x.user_book.book && x.user_book.book.title) || '', page: x.page, when: '', note: x.my_note || '', isPrivate: !!x.is_private, notePrivate: !!x.note_private }))
             : s.myQuotes,
         }));
       } catch (e) { console.warn('[ReadingGo] 체크인 영속 실패:', e); }
@@ -316,6 +324,12 @@ function App() {
     })();
   }, [switchTab]);
 
+  // 책 정보 모달 '이 책 읽기' → 검색-등록 경로 재사용 (#11)
+  useEffect(() => {
+    window.RG_registerBook = (b) => handleSearchSelectBook({ isbn13: b.isbn13 || b.isbn, title: b.title, author: b.author, publisher: b.publisher, total_pages: b.total_pages, cover_url: b.cover_url });
+    return () => { window.RG_registerBook = null; };
+  }, [handleSearchSelectBook]);
+
   // 이미 등록된 user_book 으로 활성 전환 (서재에서 — 재등록 없이 activeBook.set).
   const handleActivateUserBook = useCallback((item) => {
     if (!item || !item.id) return;
@@ -368,10 +382,10 @@ function App() {
                 <span className="ico">🏰</span>
                 <span>×{castleCount}</span>
               </button>
-              <span className="stat fire" title="연속 출석">
+              <button className="stat fire" title="스트릭 캘린더 — 탭" onClick={() => setStreakOpen(true)} style={{ cursor: 'pointer', font: 'inherit' }}>
                 <span className="ico">🔥</span>
                 <span>{appState.streak}</span>
-              </span>
+              </button>
               <span className="stat gold" title="이번 주 XP">
                 <span className="ico">⚡</span>
                 <span>{appState.xp}</span>
@@ -408,7 +422,7 @@ function App() {
               state={appState}
               onCheckin={handleCheckin}
               onSimSkip={handleSimSkip}
-              onGoLibrary={() => switchTab('library')}
+              onGoLibrary={() => switchTab('profile')}
               onGoSocial={() => switchTab('social')}
               onOpenSearch={() => setIsSearchOpen(true)}
             />
@@ -485,6 +499,24 @@ function App() {
         {/* 설정 모달 (§5.8) — 프로필 ⚙️ */}
         {settingsOpen && ReactDOM.createPortal(
           <SettingsModal onClose={() => setSettingsOpen(false)} spoilerReveal={spoilerReveal} setSpoilerReveal={setSpoilerReveal} />,
+          document.body
+        )}
+
+        {/* 책 정보 모달 (#11) — 한 문장 책 제목 탭 */}
+        {bookDetailId && ReactDOM.createPortal(
+          <BookInfoModal bookId={bookDetailId} onClose={() => setBookDetailId(null)} />,
+          document.body
+        )}
+
+        {/* 스트릭 캘린더 (#173) — 🔥 탭 */}
+        {streakOpen && ReactDOM.createPortal(
+          <StreakCalendarModal streak={appState.streak} onClose={() => setStreakOpen(false)} />,
+          document.body
+        )}
+
+        {/* 한 문장 모아보기 (#171) */}
+        {collectionOpen && ReactDOM.createPortal(
+          <SentenceCollectionModal onClose={() => setCollectionOpen(false)} />,
           document.body
         )}
 
