@@ -403,6 +403,21 @@
         const row = unwrap(await sb().from('streak').select('current').eq('user_id', userId).maybeSingle());
         return row ? (row.current || 0) : 0;
       },
+      // 타인 책장 전체 — 읽는 중 + 완독 (status 포함). 책장 필터용 (#4)
+      async publicShelf(userId) {
+        return unwrap(await sb().from('user_books').select('*, book:books(*)')
+          .eq('user_id', userId).in('status', ['reading', 'completed'])
+          .order('status', { ascending: true }).order('completed_at', { ascending: false }));
+      },
+      // 타인의 특정 책 기여 — 그 책 평점·후기 + 공개 한 문장 (#5)
+      async bookContrib(userId, bookId) {
+        const ub = unwrap(await sb().from('user_books').select('id, rating, review_text, status, current_page')
+          .eq('user_id', userId).eq('book_id', bookId).maybeSingle());
+        const sents = unwrap(await sb().from('sentences').select('id, text, page, my_note, created_at')
+          .eq('user_id', userId).eq('user_book_id', ub ? ub.id : '00000000-0000-0000-0000-000000000000')
+          .order('page', { ascending: true }));
+        return { userBook: ub || null, sentences: sents || [] };
+      },
     },
 
     /* 스포일러 (read-side) */
