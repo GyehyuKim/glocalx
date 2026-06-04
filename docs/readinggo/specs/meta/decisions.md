@@ -125,6 +125,27 @@
 
 ---
 
+### 8.4 post-beta 결정 3 (2026-06-04, batch3. 충돌 시 §8.3 위에 **우선**)
+
+> 구현·배포 완료=`gyehyu/batch3`(PR #187), 스펙=이 PR. **nest 영역(읽기모드·캐러셀·페이지·1000자 입력 UI)은 승원 nest 업데이트 pending이라 nest.md 미반영 — 아래 플래그로만 남김.**
+
+| 항목 | 결정 | 담당 | 비고 |
+|---|---|---|---|
+| **#3·4·5 타인 프로필 페이지** | 모달→**전체 페이지**. 책장 6권+더보기(읽은/읽는중 필터) + 책 탭 시 그 사람 평점·후기·한 문장 드릴다운. `users.publicShelf`·`bookContrib` 추가. '보고싶은'은 wish RLS 비공개라 본인만 | profile/backend | profile.md §5.8.2 반영 |
+| **#186 틴더 한 문장 카드** | 소셜 피드 '카드로 넘겨보기' → 스와이프 우=좋아요(짹+책갈피)/좌=넘김/아래=유예. Pointer Events 직접(Stack Lock) | social | social.md 반영 |
+| **운영자 문의** | 설정 폼 → `inquiries` 테이블(09_inquiries.sql, RLS: 본인 insert/select+admin) → admin 대시보드 목록. LLM 자동처리는 Phase 2(Gemini) | profile/backend | DB 방식 채택 |
+| **한 문장 1000자** | 인용 200→**1000자**(감상과 동일). 클라(config)+DB(07_sentence_1000.sql) | nest/backend | ⚠️ **nest.md §5.4 '200자' → 1000자 갱신 필요(승원)** |
+| **한 문장=페이지 명시** | 입력 시 그 문장이 속한 페이지를 기록(진행률과 별개 개념). 읽기모드/체크인에 명시 | nest | ⚠️ **nest.md 반영 필요(승원)** |
+| **#184 읽기 모드** | 둥지→독서 타이머+상시 한 문장 입력(북모리식). 새 ReadingMode | **nest(승원)** | ⚠️ **승원 nest.md 정의 필요 — pending** |
+| **#185 활성 책 캐러셀** | 둥지 책 배너 좌우 ‹ › 리볼빙 전환(`RG_activateBook`) | **nest(승원)** | ⚠️ **승원 nest.md §5.3 반영 필요 — pending** |
+| **#7 NPC 닉네임** | 영문→한글 형용사+동물 30종(08_npc_rename.sql, 적용됨) | backend(운영) | — |
+| **마을 공유/나가기/알림** | 가짜 rgo.app 링크→실 공유 URL+Web Share(#8), `villages.leave` 실동작(#9), 알림 체크박스 라벨 명확화(#10) | village(윤지) | village.js — 윤지 검토 |
+| **로그인 redirect** | `site_url`·`uri_allow_list`를 Netlify URL로(서버 적용됨) — OAuth 후 localhost 폴백 해소 | backend(운영) | — |
+
+**플래그(승원 nest 반영 대기)**: #184 읽기모드·#185 캐러셀·1000자 입력·페이지 명시 → **승원이 nest.md push 시 정의**. 코드는 batch3(PR #187)에 이미 있음.
+
+---
+
 ### v5/v6 결정 이력 (참고 — 충돌 시 §8.0 우선)
 
 | 이슈 | 결정 |
