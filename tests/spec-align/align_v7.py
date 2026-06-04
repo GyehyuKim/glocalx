@@ -120,6 +120,18 @@ INVARIANTS = [
         ["datastore-supabase.js"], r"user_book:user_books\(book_id"),
     ("B", "present", "어댑터 대칭 — localStorage sentences.setNote/random",
         ["datastore.js"], r"setNote[\s\S]*random\(\)|random\(\)[\s\S]*setNote"),
+
+    # ── C: post-beta 기능 (스펙↔구현 동기화 강제, decisions §8.4/§8.5) ──
+    ("C", "present", "읽기 모드 (nest.md §5.5, #184)",
+        ["nest.js"], r"ReadingMode"),
+    ("C", "present", "활성 책 캐러셀 전환 (nest.md §5.3, #185)",
+        ["nest.js"], r"switchBook"),
+    ("C", "present", "운영 대시보드 (profile.md §5.8.9, #161)",
+        ["components.js"], r"AdminDashboardModal"),
+    ("C", "present", "한 문장 틴더 카드 (social.md, #186)",
+        ["components.js"], r"TinderCards"),
+    ("C", "present", "운영자 문의 (profile.md 설정, #문의)",
+        ["datastore-supabase.js"], r"inquiries"),
 ]
 
 
