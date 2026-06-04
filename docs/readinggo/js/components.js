@@ -482,6 +482,7 @@ window.SettingsModal = SettingsModal;
 /* ── BookInfoModal: 한 문장의 책 제목 탭 → 책 정보(#11). books.getById 로 단건 조회. ── */
 function BookInfoModal({ bookId, onClose }) {
   const [bk, setBk] = useState(undefined); // undefined=로딩, null=없음
+  const [manualPages, setManualPages] = useState(''); // 쪽수 메타 누락 시 수동 입력 (#204)
   useEffect(() => {
     let alive = true;
     const DS = window.SupabaseDataStore || window.DataStore || {};
@@ -509,7 +510,17 @@ function BookInfoModal({ bookId, onClose }) {
               <p style={{ fontSize: 13, color: 'var(--ink-2)', fontWeight: 700, margin: 0 }}>{bk.author}{bk.publisher ? ' · ' + bk.publisher : ''}{bk.total_pages ? ' · ' + bk.total_pages + 'p' : ''}</p>
             </div>
             <a href={kyoboUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'var(--brand-tint)', border: '1.5px solid var(--brand)', borderRadius: 8, color: 'var(--brand-3)', fontSize: 13, fontWeight: 800, textDecoration: 'none', marginBottom: 10 }}>교보문고에서 보기 →</a>
-            <button className="submit-btn" style={{ margin: '4px 0 0' }} onClick={() => { if (window.RG_registerBook) window.RG_registerBook(bk); onClose(); }}>📖 이 책 읽기</button>
+            {/* 쪽수 메타 누락 시 수동 입력 — 진척률·읽기모드용 (#204) */}
+            {!bk.total_pages && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 13, color: 'var(--ink-2)', fontWeight: 700 }}>
+                <span>총 쪽수 <small style={{ color: 'var(--ink-3)' }}>(선택 — 모르면 비워둬요)</small></span>
+                <input type="number" inputMode="numeric" min="0" max="99999" value={manualPages} placeholder="예: 320"
+                  onChange={e => setManualPages(e.target.value)}
+                  style={{ width: 80, textAlign: 'center', padding: '6px 4px', border: '1.5px solid var(--line)', borderRadius: 8, fontSize: 14, fontWeight: 800 }} />
+                <span>p</span>
+              </div>
+            )}
+            <button className="submit-btn" style={{ margin: '4px 0 0' }} onClick={() => { if (window.RG_registerBook) { const tp = bk.total_pages || (parseInt(manualPages, 10) || 0); window.RG_registerBook({ ...bk, total_pages: tp }); } onClose(); }}>📖 이 책 읽기</button>
           </div>
         )}
       </div>

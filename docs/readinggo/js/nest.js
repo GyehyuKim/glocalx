@@ -10,13 +10,14 @@ function CheckinModal({ book, onClose, onSubmit }) {
   const [page, setPage] = _useState(book.cur);
   const [sentence, setSentence] = _useState('');
 
+  const _maxPage = book.total > 0 ? book.total : 99999; // 쪽수 미상이면 상한 없음 (#204)
   const adjustPage = (delta) => {
-    setPage(p => Math.max(0, Math.min(book.total, p + delta)));
+    setPage(p => Math.max(0, Math.min(_maxPage, p + delta)));
   };
   const handleInput = (e) => {
     let v = parseInt(e.target.value, 10);
     if (isNaN(v)) v = 0;
-    setPage(Math.max(0, Math.min(book.total, v)));
+    setPage(Math.max(0, Math.min(_maxPage, v)));
   };
   const handleSentence = (e) => {
     if (e.target.value.length <= 1000) setSentence(e.target.value);
@@ -56,7 +57,7 @@ function CheckinModal({ book, onClose, onSubmit }) {
           <div className="page-direct">
             직접 입력{' '}
             <input type="number" min="0" max="9999" value={page} onChange={handleInput} />
-            <span className="page-totalmark">전체 {book.total}p</span>
+            <span className="page-totalmark">{book.total > 0 ? '전체 ' + book.total + 'p' : '쪽수 미상'}</span>
           </div>
         </div>
 
