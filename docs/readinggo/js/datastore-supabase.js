@@ -291,6 +291,11 @@
         const { count } = await sb().from('claps').select('*', { count: 'exact', head: true }).eq('to_sentence_id', sentenceId);
         return count || 0;
       },
+      async isMine(sentenceId) {
+        const id = await uid();
+        const ex = unwrap(await sb().from('claps').select('id').eq('from_user_id', id).eq('to_sentence_id', sentenceId).maybeSingle());
+        return !!ex;
+      },
     },
     bookmarks: {
       async toggle(sentenceId) {

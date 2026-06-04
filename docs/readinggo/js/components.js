@@ -75,12 +75,19 @@ function SentenceCard({ item, bookId }) {
   const isMine = (typeof item.isMine !== 'undefined') ? item.isMine : (item.nick === '@jerome' || item.nick === 'jerome');
   const canReact = !!item.id;  // 실 sentence(UUID)만 짹·책갈피 가능 — 합성 id 는 uuid 컬럼 400 (architect L1)
   const [liked, setLiked] = useState(false);
+  const initialLikedRef = React.useRef(false);
   const [bookmarked, setBookmarked] = useState(false);
   const bk = getBook(bookId);
   const cardTitle = item.bookTitle || (bk && bk.title) || '';
-  const likeCount = (item.claps || 0) + (liked ? 1 : 0);
-  // 짹/책갈피 토글 — 양 어댑터(동기 boolean / 비동기 Promise<boolean>) 정규화.
-  // 토글이 곧 취소(다시 누르면 해제) — claps.toggle 이 존재 시 delete (#156).
+  // optimistic likeCount: item.claps(피드 로드 시점) + 현재 상태 - 초기 상태 delta (#156)
+  const likeCount = (item.claps || 0) + (liked ? 1 : 0) - (initialLikedRef.current ? 1 : 0);
+  React.useEffect(function() {
+    if (!canReact || isMine) return;
+    Promise.resolve(DataStore.claps.isMine(sentenceId)).then(function(v) {
+      setLiked(v);
+      initialLikedRef.current = v;
+    }).catch(function() {});
+  }, [sentenceId]);
   const toggleLike = () => {
     if (isMine || !canReact) return;
     Promise.resolve(DataStore.claps.toggle(sentenceId)).then(setLiked).catch(() => {});
