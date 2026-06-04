@@ -31,6 +31,24 @@ jobs:
       - name: Spec-align invariants
         run: python tests/spec-align/align_v7.py
 
+  issue-link:
+    name: issue-link (PR↔이슈 연결 강제)
+    if: github.event_name == 'pull_request'   # PR 에만 적용 (main push 는 skip)
+    runs-on: ubuntu-latest
+    steps:
+      # PR 본문에 "Closes/Fixes/Resolves/Refs #숫자" 또는 "no-issue: <사유>" 가 없으면 실패.
+      # 이슈 연결을 강제 → 머지 시 자동 close → 이슈 정리가 한 사람에게 쏠리지 않는다 (CONTRIBUTING §4.2).
+      - name: Require issue reference in PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if printf '%s' "$PR_BODY" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?)[: ]+#[0-9]+|no-issue:[[:space:]]*[^[:space:]]'; then
+            echo "✅ 이슈 연결(Closes/Refs #N) 또는 no-issue 사유 확인"
+          else
+            echo "::error::PR 본문에 이슈 연결이 없습니다. 완료=「Closes #N」(머지 시 자동 close)·부분=「Refs #N」, 이슈 불필요 시=「no-issue: <사유>」를 본문에 넣어주세요 (CONTRIBUTING §4.2)."
+            exit 1
+          fi
+
   deploy:
     name: deploy (Netlify · main 머지 시 자동)
     needs: [contracts, spec-align]          # 테스트 통과해야만 배포
