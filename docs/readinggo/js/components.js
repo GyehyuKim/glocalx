@@ -224,35 +224,24 @@ function UserProfileModal({ handle, onClose }) {
 function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
   const me = window.RG_ME || {};
   const V = window.RG_VALIDATE || {};
-  const [nick, setNick] = useState(me.displayName || me.handle || '');
-  const [busy, setBusy] = useState(false);
-  const [nmsg, setNmsg] = useState('');
   const [hdl, setHdl] = useState(me.handle || '');
   const [hbusy, setHbusy] = useState(false);
   const [hmsg, setHmsg] = useState('');
-  const saveNick = () => {
-    if (busy) return;
-    const r = V.displayName ? V.displayName(nick) : { ok: true, value: (nick || '').trim() };
-    if (!r.ok) { setNmsg(r.msg); return; }
-    setBusy(true); setNmsg('');
-    Promise.resolve((DataStore.profile && DataStore.profile.update) ? DataStore.profile.update({ display_name: r.value }) : null)
-      .then(() => { if (window.RG_ME) window.RG_ME.displayName = r.value; setNmsg('✓ 저장됨'); showToast('표시 이름 저장됨'); })
-      .catch(() => setNmsg('저장 실패'))
-      .finally(() => setBusy(false));
-  };
+  // 닉네임 1개 통합(Model A): 화면 표시·고유성은 handle 로, 저장 시 display_name 도 동기화.
+  // 내부 식별은 불변 UUID — 닉네임을 바꿔도 기록은 갈리지 않는다.
   const saveHandle = async () => {
     if (hbusy) return;
     const r = V.handle ? V.handle(hdl) : { ok: true, value: (hdl || '').replace(/^@/, '').trim() };
     if (!r.ok) { setHmsg(r.msg); return; }
-    if (r.value === (me.handle || '')) { setHmsg('현재 아이디예요'); return; }
+    if (r.value === (me.handle || '')) { setHmsg('현재 닉네임이에요'); return; }
     setHbusy(true); setHmsg('확인 중…');
     try {
       const ok = (DataStore.users && DataStore.users.isHandleAvailable)
         ? await Promise.resolve(DataStore.users.isHandleAvailable(r.value)) : true;
-      if (!ok) { setHmsg('이미 사용 중인 아이디예요'); return; }
-      if (DataStore.profile && DataStore.profile.update) await Promise.resolve(DataStore.profile.update({ handle: r.value }));
-      if (window.RG_ME) window.RG_ME.handle = r.value;
-      setHmsg('✓ 저장됨'); showToast('아이디 저장됨 — 새로고침하면 피드에 반영돼요');
+      if (!ok) { setHmsg('이미 사용 중인 닉네임이에요'); return; }
+      if (DataStore.profile && DataStore.profile.update) await Promise.resolve(DataStore.profile.update({ handle: r.value, display_name: r.value }));
+      if (window.RG_ME) { window.RG_ME.handle = r.value; window.RG_ME.displayName = r.value; }
+      setHmsg('✓ 저장됨'); showToast('닉네임 저장됨 — 새로고침하면 피드에 반영돼요');
     } catch (e) { setHmsg('이미 사용 중이거나 저장 실패'); }
     finally { setHbusy(false); }
   };
@@ -281,21 +270,10 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
               <span style={{ position: 'absolute', top: 3, left: spoilerReveal ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
             </button>
           </div>
-          {/* 표시 이름(display_name) — 프로필에 크게 보이는 이름(중복 허용) */}
+          {/* 닉네임 — 피드·프로필에 표시되는 고유 이름(중복 불가, 언제든 변경). 내부 UUID 는 불변. */}
           <div style={{ padding: '14px 0', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 4 }}>표시 이름</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>프로필 상단에 크게 보이는 이름이에요.</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input value={nick} maxLength={40} onChange={e => { setNick(e.target.value); setNmsg(''); }} placeholder="표시 이름 (최대 40자)"
-                style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--line)', fontSize: 14, outline: 'none' }} />
-              <button onClick={saveNick} disabled={busy} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 13, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>저장</button>
-            </div>
-            {nmsg && <div style={{ fontSize: 12, color: nmsg.indexOf('✓') === 0 ? 'var(--brand)' : '#d33', marginTop: 6 }}>{nmsg}</div>}
-          </div>
-          {/* 아이디(@handle) — 피드·프로필에 표시되는 고유 닉네임, 중복 불가 */}
-          <div style={{ padding: '14px 0', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 4 }}>아이디 (@)</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>피드·프로필에 <b>@아이디</b>로 표시돼요. 다른 사람과 겹칠 수 없어요.</div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 4 }}>닉네임</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 8 }}>피드·프로필에 <b>@닉네임</b>으로 표시돼요. 다른 사람과 겹칠 수 없고, 언제든 바꿀 수 있어요.</div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span style={{ color: 'var(--ink-3)', fontWeight: 800 }}>@</span>
               <input value={hdl} maxLength={20} onChange={e => { setHdl(e.target.value); setHmsg(''); }} placeholder="myname"
