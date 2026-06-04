@@ -442,8 +442,15 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
             )}
           </div>
 
+          {/* 다른 기기 로그아웃 (멀티 디바이스 관리) */}
+          <button onClick={() => {
+            if (!window.confirm('이 기기만 남기고 다른 모든 기기에서 로그아웃할까요?')) return;
+            if (window.RG_SB && window.RG_SB.signOutOtherDevices) {
+              Promise.resolve(window.RG_SB.signOutOtherDevices()).then(() => showToast('다른 기기에서 로그아웃했어요')).catch(() => showToast('실패 — 잠시 후 다시'));
+            }
+          }} style={{ marginTop: 14, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>📱 다른 기기에서 로그아웃</button>
           {/* 로그아웃 */}
-          <button onClick={logout} style={{ marginTop: 14, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
+          <button onClick={logout} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
         </div>
       </div>
     </div>
@@ -630,6 +637,15 @@ function AdminDashboardModal({ onClose }) {
     if (DS.admin.inquiries) Promise.resolve(DS.admin.inquiries()).then((r) => setInqs(r || [])).catch(() => setInqs([]));
     else setInqs([]);
   }, []);
+  // 문의 상태 순환 (open→answered→closed→open)
+  const cycleStatus = (q) => {
+    const DS = window.SupabaseDataStore;
+    if (!DS || !DS.admin || !DS.admin.inquirySetStatus) return;
+    const next = q.status === 'open' ? 'answered' : q.status === 'answered' ? 'closed' : 'open';
+    setInqs((list) => (list || []).map((x) => x.id === q.id ? { ...x, status: next } : x));
+    Promise.resolve(DS.admin.inquirySetStatus(q.id, next)).catch(() => {});
+  };
+  const _stColor = { open: '#E5484D', answered: '#F59E0B', closed: '#9097A0' };
   const rows = [
     ['👤 가입자', stats && stats.users],
     ['📝 한 문장', stats && stats.sentences],
@@ -664,8 +680,12 @@ function AdminDashboardModal({ onClose }) {
               <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>접수된 문의가 없어요</div>
             ) : inqs.map((q) => (
               <div key={q.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>@{(q.user && q.user.handle) || '익명'} · {String(q.created_at).slice(0, 10)} · {q.status}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700 }}>@{(q.user && q.user.handle) || '익명'} · {String(q.created_at).slice(0, 10)}</div>
+                  <button onClick={() => cycleStatus(q)} title="상태 변경" style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: _stColor[q.status] || '#9097A0', border: 'none', borderRadius: 10, padding: '2px 8px', cursor: 'pointer' }}>{q.status}</button>
+                </div>
                 <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{q.message}</div>
+                {q.email && <a href={`mailto:${q.email}?subject=${encodeURIComponent('[ReadingGo] 문의 답변')}`} style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: 'var(--brand-3)', fontWeight: 800 }}>✉️ {q.email} 로 답장</a>}
               </div>
             ))}
           </div>

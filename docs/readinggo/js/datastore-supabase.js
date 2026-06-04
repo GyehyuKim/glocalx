@@ -496,13 +496,23 @@
       async inquiries() {
         return unwrap(await sb().from('inquiries').select('*, user:users(handle)').order('created_at', { ascending: false }).limit(100));
       },
+      // 문의 상태 변경 (open→answered→closed). RLS는 is_admin update
+      async inquirySetStatus(id, status) {
+        return unwrap(await sb().from('inquiries').update({ status }).eq('id', id).select().single());
+      },
     },
 
     /* 문의 — 누구나(로그인) 작성 → admin이 대시보드에서 확인 */
     inquiries: {
       async create({ message, email }) {
         const id = await uid();
-        return unwrap(await sb().from('inquiries').insert({ user_id: id, message: message || '', email: email || null }).select().single());
+        // 답변 메일 대상 = 가입(인증) 이메일. 닉네임 변경과 무관하게 user_id로 앵커되지만,
+        // admin이 회신할 수 있도록 작성 시점의 auth 이메일을 함께 박아둔다.
+        let authEmail = email || null;
+        if (!authEmail) {
+          try { const { data } = await sb().auth.getUser(); authEmail = (data && data.user && data.user.email) || null; } catch (e) {}
+        }
+        return unwrap(await sb().from('inquiries').insert({ user_id: id, message: message || '', email: authEmail }).select().single());
       },
     },
 
