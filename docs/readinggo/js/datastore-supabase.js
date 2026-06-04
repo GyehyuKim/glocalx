@@ -403,6 +403,21 @@
         const row = unwrap(await sb().from('streak').select('current').eq('user_id', userId).maybeSingle());
         return row ? (row.current || 0) : 0;
       },
+      // 타인 책장 전체 — 읽는 중 + 완독 (status 포함). 책장 필터용 (#4)
+      async publicShelf(userId) {
+        return unwrap(await sb().from('user_books').select('*, book:books(*)')
+          .eq('user_id', userId).in('status', ['reading', 'completed'])
+          .order('status', { ascending: true }).order('completed_at', { ascending: false }));
+      },
+      // 타인의 특정 책 기여 — 그 책 평점·후기 + 공개 한 문장 (#5)
+      async bookContrib(userId, bookId) {
+        const ub = unwrap(await sb().from('user_books').select('id, rating, review_text, status, current_page')
+          .eq('user_id', userId).eq('book_id', bookId).maybeSingle());
+        const sents = unwrap(await sb().from('sentences').select('id, text, page, my_note, created_at')
+          .eq('user_id', userId).eq('user_book_id', ub ? ub.id : '00000000-0000-0000-0000-000000000000')
+          .order('page', { ascending: true }));
+        return { userBook: ub || null, sentences: sents || [] };
+      },
     },
 
     /* 스포일러 (read-side) */
@@ -437,6 +452,11 @@
         await sb().from('village_members').upsert({ village_id: villageId, user_id: id }, { onConflict: 'village_id,user_id' });
         return true;
       },
+      async leave(villageId) {
+        const id = await uid();
+        await sb().from('village_members').delete().eq('village_id', villageId).eq('user_id', id);
+        return true;
+      },
       async listMine() {
         const id = await uid();
         const rows = unwrap(await sb().from('village_members').select('village:villages(*)').eq('user_id', id));
@@ -458,12 +478,12 @@
     /* 운영 대시보드 집계 — is_admin=true 전용 (#161) */
     admin: {
       async stats() {
+        const today = _today();
         const [users, sentences, completed, todaySessions] = await Promise.all([
           sb().from('users').select('*', { count: 'exact', head: true }),
           sb().from('sentences').select('*', { count: 'exact', head: true }),
           sb().from('user_books').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-          sb().from('sessions').select('*', { count: 'exact', head: true })
-            .gte('started_at', new Date(Date.now() - 86400000).toISOString()),
+          sb().from('reading_sessions').select('*', { count: 'exact', head: true }).eq('session_date', today),
         ]);
         return {
           users: users.count || 0,
@@ -471,6 +491,18 @@
           completed: completed.count || 0,
           todaySessions: todaySessions.count || 0,
         };
+      },
+      // 문의 목록 (admin 전용, RLS는 is_admin) (#문의)
+      async inquiries() {
+        return unwrap(await sb().from('inquiries').select('*, user:users(handle)').order('created_at', { ascending: false }).limit(100));
+      },
+    },
+
+    /* 문의 — 누구나(로그인) 작성 → admin이 대시보드에서 확인 */
+    inquiries: {
+      async create({ message, email }) {
+        const id = await uid();
+        return unwrap(await sb().from('inquiries').insert({ user_id: id, message: message || '', email: email || null }).select().single());
       },
     },
 

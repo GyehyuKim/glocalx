@@ -134,12 +134,17 @@ function SentenceCard({ item, bookId }) {
   );
 }
 
-/* ── UserProfileModal: 타인 프로필 (전체 공개, §5.8.2) ──
-   핸들 탭 → 해당 사용자 공개 완독 책장 + 공개 한 문장. RLS select using(true). */
+/* ── UserProfileModal: 타인 프로필 — 전체 페이지 (§5.8.2, #3/#4/#5) ──
+   핸들 탭 → 풀스크린 프로필: 책장(6권+더보기+읽은/읽는중 필터) + 공개 한 문장.
+   책 탭 → 그 사람의 그 책 평점·후기·한 문장 드릴다운. */
 function UserProfileModal({ handle, onClose }) {
   const [data, setData] = useState(undefined); // undefined=로딩, null=없음
-  const [revealed, setRevealed] = useState({}); // 스포일러 카드별 탭 공개 (§5.7.1)
-  const [following, setFollowing] = useState(null); // null=자기자신/미상, true/false=팔로우 상태 (#7)
+  const [revealed, setRevealed] = useState({});
+  const [following, setFollowing] = useState(null);
+  const [shelfOpen, setShelfOpen] = useState(false);   // 더 보기 → 전체 책장
+  const [shelfFilter, setShelfFilter] = useState('completed'); // completed|reading
+  const [bookView, setBookView] = useState(null);      // {bookId, title, cover} 드릴다운
+  const [contrib, setContrib] = useState(undefined);   // bookContrib 결과
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -148,12 +153,15 @@ function UserProfileModal({ handle, onClose }) {
         if (!DS || !DS.users || !DS.users.getByHandle) { if (alive) setData(null); return; }
         const u = await DS.users.getByHandle(handle);
         if (!u) { if (alive) setData(null); return; }
-        const [books, sents, streak] = await Promise.all([
-          DS.users.publicBooks(u.id).catch(() => []),
+        const [shelf, sents, streak] = await Promise.all([
+          DS.users.publicShelf ? DS.users.publicShelf(u.id).catch(() => []) : DS.users.publicBooks(u.id).catch(() => []),
           DS.users.publicSentences(u.id).catch(() => []),
           DS.users.publicStreak ? DS.users.publicStreak(u.id).catch(() => 0) : 0,
         ]);
-        if (alive) setData({ user: u, books: books || [], sents: sents || [], streak: streak || 0 });
+        const all = shelf || [];
+        const completed = all.filter((b) => b.status === 'completed');
+        const reading = all.filter((b) => b.status === 'reading');
+        if (alive) setData({ user: u, completed, reading, sents: sents || [], streak: streak || 0 });
         const myId = window.RG_ME && window.RG_ME.id;
         if (myId && u.id !== myId && DS.friends && DS.friends.isFollowing) {
           const f = await DS.friends.isFollowing(u.id).catch(() => false);
@@ -163,6 +171,17 @@ function UserProfileModal({ handle, onClose }) {
     })();
     return () => { alive = false; };
   }, [handle]);
+  // 책 드릴다운 — 그 사람의 그 책 평점·후기·한 문장 (#5)
+  useEffect(() => {
+    if (!bookView || !data) return;
+    let alive = true;
+    setContrib(undefined);
+    const DS = window.SupabaseDataStore;
+    if (!DS || !DS.users || !DS.users.bookContrib) { setContrib(null); return; }
+    Promise.resolve(DS.users.bookContrib(data.user.id, bookView.bookId))
+      .then((r) => { if (alive) setContrib(r); }).catch(() => { if (alive) setContrib(null); });
+    return () => { alive = false; };
+  }, [bookView]);
   const toggleFollow = () => {
     const DS = window.SupabaseDataStore;
     if (!data || !data.user || !(DS && DS.friends)) return;
@@ -170,70 +189,142 @@ function UserProfileModal({ handle, onClose }) {
     const p = following ? DS.friends.unfollow(target) : DS.friends.follow(target);
     Promise.resolve(p).then(() => setFollowing(!following)).catch(() => {});
   };
+  const pageStyle = { position: 'fixed', inset: 0, background: 'var(--bg, #fff)', zIndex: 1000, overflowY: 'auto', WebkitOverflowScrolling: 'touch' };
+  const headStyle = { position: 'sticky', top: 0, zIndex: 2, display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: 'var(--bg, #fff)', borderBottom: '1px solid var(--line)' };
+  const BookCard = ({ ub }) => (
+    <div onClick={() => setBookView({ bookId: ub.book_id, title: ub.book && ub.book.title, cover: ub.book && ub.book.cover_url })}
+      style={{ width: 84, cursor: 'pointer' }}>
+      <div style={{ width: 84, height: 118, borderRadius: 6, overflow: 'hidden', background: 'var(--line)', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {ub.book && ub.book.cover_url
+          ? <img src={ub.book.cover_url} alt={ub.book.title} loading="lazy" referrerPolicy="no-referrer" onError={(e) => (e.target.style.display = 'none')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span style={{ fontSize: 28 }}>📖</span>}
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ub.book && ub.book.title}</div>
+      {typeof ub.rating === 'number' && <div style={{ fontSize: 10, color: 'var(--brand-3)', fontWeight: 800 }}>⭐ {ub.rating}</div>}
+    </div>
+  );
+
+  // 책 드릴다운 화면 (#5)
+  if (bookView) {
+    return (
+      <div style={pageStyle} role="dialog" aria-label={bookView.title}>
+        <div style={headStyle}>
+          <button onClick={() => { setBookView(null); setContrib(undefined); }} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink)' }}>←</button>
+          <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--ink)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bookView.title}</div>
+        </div>
+        <div style={{ padding: '16px 20px 40px' }}>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 12 }}>@{data && data.user.handle}님의 기록</div>
+          {contrib === undefined ? (
+            <div style={{ textAlign: 'center', color: 'var(--ink-3)', padding: 30 }}>불러오는 중…</div>
+          ) : (
+            <>
+              {contrib && contrib.userBook && (typeof contrib.userBook.rating === 'number' || contrib.userBook.review_text) && (
+                <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                  {typeof contrib.userBook.rating === 'number' && <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-3)', marginBottom: 4 }}>⭐ {contrib.userBook.rating} / 5</div>}
+                  {contrib.userBook.review_text && <div style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.6 }}>{contrib.userBook.review_text}</div>}
+                </div>
+              )}
+              <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>📖 한 문장 {(contrib && contrib.sentences || []).length}개</div>
+              {(!contrib || contrib.sentences.length === 0) ? (
+                <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>공개된 한 문장이 없어요</div>
+              ) : contrib.sentences.map((s) => {
+                const blinded = !revealed[s.id] && isSentenceBlinded(bookView.bookId, s.page);
+                return (
+                  <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>{s.page}p</div>
+                    {blinded
+                      ? <div className="spoiler-blind" onClick={() => setRevealed((r) => ({ ...r, [s.id]: true }))}>⚠️ 내가 아직 안 읽은 부분 · 탭하면 보기</div>
+                      : <div style={{ fontSize: 14, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="sheet" role="dialog" aria-label={handle}>
-        <div className="sheet-grip" />
-        <button onClick={onClose} aria-label="닫기" style={{position:'absolute', top:10, right:14, background:'rgba(0,0,0,0.06)', border:'none', borderRadius:'50%', width:30, height:30, fontSize:16, cursor:'pointer', color:'var(--ink-2)', lineHeight:1, zIndex:2}}>✕</button>
-        {data === undefined ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>불러오는 중…</div>
-        ) : data === null ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>프로필을 찾을 수 없어요</div>
-        ) : (
-          <div style={{ padding: '8px 20px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)' }}>🐦 {data.user.display_name || data.user.handle}</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>@{data.user.handle}</div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, fontSize: 12, color: 'var(--ink-2)', fontWeight: 800 }}>
-                <span>🏰 완독 {data.books.length}</span>
-                <span>🔥 {data.streak}일</span>
-                <span>✨ XP {data.user.xp || 0}</span>
-              </div>
-              {following !== null && (
-                <button onClick={toggleFollow}
-                  style={{ marginTop: 10, padding: '8px 22px', borderRadius: 20, border: following ? '1.5px solid var(--line)' : 'none', background: following ? 'transparent' : 'var(--brand)', color: following ? 'var(--ink-2)' : '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-                  {following ? '팔로잉 ✓' : '+ 팔로우'}
-                </button>
-              )}
-              {data.user.bio && <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 6 }}>{data.user.bio}</div>}
-            </div>
-            {data.books.length > 0 && (
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>🏰 완독 책장</div>
-                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
-                  {data.books.map((ub) => (
-                    <div key={ub.id} style={{ flex: '0 0 auto', width: 80 }}>
-                      <div style={{ width: 80, height: 112, borderRadius: 6, overflow: 'hidden', background: 'var(--line)', marginBottom: 4 }}>
-                        {ub.book && ub.book.cover_url && <img src={ub.book.cover_url} alt={ub.book.title} loading="lazy" referrerPolicy="no-referrer" onError={(e) => (e.target.style.display = 'none')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ub.book && ub.book.title}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>📖 공개 한 문장 {data.sents.length}개</div>
-            {data.sents.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', padding: '8px 0' }}>아직 공개된 한 문장이 없어요</div>
-            ) : data.sents.map((s) => {
-              const bt = s.user_book && s.user_book.book && s.user_book.book.title;
-              const bid = s.user_book && s.user_book.book_id;
-              const blinded = !revealed[s.id] && isSentenceBlinded(bid, s.page);
-              return (
-                <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>{bt ? bt + ' · ' : ''}{s.page}p</div>
-                  {blinded ? (
-                    <div className="spoiler-blind" onClick={() => setRevealed((r) => ({ ...r, [s.id]: true }))}>⚠️ 내가 아직 안 읽은 부분 · 탭하면 보기</div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+    <div style={pageStyle} role="dialog" aria-label={handle}>
+      <div style={headStyle}>
+        <button onClick={onClose} aria-label="뒤로" style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--ink)' }}>←</button>
+        <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--ink)' }}>{data && data.user ? ('@' + data.user.handle) : '프로필'}</div>
       </div>
+      {data === undefined ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>불러오는 중…</div>
+      ) : data === null ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>프로필을 찾을 수 없어요</div>
+      ) : (
+        <div style={{ padding: '12px 20px 40px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)' }}>🐦 {data.user.display_name || data.user.handle}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, fontSize: 12, color: 'var(--ink-2)', fontWeight: 800 }}>
+              <span>🏰 완독 {data.completed.length}</span>
+              <span>📖 읽는 중 {data.reading.length}</span>
+              <span>🔥 {data.streak}일</span>
+              <span>✨ {data.user.xp || 0}</span>
+            </div>
+            {following !== null && (
+              <button onClick={toggleFollow}
+                style={{ marginTop: 12, padding: '8px 22px', borderRadius: 20, border: following ? '1.5px solid var(--line)' : 'none', background: following ? 'transparent' : 'var(--brand)', color: following ? 'var(--ink-2)' : '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                {following ? '팔로잉 ✓' : '+ 팔로우'}
+              </button>
+            )}
+            {data.user.bio && <div style={{ fontSize: 13, color: 'var(--ink-2)', marginTop: 8 }}>{data.user.bio}</div>}
+          </div>
+
+          {/* 책장 — 기본 6권(완독 우선) + 더보기 → 필터 전체 (#4) */}
+          {(() => {
+            const top = data.completed.concat(data.reading).slice(0, 6);
+            const filtered = shelfFilter === 'reading' ? data.reading : data.completed;
+            const totalShelf = data.completed.length + data.reading.length;
+            return (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900 }}>📚 책장 {totalShelf}</div>
+                  {totalShelf > 6 && <button onClick={() => setShelfOpen((v) => !v)} style={{ background: 'none', border: 'none', color: 'var(--brand-3)', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>{shelfOpen ? '접기' : '더 보기 ›'}</button>}
+                </div>
+                {!shelfOpen ? (
+                  top.length === 0 ? <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>아직 책이 없어요</div>
+                    : <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6 }}>{top.map((ub) => <div key={ub.id} style={{ flex: '0 0 auto' }}><BookCard ub={ub} /></div>)}</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                      {[['completed', `완독 ${data.completed.length}`], ['reading', `읽는 중 ${data.reading.length}`]].map(([id, label]) => (
+                        <button key={id} onClick={() => setShelfFilter(id)} style={{ padding: '6px 14px', borderRadius: 16, border: shelfFilter === id ? 'none' : '1px solid var(--line)', background: shelfFilter === id ? 'var(--brand)' : 'transparent', color: shelfFilter === id ? '#fff' : 'var(--ink-2)', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>{label}</button>
+                      ))}
+                    </div>
+                    {filtered.length === 0 ? <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>없어요</div>
+                      : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', gap: 14 }}>{filtered.map((ub) => <BookCard key={ub.id} ub={ub} />)}</div>}
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 8 }}>※ '보고 싶은 책'은 비공개라 본인만 볼 수 있어요</div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* 공개 한 문장 */}
+          <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 10 }}>✏️ 공개 한 문장 {data.sents.length}</div>
+          {data.sents.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--ink-3)', padding: '8px 0' }}>아직 공개된 한 문장이 없어요</div>
+          ) : data.sents.map((s) => {
+            const bt = s.user_book && s.user_book.book && s.user_book.book.title;
+            const bid = s.user_book && s.user_book.book_id;
+            const blinded = !revealed[s.id] && isSentenceBlinded(bid, s.page);
+            return (
+              <div key={s.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>{bt ? bt + ' · ' : ''}{s.page}p</div>
+                {blinded ? (
+                  <div className="spoiler-blind" onClick={() => setRevealed((r) => ({ ...r, [s.id]: true }))}>⚠️ 내가 아직 안 읽은 부분 · 탭하면 보기</div>
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -268,6 +359,20 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
     if (window.RG_SB && window.RG_SB.signOut) {
       Promise.resolve(window.RG_SB.signOut()).finally(() => window.location.reload());
     }
+  };
+  // 운영자 문의 (DB 저장 → admin 대시보드)
+  const [inqMsg, setInqMsg] = useState('');
+  const [inqBusy, setInqBusy] = useState(false);
+  const [inqDone, setInqDone] = useState(false);
+  const sendInquiry = () => {
+    const m = inqMsg.trim();
+    if (!m) { showToast('문의 내용을 적어주세요'); return; }
+    if (!(DataStore.inquiries && DataStore.inquiries.create)) { showToast('로그인 후 이용해주세요'); return; }
+    setInqBusy(true);
+    Promise.resolve(DataStore.inquiries.create({ message: m }))
+      .then(() => { setInqDone(true); setInqMsg(''); showToast('문의가 전송됐어요 — 운영자가 확인합니다'); })
+      .catch(() => showToast('전송 실패 — 잠시 후 다시'))
+      .finally(() => setInqBusy(false));
   };
   // 데이터 내보내기(#172) — 데이터 주권: 내 프로필·책·한 문장을 JSON 으로.
   const exportData = async () => {
@@ -321,8 +426,24 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
           </div>
           {/* 데이터 내보내기 (#172) — 데이터 주권: 내 기록은 내 것 */}
           <button onClick={exportData} style={{ marginTop: 18, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>📦 내 데이터 내보내기 (JSON)</button>
+
+          {/* 운영자 문의 — DB 저장 → admin 대시보드 */}
+          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--ink-2)', marginBottom: 8 }}>✉️ 운영자에게 문의</div>
+            {inqDone ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-2)', background: 'var(--card)', borderRadius: 10, padding: 12 }}>전송됐어요. 운영자가 확인 후 답변드립니다 🐦 <button onClick={() => setInqDone(false)} style={{ marginLeft: 6, background: 'none', border: 'none', color: 'var(--brand-3)', fontWeight: 800, cursor: 'pointer' }}>다시 쓰기</button></div>
+            ) : (
+              <>
+                <textarea value={inqMsg} onChange={(e) => { if (e.target.value.length <= 2000) setInqMsg(e.target.value); }} placeholder="버그·불편·제안 무엇이든 적어주세요 (최대 2000자)" rows={3}
+                  style={{ width: '100%', boxSizing: 'border-box', borderRadius: 10, border: '1.5px solid var(--line)', padding: 10, fontSize: 14, lineHeight: 1.5, resize: 'none' }} />
+                <button onClick={sendInquiry} disabled={inqBusy} style={{ marginTop: 8, width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 14, cursor: inqBusy ? 'default' : 'pointer', opacity: inqBusy ? 0.6 : 1 }}>{inqBusy ? '보내는 중…' : '문의 보내기'}</button>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>또는 readinggo.admin@gmail.com</div>
+              </>
+            )}
+          </div>
+
           {/* 로그아웃 */}
-          <button onClick={logout} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
+          <button onClick={logout} style={{ marginTop: 14, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
         </div>
       </div>
     </div>
@@ -501,10 +622,13 @@ window.SentenceCollectionModal = SentenceCollectionModal;
 /* ── AdminDashboardModal: 운영 대시보드 — is_admin=true 전용 (#161) ── */
 function AdminDashboardModal({ onClose }) {
   const [stats, setStats] = useState(null);
+  const [inqs, setInqs] = useState(undefined); // 문의 목록
   useEffect(() => {
     const DS = window.SupabaseDataStore;
-    if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); return; }
+    if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); setInqs([]); return; }
     Promise.resolve(DS.admin.stats()).then(setStats).catch(() => setStats({}));
+    if (DS.admin.inquiries) Promise.resolve(DS.admin.inquiries()).then((r) => setInqs(r || [])).catch(() => setInqs([]));
+    else setInqs([]);
   }, []);
   const rows = [
     ['👤 가입자', stats && stats.users],
@@ -531,9 +655,104 @@ function AdminDashboardModal({ onClose }) {
               ))}
             </div>
           )}
+          {/* 문의 목록 */}
+          <div style={{ marginTop: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 10 }}>✉️ 문의 {inqs && inqs.length ? '(' + inqs.length + ')' : ''}</div>
+            {inqs === undefined ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>불러오는 중…</div>
+            ) : inqs.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>접수된 문의가 없어요</div>
+            ) : inqs.map((q) => (
+              <div key={q.id} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>@{(q.user && q.user.handle) || '익명'} · {String(q.created_at).slice(0, 10)} · {q.status}</div>
+                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{q.message}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 window.AdminDashboardModal = AdminDashboardModal;
+
+/* ── TinderCards: 한 문장 스와이프 리뷰 (#186) ──
+   책의 한 문장들을 카드로. 우=좋아요(짹+책갈피)/좌=싫어요(넘김)/아래=유예(뒤로).
+   Stack Lock 준수 — 라이브러리 없이 Pointer Events + transform 직접 구현. */
+function TinderCards({ items, title, onClose }) {
+  const [queue, setQueue] = useState(items || []);
+  const [drag, setDrag] = useState({ dx: 0, dy: 0, active: false });
+  const [liked, setLiked] = useState(0);
+  const startRef = useRef(null);
+  const top = queue[0];
+
+  const act = (dir) => {
+    const card = queue[0];
+    if (!card) return;
+    if (dir === 'like') {
+      setLiked((n) => n + 1);
+      if (card.id && DataStore.claps && DataStore.claps.toggle) Promise.resolve(DataStore.claps.toggle(card.id)).catch(() => {});
+      if (card.id && DataStore.bookmarks && DataStore.bookmarks.toggle) Promise.resolve(DataStore.bookmarks.toggle(card.id)).catch(() => {});
+    }
+    setDrag({ dx: 0, dy: 0, active: false });
+    setQueue((q) => dir === 'defer' ? q.slice(1).concat(q[0]) : q.slice(1));
+  };
+  const onDown = (e) => { startRef.current = { x: e.clientX, y: e.clientY }; setDrag((d) => ({ ...d, active: true })); e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); };
+  const onMove = (e) => { if (!startRef.current) return; setDrag({ dx: e.clientX - startRef.current.x, dy: e.clientY - startRef.current.y, active: true }); };
+  const onUp = () => {
+    if (!startRef.current) return;
+    const { dx, dy } = drag;
+    startRef.current = null;
+    if (dx > 90) return act('like');
+    if (dx < -90) return act('dislike');
+    if (dy > 110) return act('defer');
+    setDrag({ dx: 0, dy: 0, active: false });
+  };
+
+  const hint = drag.dx > 40 ? { t: '좋아요 ❤️', c: '#3FD17F' } : drag.dx < -40 ? { t: '넘기기 ✕', c: '#E5484D' } : drag.dy > 60 ? { t: '나중에 ↓', c: '#9097A0' } : null;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#15171B', zIndex: 1100, display: 'flex', flexDirection: 'column', color: '#F4F2EC' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#F4F2EC', fontSize: 20, cursor: 'pointer' }}>←</button>
+        <div style={{ fontSize: 14, fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>{title || '한 문장 카드'}</div>
+        <div style={{ fontSize: 13, opacity: 0.7, fontWeight: 800 }}>❤️ {liked}</div>
+      </div>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        {!top ? (
+          <div style={{ textAlign: 'center', opacity: 0.8 }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>🃏</div>
+            <div style={{ fontWeight: 800 }}>카드를 다 봤어요</div>
+            <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>❤️ {liked}개에 좋아요를 남겼어요</div>
+            <button onClick={onClose} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 20, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>닫기</button>
+          </div>
+        ) : (
+          <>
+            {queue[1] && (
+              <div style={{ position: 'absolute', width: 'min(86vw, 360px)', height: 360, background: 'rgba(255,255,255,0.06)', borderRadius: 18, transform: 'scale(0.94) translateY(12px)' }} />
+            )}
+            <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+              style={{
+                position: 'relative', width: 'min(86vw, 360px)', minHeight: 360, background: '#22252B', borderRadius: 18, padding: 24,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.5)', cursor: 'grab', touchAction: 'none', userSelect: 'none',
+                transform: `translate(${drag.dx}px, ${drag.dy}px) rotate(${drag.dx / 22}deg)`,
+                transition: drag.active ? 'none' : 'transform 0.25s ease', display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              }}>
+              {hint && <div style={{ position: 'absolute', top: 18, left: 18, fontSize: 16, fontWeight: 900, color: hint.c, border: `2px solid ${hint.c}`, borderRadius: 8, padding: '2px 10px' }}>{hint.t}</div>}
+              <div style={{ fontSize: 12, opacity: 0.6, fontWeight: 700, marginBottom: 12 }}>{top.bookTitle ? top.bookTitle + ' · ' : ''}{top.page}p {top.nick ? '· ' + top.nick : ''}</div>
+              <div style={{ fontSize: 19, lineHeight: 1.7, fontWeight: 600 }}>"{top.text || top.q}"</div>
+            </div>
+          </>
+        )}
+      </div>
+      {top && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 22, padding: '12px 0 28px' }}>
+          <button onClick={() => act('dislike')} style={{ width: 56, height: 56, borderRadius: '50%', border: 'none', background: '#2A2D33', color: '#E5484D', fontSize: 22, cursor: 'pointer' }}>✕</button>
+          <button onClick={() => act('defer')} style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: '#2A2D33', color: '#9097A0', fontSize: 18, cursor: 'pointer', alignSelf: 'center' }}>↓</button>
+          <button onClick={() => act('like')} style={{ width: 56, height: 56, borderRadius: '50%', border: 'none', background: '#2A2D33', color: '#3FD17F', fontSize: 22, cursor: 'pointer' }}>❤️</button>
+        </div>
+      )}
+    </div>
+  );
+}
+window.TinderCards = TinderCards;

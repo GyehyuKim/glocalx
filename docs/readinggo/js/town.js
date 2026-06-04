@@ -25,6 +25,29 @@ function TownDetailView({ state, townId, onBack }) {
 
   const isAdmin = (town.myRole === 'admin' || (town.coAdmins || []).includes('jerome')) && town.collection !== 'past';
 
+  // 마을 공유 (#8) — 공유 URL + Web Share API, 미지원 시 클립보드 폴백
+  const shareVillage = async () => {
+    const base = window.location.origin;
+    const url = town.inviteCode
+      ? `${base}/?village=${town.id}&code=${town.inviteCode}`
+      : `${base}/?village=${town.id}`;
+    const shareData = { title: `ReadingGo 마을 · ${town.name}`, text: `"${book.title}" 같이 읽어요 — ReadingGo 마을에 초대합니다 🐦`, url };
+    try {
+      if (navigator.share) { await navigator.share(shareData); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(url); showToast('초대 링크 복사됨 — 붙여넣어 공유하세요'); }
+    catch (e) { showToast('공유 링크: ' + url); }
+  };
+
+  // 마을 나가기 (#9) — 실제 탈퇴 후 목록으로
+  const leaveVillage = () => {
+    if (!window.confirm(`'${town.name}' 마을에서 나갈까요?`)) return;
+    const done = () => { showToast('마을에서 나왔어요'); setIsSettingsOpen(false); onBack(); };
+    if (window.DataStore && window.DataStore.villages && window.DataStore.villages.leave) {
+      Promise.resolve(window.DataStore.villages.leave(town.id)).then(done).catch(() => showToast('나가기 실패 — 잠시 후 다시'));
+    } else { done(); }
+  };
+
   // Ranking
   const ranking = [...town.members].sort((a,b)=>b.cumulativePage-a.cumulativePage).map((m,i)=>({...m,rank:i+1}));
 
@@ -158,10 +181,24 @@ function TownDetailView({ state, townId, onBack }) {
             <div style={{padding:12}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}> <div style={{fontSize:16,fontWeight:900}}>설정</div> <button onClick={()=>setIsSettingsOpen(false)} style={{background:'transparent',border:'none'}}>✕</button></div>
               <div style={{display:'grid',gap:10}}>
-                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>초대 링크: <strong>rgo.app/v/{town.inviteCode||'-----'}</strong> <button onClick={()=>{ navigator.clipboard && navigator.clipboard.writeText(`https://rgo.app/v/${town.inviteCode||''}`); showToast('초대 링크 복사됨'); }} style={{marginLeft:8}}>복사</button></div>
-                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>초대 코드: <strong>{town.inviteCode||'없음'}</strong> <button onClick={()=>{ navigator.clipboard && navigator.clipboard.writeText(town.inviteCode||''); showToast('초대 코드 복사됨'); }} style={{marginLeft:8}}>복사</button></div>
-                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>알림 설정: <div style={{marginTop:8,display:'flex',gap:8}}><label><input type="checkbox" defaultChecked={town.notificationPrefs && town.notificationPrefs.poke}/> 콕찌르기</label><label><input type="checkbox" defaultChecked={town.notificationPrefs && town.notificationPrefs.board}/> 게시판</label></div></div>
-                <div style={{padding:10,background:'var(--card)',borderRadius:10}}><button onClick={()=>{ if(isAdmin){ showToast('관리자 권한을 이양하세요 (시뮬레이션)'); } else { showToast('관리자에게 요청하세요'); } }} style={{padding:8}}>나가기</button></div>
+                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>
+                  <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:6}}>마을 초대</div>
+                  <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap'}}>
+                    <span style={{fontSize:12, color:'var(--ink-3)'}}>초대 코드</span>
+                    <strong style={{letterSpacing:1}}>{town.inviteCode||'공개 마을(코드 없음)'}</strong>
+                    <button onClick={shareVillage} style={{marginLeft:'auto', padding:'6px 14px', borderRadius:16, border:'none', background:'var(--brand)', color:'#fff', fontWeight:800, fontSize:13, cursor:'pointer'}}>📤 공유하기</button>
+                  </div>
+                </div>
+                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>
+                  <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:6}}>이 마을 알림 받기</div>
+                  <div style={{display:'flex',gap:16}}>
+                    <label style={{fontSize:13, display:'flex', alignItems:'center', gap:5}}><input type="checkbox" defaultChecked={!town.notificationPrefs || town.notificationPrefs.poke !== false}/> 🪱 콕찌르기 받기</label>
+                    <label style={{fontSize:13, display:'flex', alignItems:'center', gap:5}}><input type="checkbox" defaultChecked={!town.notificationPrefs || town.notificationPrefs.board !== false}/> 💬 게시판 새 글</label>
+                  </div>
+                </div>
+                <div style={{padding:10,background:'var(--card)',borderRadius:10}}>
+                  <button onClick={leaveVillage} style={{padding:'8px 0', width:'100%', background:'none', border:'none', color:'#E5484D', fontWeight:800, fontSize:14, cursor:'pointer'}}>🚪 마을 나가기</button>
+                </div>
               </div>
             </div>
           </div>
