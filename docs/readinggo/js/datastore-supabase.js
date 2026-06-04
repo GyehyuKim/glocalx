@@ -291,6 +291,11 @@
         const { count } = await sb().from('claps').select('*', { count: 'exact', head: true }).eq('to_sentence_id', sentenceId);
         return count || 0;
       },
+      async isMine(sentenceId) {
+        const id = await uid();
+        const ex = unwrap(await sb().from('claps').select('id').eq('from_user_id', id).eq('to_sentence_id', sentenceId).maybeSingle());
+        return !!ex;
+      },
     },
     bookmarks: {
       async toggle(sentenceId) {
@@ -439,6 +444,25 @@
       },
       async members(villageId) {
         return unwrap(await sb().from('village_members').select('joined_at, user:users(*)').eq('village_id', villageId));
+      },
+    },
+
+    /* 운영 대시보드 집계 — is_admin=true 전용 (#161) */
+    admin: {
+      async stats() {
+        const [users, sentences, completed, todaySessions] = await Promise.all([
+          sb().from('users').select('*', { count: 'exact', head: true }),
+          sb().from('sentences').select('*', { count: 'exact', head: true }),
+          sb().from('user_books').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+          sb().from('sessions').select('*', { count: 'exact', head: true })
+            .gte('started_at', new Date(Date.now() - 86400000).toISOString()),
+        ]);
+        return {
+          users: users.count || 0,
+          sentences: sentences.count || 0,
+          completed: completed.count || 0,
+          todaySessions: todaySessions.count || 0,
+        };
       },
     },
 

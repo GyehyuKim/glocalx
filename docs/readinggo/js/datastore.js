@@ -351,6 +351,9 @@ const DataStore = {
         return !!s.claps[sentenceId];
       });
     },
+    isMine(sentenceId) {
+      return localStorageAdapter.mutate(s => !!s.claps[sentenceId]);
+    },
   },
   bookmarks: {
     toggle(sentenceId) {

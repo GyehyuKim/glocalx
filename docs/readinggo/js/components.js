@@ -75,12 +75,19 @@ function SentenceCard({ item, bookId }) {
   const isMine = (typeof item.isMine !== 'undefined') ? item.isMine : (item.nick === '@jerome' || item.nick === 'jerome');
   const canReact = !!item.id;  // 실 sentence(UUID)만 짹·책갈피 가능 — 합성 id 는 uuid 컬럼 400 (architect L1)
   const [liked, setLiked] = useState(false);
+  const initialLikedRef = React.useRef(false);
   const [bookmarked, setBookmarked] = useState(false);
   const bk = getBook(bookId);
   const cardTitle = item.bookTitle || (bk && bk.title) || '';
-  const likeCount = (item.claps || 0) + (liked ? 1 : 0);
-  // 짹/책갈피 토글 — 양 어댑터(동기 boolean / 비동기 Promise<boolean>) 정규화.
-  // 토글이 곧 취소(다시 누르면 해제) — claps.toggle 이 존재 시 delete (#156).
+  // optimistic likeCount: item.claps(피드 로드 시점) + 현재 상태 - 초기 상태 delta (#156)
+  const likeCount = (item.claps || 0) + (liked ? 1 : 0) - (initialLikedRef.current ? 1 : 0);
+  React.useEffect(() => {
+    if (!canReact || isMine) return;
+    Promise.resolve(DataStore.claps.isMine(sentenceId)).then(v => {
+      setLiked(v);
+      initialLikedRef.current = v;
+    }).catch(() => {});
+  }, [sentenceId]);
   const toggleLike = () => {
     if (isMine || !canReact) return;
     Promise.resolve(DataStore.claps.toggle(sentenceId)).then(setLiked).catch(() => {});
@@ -490,3 +497,43 @@ function SentenceCollectionModal({ onClose }) {
   );
 }
 window.SentenceCollectionModal = SentenceCollectionModal;
+
+/* ── AdminDashboardModal: 운영 대시보드 — is_admin=true 전용 (#161) ── */
+function AdminDashboardModal({ onClose }) {
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    const DS = window.SupabaseDataStore;
+    if (!DS || !DS.admin || !DS.admin.stats) { setStats({}); return; }
+    Promise.resolve(DS.admin.stats()).then(setStats).catch(() => setStats({}));
+  }, []);
+  const rows = [
+    ['👤 가입자', stats && stats.users],
+    ['📝 한 문장', stats && stats.sentences],
+    ['🏰 완독', stats && stats.completed],
+    ['⚡ 오늘 체크인', stats && stats.todaySessions],
+  ];
+  return (
+    <div className="modal-backdrop show" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet" role="dialog" aria-label="운영 대시보드">
+        <div className="sheet-grip" />
+        <button onClick={onClose} aria-label="닫기" style={{position:'absolute',top:10,right:14,background:'rgba(0,0,0,0.06)',border:'none',borderRadius:'50%',width:30,height:30,fontSize:16,cursor:'pointer',color:'var(--ink-2)',lineHeight:1,zIndex:2}}>✕</button>
+        <div style={{padding:'16px 20px 28px'}}>
+          <div style={{fontSize:18,fontWeight:900,marginBottom:20,textAlign:'center'}}>⚙️ 운영 대시보드</div>
+          {!stats ? (
+            <div style={{textAlign:'center',color:'var(--ink-3)',padding:20}}>불러오는 중…</div>
+          ) : (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {rows.map(([label, val]) => (
+                <div key={label} style={{background:'var(--card)',border:'1px solid var(--line)',borderRadius:10,padding:'16px 12px',textAlign:'center'}}>
+                  <div style={{fontSize:24,fontWeight:900,color:'var(--brand)'}}>{val ?? '—'}</div>
+                  <div style={{fontSize:11,color:'var(--ink-3)',fontWeight:700,marginTop:6}}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+window.AdminDashboardModal = AdminDashboardModal;

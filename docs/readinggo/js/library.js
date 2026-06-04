@@ -245,6 +245,8 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
   const [wishlistBooks, setWishlistBooks] = _useState([]);
   const [recall, setRecall] = _useState(null);     // 무작위 회상 (§5.8.7)
   const [favs, setFavs] = _useState(null);         // 좋아요한 문장 (#11)
+  const [adminOpen, setAdminOpen] = _useState(false); // 운영 대시보드 (#161)
+  const isAdmin = !!(window.RG_ME && window.RG_ME.isAdmin);
 
   // 내 책(읽는중/완독) + 관심책 — 실 Supabase (양 어댑터 정규화). 데모 상수 미사용.
   _useEffect(() => {
@@ -309,6 +311,10 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
       <div style={{background:'linear-gradient(135deg, var(--brand), var(--brand-3))', color:'white', padding:'20px 16px', marginBottom:20, position:'relative'}}>
         <button onClick={() => window.RG_openSettings && window.RG_openSettings()} title="설정"
           style={{position:'absolute', top:12, right:12, background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:34, height:34, fontSize:17, cursor:'pointer', color:'#fff', lineHeight:1}}>⚙️</button>
+        {isAdmin && (
+          <button onClick={() => setAdminOpen(true)} title="운영 대시보드"
+            style={{position:'absolute', top:12, right:52, background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:34, height:34, fontSize:17, cursor:'pointer', color:'#fff', lineHeight:1}}>📊</button>
+        )}
         <div style={{textAlign:'center'}}>
           <div style={{fontSize:28, fontWeight:900, marginBottom:4}}>🐦 {(window.RG_ME && (window.RG_ME.displayName || window.RG_ME.handle)) || '독자'}</div>
           <div style={{fontSize:13, opacity:0.9, marginBottom:14, minHeight:20}}>
@@ -495,6 +501,10 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           onClose={() => setSelectedBookId(null)}
           onActivate={onActivateUserBook}
         />,
+        document.body
+      )}
+      {adminOpen && ReactDOM.createPortal(
+        <AdminDashboardModal onClose={() => setAdminOpen(false)} />,
         document.body
       )}
     </section>
