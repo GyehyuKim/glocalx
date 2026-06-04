@@ -261,6 +261,24 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
       Promise.resolve(window.RG_SB.signOut()).finally(() => window.location.reload());
     }
   };
+  // 데이터 내보내기(#172) — 데이터 주권: 내 프로필·책·한 문장을 JSON 으로.
+  const exportData = async () => {
+    try {
+      const [meRow, books, sents] = await Promise.all([
+        Promise.resolve((DataStore.profile && DataStore.profile.get) ? DataStore.profile.get() : null).catch(() => null),
+        Promise.resolve((DataStore.myBooks && DataStore.myBooks.list) ? DataStore.myBooks.list() : []).catch(() => []),
+        Promise.resolve((DataStore.sentences && DataStore.sentences.listMine) ? DataStore.sentences.listMine() : []).catch(() => []),
+      ]);
+      const payload = { app: 'ReadingGo', exported_at: new Date().toISOString(), profile: meRow, books, sentences: sents };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `readinggo-export-${(meRow && meRow.handle) || 'me'}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('데이터를 내보냈어요 (JSON)');
+    } catch (e) { showToast('내보내기 실패'); }
+  };
   return (
     <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet" role="dialog" aria-label="설정">
@@ -293,8 +311,10 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
             </div>
             {hmsg && <div style={{ fontSize: 12, color: hmsg.indexOf('✓') === 0 ? 'var(--brand)' : '#d33', marginTop: 6 }}>{hmsg}</div>}
           </div>
+          {/* 데이터 내보내기 (#172) — 데이터 주권: 내 기록은 내 것 */}
+          <button onClick={exportData} style={{ marginTop: 18, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>📦 내 데이터 내보내기 (JSON)</button>
           {/* 로그아웃 */}
-          <button onClick={logout} style={{ marginTop: 18, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
+          <button onClick={logout} style={{ marginTop: 10, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>로그아웃</button>
         </div>
       </div>
     </div>
