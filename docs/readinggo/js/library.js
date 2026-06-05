@@ -148,6 +148,14 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
             </div>
           )}
 
+          {/* 완독 후 AI 카드 (§5.8.6) — Phase1 Gemini 전까지 '준비 중' 플레이스홀더 (#259) */}
+          {bookshelfEntry && (
+            <div style={{background:'var(--brand-tint)', border:'1px solid var(--brand)', borderRadius:'8px', padding:'12px 14px', marginBottom:14}}>
+              <div style={{fontSize:13, fontWeight:800, color:'var(--brand-3)', marginBottom:4}}>🤖 AI 다음 책 추천 · 나만의 추출 책</div>
+              <div style={{fontSize:12, color:'var(--ink-2)', lineHeight:1.5}}>이 책의 한 문장으로 다음 책 추천과 추출 책을 만들어 드려요. <b>준비 중</b>(Phase 1).</div>
+            </div>
+          )}
+
           {/* 진도 정보 (읽는 중일 때) */}
           {prog.cur > 0 && !bookshelfEntry && (
             <div style={{background:'var(--paper-2)', borderRadius:'8px', padding:'12px 14px', marginBottom:14}}>

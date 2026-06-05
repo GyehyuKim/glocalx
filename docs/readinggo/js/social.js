@@ -18,6 +18,31 @@ function SocialView({ state }) {
   const [tab, setTab] = useState('recent');  // 'following' | 'recent' | 'recommend' (#8)
   const [items, setItems] = useState(null);  // null=로딩, []=빈
   const [cardMode, setCardMode] = useState(false); // 틴더 카드 리뷰 (#186)
+  const [findOpen, setFindOpen] = useState(false); // 친구 찾기 패널 (#250)
+  const [fq, setFq] = useState('');
+  const [fres, setFres] = useState([]);
+  const [followed, setFollowed] = useState({});    // userId -> true
+
+  // 친구 찾기: @닉 검색(users.search) → 팔로우 (#250)
+  useEffect(() => {
+    if (!findOpen) return;
+    const q = fq.trim();
+    if (!q || !(DataStore.users && DataStore.users.search)) { setFres([]); return; }
+    let alive = true;
+    const t = setTimeout(() => {
+      Promise.resolve(DataStore.users.search(q)).then(rows => {
+        if (!alive) return;
+        const myId = window.RG_ME && window.RG_ME.id;
+        setFres((rows || []).filter(u => u.id !== myId));
+      }).catch(() => { if (alive) setFres([]); });
+    }, 250);
+    return () => { alive = false; clearTimeout(t); };
+  }, [fq, findOpen]);
+  const doFollow = (u) => {
+    if (!(DataStore.friends && DataStore.friends.follow)) return;
+    setFollowed(m => ({ ...m, [u.id]: true }));
+    Promise.resolve(DataStore.friends.follow(u.id)).then(() => showToast('팔로우했어요 🐦')).catch(() => {});
+  };
 
   useEffect(() => {
     let alive = true;
@@ -54,7 +79,27 @@ function SocialView({ state }) {
 
   return (
     <section className="view active">
-      <div className="section-head"><h3>📚 한 문장 피드</h3></div>
+      <div className="section-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3>📚 한 문장 피드</h3>
+        <button onClick={() => setFindOpen(v => !v)} title="친구 찾기" style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', padding: '2px 6px' }}>🔍</button>
+      </div>
+      {findOpen && (
+        <div style={{ padding: '0 16px 12px' }}>
+          <input value={fq} onChange={e => setFq(e.target.value)} placeholder="@닉네임으로 친구 찾기" autoFocus
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--line)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+          {fres.map(u => (
+            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', borderBottom: '1px solid var(--line-2)' }}>
+              <span style={{ fontSize: 20 }}>{(u.display_name && u.display_name[0]) || '🐦'}</span>
+              <button onClick={() => window.RG_openProfile && window.RG_openProfile(u.handle)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: 'var(--brand-3)', cursor: 'pointer' }}>@{u.handle}</button>
+              <button onClick={() => doFollow(u)} disabled={!!followed[u.id]}
+                style={{ padding: '5px 12px', borderRadius: 14, border: 'none', background: followed[u.id] ? 'var(--line-2)' : 'var(--brand)', color: followed[u.id] ? 'var(--ink-3)' : '#fff', fontSize: 12, fontWeight: 800, cursor: followed[u.id] ? 'default' : 'pointer' }}>
+                {followed[u.id] ? '팔로잉 ✓' : '팔로우'}
+              </button>
+            </div>
+          ))}
+          {fq.trim() && fres.length === 0 && <div style={{ padding: 12, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>검색 결과 없음</div>}
+        </div>
+      )}
       {/* 전체 / 팔로우 탭 (#7) */}
       <div style={{ display: 'flex', gap: 8, padding: '0 16px 10px' }}>
         {[['following', '팔로우'], ['recent', '최근'], ['recommend', '추천']].map(([id, label]) => (
