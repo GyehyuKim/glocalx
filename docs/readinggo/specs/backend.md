@@ -55,6 +55,7 @@ settings.get() / settings.update({reminder_hour, ...})
 // 책 / 검색
 books.search(query)                        → Book[]          // DB ilike(즉시) — 클라에서 데모 Fuse + 알라딘 결과와 병합·중복제거(isbn13). 외국 작가 표기변이는 알라딘 위임 (QA3 #148)
 // 알라딘 프록시(Netlify fn): **ItemSearch(검색)는 packing을 줘도 itemPage 미제공** — 쪽수는 **ItemLookUp(?isbn=)만** 반환. 등록 시 쪽수 없으면 isbn 개별 조회로 1회 보강 (QA7 #233). 그래도 없으면 total_pages=null → 수동 입력 폴백(#204)
+// 인기도서 사전 아카이브(#239): netlify/functions/archive-books.mjs 스케줄(@daily) — 알라딘 베스트셀러→ItemLookUp→books upsert(service_role). 등록 지연 0·API 의존 감소. env: SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY·ARCHIVE_DAILY_CAP(기본3000)
 books.get(bookId)                          → Book
 myBooks.list()                             → UserBook[]      // 읽는 중 + 완독 + 보관
 myBooks.add({book, current_page})          → UserBook
