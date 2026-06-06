@@ -109,7 +109,12 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
         .filter(v => v && !mineIds.includes(v.id))
         .map(v => _villageRowToTown(v, 'recommended', null));
 
-      const merged = [...mineTowns, ...pubTowns];
+      // listPublic 결과가 없으면 초기 state의 seed 추천 마을을 폴백으로 보존 (Phase0 데모용)
+      const seedRec = pubTowns.length === 0
+        ? (state.towns || []).filter(t => (t.collection || '') === 'recommended' && !mineIds.includes(t.id))
+        : [];
+
+      const merged = [...mineTowns, ...pubTowns, ...seedRec];
       if (merged.length > 0) {
         setTowns(merged);
         setMyVillageIds(mineIds);
