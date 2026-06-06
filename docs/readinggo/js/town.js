@@ -36,7 +36,7 @@ function _getVillageMottoLine(town, myHandle) {
   return '오늘도 같이 읽어요 🐦';
 }
 
-function TownDetailView({ state, townId, onBack }) {
+function TownDetailView({ state, townId, onBack, onTownUpdate }) {
   const { useState } = React;
   const [selectedMember, setSelectedMember] = useState(null);
   const [activeSubtab, setActiveSubtab] = useState('members');
@@ -46,7 +46,7 @@ function TownDetailView({ state, townId, onBack }) {
   const [editDesc, setEditDesc] = useState('');
   const [editVisibility, setEditVisibility] = useState('public');
 
-  const town = state.towns.find(t => t.id === townId);
+  const town = (state.towns || []).find(t => t.id === townId);
   const book = town ? getBook(town.bookId) : null;
   if (!town || !book) return (<section className="view active"><div>마을을 찾을 수 없습니다</div></section>);
 
@@ -122,15 +122,18 @@ function TownDetailView({ state, townId, onBack }) {
 
   const saveEditInfo = () => {
     if (!editName.trim()) { showToast('마을 이름을 입력해주세요'); return; }
+    const patch = { id: town.id, name: editName.trim(), description: editDesc.trim(), visibility: editVisibility };
     const done = () => {
-      town.name = editName.trim();
-      town.description = editDesc.trim();
-      town.visibility = editVisibility;
+      // in-place mutation for TownDetailView 즉시 반영 + onTownUpdate로 villageTowns 상태 갱신
+      town.name = patch.name;
+      town.description = patch.description;
+      town.visibility = patch.visibility;
+      if (onTownUpdate) onTownUpdate(patch);
       showToast('마을 정보를 수정했어요');
       setIsEditingInfo(false);
     };
     if (window.DataStore && window.DataStore.villages && window.DataStore.villages.update) {
-      Promise.resolve(window.DataStore.villages.update(town.id, { name: editName.trim(), description: editDesc.trim(), visibility: editVisibility })).then(done).catch(() => showToast('수정 실패 — 잠시 후 다시'));
+      Promise.resolve(window.DataStore.villages.update(town.id, { name: patch.name, description: patch.description, visibility: patch.visibility })).then(done).catch(() => showToast('수정 실패 — 잠시 후 다시'));
     } else { done(); }
   };
 

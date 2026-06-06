@@ -222,6 +222,10 @@ function App() {
     setSelectedTownId(null);
   }, []);
 
+  const handleTownUpdate = useCallback((updatedFields) => {
+    setVillageTowns(prev => prev.map(t => t.id === updatedFields.id ? { ...t, ...updatedFields } : t));
+  }, []);
+
   // NestView가 체크인/simskip 후 자체 업데이트하고 콜백으로 상위 동기화.
   // 둥지 단계(nest.lv)는 활성 책 진척률에서 파생 → NestView가 계산해 넘긴다(§5.2).
   const handleCheckin = useCallback((ns, nestLv, xpGain, sentence) => {
@@ -492,6 +496,7 @@ function App() {
               state={villageTowns.length > 0 ? { ...appState, towns: villageTowns } : appState}
               townId={selectedTownId}
               onBack={handleBackToVillage}
+              onTownUpdate={handleTownUpdate}
             />
           )}
           {activeTab === 'social' && (

@@ -3,20 +3,40 @@
    마을 탭: 목록 / 찾기 / 추천 / 지난 마을
    ========================================================= */
 
+/* town._bookData 폴백을 포함한 book 해석 (UUID bookId일 때 Supabase 메타 사용) */
+function resolveBook(town) {
+  if (town && town._bookData) {
+    return {
+      title: town._bookData.title || '',
+      cover: town._bookData.cover || '',
+      author: town._bookData.author || '',
+      fb: ['#9AA7B2', '#C7D0D8'],
+    };
+  }
+  return getBook(town ? town.bookId : '');
+}
+
 /* Supabase village row → VillageView 내부 town 형태 변환 */
 function _villageRowToTown(v, collection, myUserId) {
   const parts = Array.isArray(v.parts) ? v.parts : [];
   const totalParts = parts.length || 1;
   const isMyVillage = myUserId && v.created_by === myUserId;
-  // book_id 는 Supabase UUID — ISBN 경유로 로컬 TSV ID 매핑, 미매핑 시 UUID 유지
+  // book_id 는 Supabase UUID — ISBN 경유로 로컬 TSV ID 매핑
+  // 미매핑 시 UUID 유지하되 _bookData에 Supabase 메타 보존 (TownCard 폴백용)
   let bookId = v.book_id || '';
+  let _bookData = null;
   if (v.book && v.book.isbn13) {
     const found = (window.ALL_BOOKS || []).find(b => b.isbn === v.book.isbn13);
-    if (found) bookId = found.book_id;
+    if (found) {
+      bookId = found.book_id;
+    } else {
+      _bookData = { title: v.book.title || '', cover: v.book.cover_url || '', author: v.book.author || '' };
+    }
   }
   return {
     id: v.id,
     bookId,
+    _bookData,
     name: v.name || '',
     description: v.description || '',
     collection: collection || 'active',
@@ -74,12 +94,14 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
       if (!alive) return;
 
       // mine: active collection (내가 속한 마을)
+      // RG_ME.id = 로그인한 현재 유저 UUID — v.created_by 비교로 admin 판정
+      const meId = window.RG_ME && window.RG_ME.id;
       const mineIds = [];
       const mineTowns = [];
       (mine || []).forEach(v => {
         if (!v) return;
         mineIds.push(v.id);
-        mineTowns.push(_villageRowToTown(v, 'active', v.created_by));
+        mineTowns.push(_villageRowToTown(v, 'active', meId));
       });
 
       // pub: recommended collection, 내 마을 제외 (#170)
@@ -163,7 +185,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
       if ((town.visibility || 'public') !== 'public') return false;
       if (myVillageIds.includes(town.id)) return false; // #170: 이미 참여/생성한 마을 제외
 
-      const book = getBook(town.bookId);
+      const book = resolveBook(town);
       const haystack = [town.name, town.currentRange, book.title, book.author, town.bookId]
         .filter(Boolean)
         .join(' ')
@@ -416,7 +438,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
             <TownCard
               key={town.id}
               town={town}
-              book={getBook(town.bookId)}
+              book={resolveBook(town)}
               onClick={() => onSelectTown(town.id)}
               dday={getDday(town.dday)}
               metaText={`${town.currentPart}/${town.totalParts} 파트 · ${getDday(town.dday)}`}
@@ -457,7 +479,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
                 <TownCard
                   key={town.id}
                   town={town}
-                  book={getBook(town.bookId)}
+                  book={resolveBook(town)}
                   onClick={() => onSelectTown(town.id)}
                   dday={town.completedLabel || getDday(town.dday)}
                   metaText={`${town.statusLabel || '완료'} · ${town.completedLabel || '최근'} · 책 ${town.completedBooks || 1}권`}
@@ -477,7 +499,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
             towns={recommendedTowns}
             emptyText=""
             renderTown={(town) => {
-              const book = getBook(town.bookId);
+              const book = resolveBook(town);
               return (
                 <button
                   key={town.id}
@@ -669,7 +691,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
 
                   {searchResults.length > 0 ? (
                     searchResults.map((town) => {
-                      const book = getBook(town.bookId);
+                      const book = resolveBook(town);
                       return (
                         <button
                           key={town.id}
@@ -1056,7 +1078,7 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
                 </div>
 
                 {(() => {
-                  const isMember = (previewTown.members || []).some(m => m.name === 'jerome');
+                  const isMember = myVillageIds.includes(previewTown.id);
                   const isFull = previewTown.capacity && (previewTown.memberCount || (previewTown.members||[]).length) >= previewTown.capacity;
                   const isPast = (previewTown.collection || '') === 'past' || previewTown.status === 'completed';
                   let label = '참여하기';
