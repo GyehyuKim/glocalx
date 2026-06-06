@@ -45,7 +45,10 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editVisibility, setEditVisibility] = useState('public');
-  const [membersKey, setMembersKey] = useState(0);
+  const [membersList, setMembersList] = useState(() => {
+    const t = (state.towns || []).find(x => x.id === townId);
+    return (t && t.members) || [];
+  });
   const [topics, setTopics] = useState(() => {
     const t = (state.towns || []).find(x => x.id === townId);
     return (t && t._topics) || [];
@@ -57,28 +60,21 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
   const book = town ? resolveBook(town) : null;
   if (!town || !book) return (<section className="view active"><div>마을을 찾을 수 없습니다</div></section>);
 
-  // 마을 멤버 비동기 로드 (Supabase) — 나를 포함한 실제 멤버 표시
+  // 마을 멤버 비동기 로드 (Supabase) — React state로 관리하여 부모 리렌더에도 안전
   useEffect(() => {
     const DS = window.DataStore;
-    if (!DS || !DS.villages || !DS.villages.members) {
-      // DataStore 없으면 현재 유저를 fallback 멤버로
-      const me = window.RG_ME;
-      if (me && (!town.members || town.members.length === 0)) {
-        town.members = [{ name: me.handle || me.name || '나', nest: '🪺', streak: 0, cumulativePage: 0, todayRecorded: false }];
-        setMembersKey(k => k + 1);
-      }
-      return;
-    }
-    Promise.resolve(DS.villages.members(townId)).then(rows => {
-      if (!rows || !rows.length) {
+    const fallback = () => {
+      setMembersList(prev => {
+        if (prev.length) return prev;
         const me = window.RG_ME;
-        if (me) {
-          town.members = [{ name: me.handle || me.name || '나', nest: '🪺', streak: 0, cumulativePage: 0, todayRecorded: false }];
-          setMembersKey(k => k + 1);
-        }
-        return;
-      }
-      town.members = rows.map(r => {
+        if (!me) return prev;
+        return [{ name: me.handle || me.name || '나', nest: '🪺', streak: 0, cumulativePage: 0, todayRecorded: false }];
+      });
+    };
+    if (!DS || !DS.villages || !DS.villages.members) { fallback(); return; }
+    Promise.resolve(DS.villages.members(townId)).then(rows => {
+      if (!rows || !rows.length) { fallback(); return; }
+      setMembersList(rows.map(r => {
         const u = r.user || {};
         return {
           name: u.handle || u.display_name || u.email || '멤버',
@@ -90,9 +86,8 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
           page: u.todaySentence ? u.todaySentence.page : null,
           claps: 0,
         };
-      });
-      setMembersKey(k => k + 1);
-    }).catch(() => {});
+      }));
+    }).catch(fallback);
   }, [townId]);
 
   // 게시판 주제 비동기 로드 (Supabase)
@@ -289,12 +284,12 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
       {(() => {
         const totalParts = Math.max(town.totalParts || 1, 1);
         const partProgress = Math.min(100, Math.max(0, ((town.currentPart - 1) / totalParts) * 100));
-        const members = town.members || [];
+        const members = membersList;
         const todayDone = members.filter(m => m.todayRecorded).length;
         const totalMembers = members.length;
         const dday = town.dday || 0;
         const ddayLabel = dday === 0 ? '오늘 마감' : dday < 0 ? `D${dday}` : `D+${dday}`;
-        const motto = _getVillageMottoLine(town, myHandle);
+        const motto = _getVillageMottoLine({ ...town, members: membersList }, myHandle);
         return (
           <div style={{padding:'12px 16px 8px', borderBottom:'1px solid var(--line)', marginBottom:4}}>
             {/* 1줄: 파트 · 챕터범위 · D-day + 진행 바 */}
@@ -332,7 +327,7 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
         const getProgress = (m) => Math.min(100, ((m.cumulativePage || 0) / totalPages) * 100);
 
         // 랭킹: 전체 책 진척률 내림차순 → 동점 시 스트릭 높은 순.
-        const regularMembers = (town.members || [])
+        const regularMembers = membersList
           .slice()
           .sort((a, b) => {
             const diff = getProgress(b) - getProgress(a);
@@ -487,7 +482,7 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
       })()}
 
       {activeSubtab==='sentence' && (() => {
-        const allMembers = town.members || [];
+        const allMembers = membersList;
         const todayQuotes = allMembers.filter(m => m.quote && m.todayRecorded);
         const yesterdayQuotes = allMembers.filter(m => m.quote && !m.todayRecorded);
         const todayCount = todayQuotes.length;
