@@ -133,29 +133,14 @@ function TownDetailView({ state, townId, onBack }) {
         // 진척률 계산: 읽은 페이지 / 책 전체 페이지 × 100
         const getProgress = (m) => Math.min(100, ((m.cumulativePage || 0) / totalPages) * 100);
 
-        // 역할 뱃지: 👑 관리자 / ⭐ 공동관리자
-        const getRoleBadge = (memberName) => {
-          const h = _norm(memberName);
-          if (h === leaderHandle) return '👑';
-          if ((town.coAdmins || []).some(ca => _norm(ca) === h)) return '⭐';
-          return '';
-        };
-
-        // 랭킹: 전체 책 진척률 내림차순 → 동점 시 스트릭 높은 순. NPC 제외.
+        // 랭킹: 전체 책 진척률 내림차순 → 동점 시 스트릭 높은 순.
         const regularMembers = (town.members || [])
-          .filter(m => !m.isNPC)
           .slice()
           .sort((a, b) => {
             const diff = getProgress(b) - getProgress(a);
             return diff !== 0 ? diff : (b.streak || 0) - (a.streak || 0);
           })
           .map((m, i) => ({ ...m, rank: i + 1 }));
-
-        // NPC 시드 (Phase0): members에 isNPC가 없으면 데미안 고정 노출
-        const npcSeed = [{ name: '데미안', nest: '🏰', isNPC: true, todayRecorded: true, cumulativePage: totalPages, streak: 999, xp: 9999 }];
-        const npcMembers = (town.members || []).filter(m => m.isNPC).length > 0
-          ? (town.members || []).filter(m => m.isNPC)
-          : npcSeed;
 
         // 15명 이하: 전원 3열 그리드. 16명 이상: 상위 15위 그리드 + 나머지 한 줄 목록
         const gridMembers = regularMembers.slice(0, 15);
@@ -167,11 +152,10 @@ function TownDetailView({ state, townId, onBack }) {
               👥 참여자 ({regularMembers.length}명)
             </div>
 
-            {/* 3열 랭킹 그리드 */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+            {/* 3열 랭킹 그리드 — align-items:stretch 로 같은 row 높이 균일 */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,alignItems:'start'}}>
               {gridMembers.map(m => {
                 const progress = getProgress(m);
-                const roleBadge = getRoleBadge(m.name);
                 const isLit = !!m.todayRecorded;
                 const isSelf = _norm(m.name) === _norm(myHandle);
                 const canPoke = isPrivate && !isLit && !isSelf;
@@ -180,66 +164,88 @@ function TownDetailView({ state, townId, onBack }) {
                 return (
                   <div key={m.name} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
                     {/* 순위 번호 (카드 외부 상단) */}
-                    <div style={{fontSize:13,fontWeight:900,color:'var(--ink-2)'}}>
+                    <div style={{fontSize:13,fontWeight:900,color:'var(--ink-2)',alignSelf:'center'}}>
                       {m.rank <= 3 ? ['🥇','🥈','🥉'][m.rank - 1] : `${m.rank}위`}
                     </div>
 
-                    {/* 멤버 카드 */}
-                    <button
-                      onClick={() => goProfile(m.name)}
+                    {/* 멤버 카드 — position:relative 로 불빛 우측상단 절대배치 */}
+                    <div
                       style={{
+                        position:'relative',
                         width:'100%',
-                        padding:'10px 6px',
                         borderRadius:14,
                         border:'1.5px solid ' + (isLit ? 'var(--brand)' : 'var(--line)'),
                         background: isLit ? 'var(--brand-tint)' : 'var(--card)',
-                        cursor:'pointer',
-                        textAlign:'center',
                         boxShadow: isLit ? '0 0 14px rgba(34,122,83,0.22)' : 'none',
                         transition:'box-shadow 0.15s ease',
+                        padding:'10px 6px 10px',
+                        boxSizing:'border-box',
+                        display:'flex',
+                        flexDirection:'column',
+                        alignItems:'center',
+                        minHeight:100,
                       }}
                     >
-                      {/* 둥지 이모지 + 불빛 */}
-                      <div style={{fontSize:26,lineHeight:1,marginBottom:3}}>
-                        {m.nest}
-                        <span style={{fontSize:9,marginLeft:1,color: isLit ? '#F5A623' : 'var(--ink-3)'}}>
-                          {isLit ? '●' : '○'}
-                        </span>
-                      </div>
-                      {/* 닉네임 */}
-                      <div style={{fontSize:11,fontWeight:800,color:'var(--ink-1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%',padding:'0 2px'}}>
-                        {m.name}
-                      </div>
-                      {/* 역할 뱃지 */}
-                      {roleBadge && (
-                        <div style={{fontSize:12,marginTop:2,lineHeight:1}}>{roleBadge}</div>
-                      )}
-                      {/* 진척률 */}
-                      <div style={{fontSize:13,fontWeight:900,color:'var(--brand-3)',marginTop:4}}>
-                        {progress.toFixed(1)}%
-                      </div>
-                    </button>
+                      {/* 불빛 — 우측 상단 코너 절대배치 */}
+                      <span style={{
+                        position:'absolute',
+                        top:6,
+                        right:7,
+                        fontSize:9,
+                        color: isLit ? '#F5A623' : 'var(--ink-3)',
+                        lineHeight:1,
+                      }}>
+                        {isLit ? '●' : '○'}
+                      </span>
 
-                    {/* 콕찌르기 버튼: 비공개 마을 + 불 꺼진(○) 멤버 전용 */}
-                    {canPoke && (
+                      {/* 카드 본체: 프로필 이동 영역 */}
                       <button
-                        onClick={() => handlePoke(m.name)}
-                        disabled={hasPoked}
+                        onClick={() => goProfile(m.name)}
                         style={{
-                          padding:'4px 8px',
-                          border:'1.5px solid ' + (hasPoked ? 'var(--line-2)' : 'var(--line)'),
-                          borderRadius:20,
-                          background: hasPoked ? 'var(--line-2)' : 'var(--paper)',
-                          color: hasPoked ? 'var(--ink-3)' : 'var(--ink-2)',
-                          fontWeight:700,
-                          fontSize:10,
-                          cursor: hasPoked ? 'default' : 'pointer',
-                          whiteSpace:'nowrap',
+                          width:'100%',
+                          background:'transparent',
+                          border:'none',
+                          cursor:'pointer',
+                          textAlign:'center',
+                          padding:0,
+                          flex:1,
                         }}
                       >
-                        {hasPoked ? '✓ 콕 찔렀어요' : '🪱 콕찌르기'}
+                        {/* 둥지 이모지 */}
+                        <div style={{fontSize:26,lineHeight:1,marginBottom:4}}>{m.nest}</div>
+                        {/* 닉네임 */}
+                        <div style={{fontSize:11,fontWeight:800,color:'var(--ink-1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>
+                          {m.name}
+                        </div>
+                        {/* 진도 XX% */}
+                        <div style={{fontSize:12,fontWeight:900,color:'var(--brand-3)',marginTop:4}}>
+                          진도 {Math.round(progress)}%
+                        </div>
                       </button>
-                    )}
+
+                      {/* 콕찌르기 — 카드 내부 하단. 비공개 마을 + 불 꺼진 멤버 전용 */}
+                      {canPoke && (
+                        <button
+                          onClick={() => handlePoke(m.name)}
+                          disabled={hasPoked}
+                          style={{
+                            marginTop:6,
+                            width:'100%',
+                            padding:'4px 0',
+                            border:'1.5px solid ' + (hasPoked ? 'var(--line-2)' : 'var(--line)'),
+                            borderRadius:20,
+                            background: hasPoked ? 'var(--line-2)' : 'var(--paper)',
+                            color: hasPoked ? 'var(--ink-3)' : 'var(--ink-2)',
+                            fontWeight:700,
+                            fontSize:10,
+                            cursor: hasPoked ? 'default' : 'pointer',
+                            whiteSpace:'nowrap',
+                          }}
+                        >
+                          {hasPoked ? '✓ 콕 찔렀어요' : '🪱 콕찌르기'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -262,7 +268,7 @@ function TownDetailView({ state, townId, onBack }) {
                       <button onClick={()=>goProfile(m.name)} style={{flex:1,background:'none',border:'none',textAlign:'left',fontSize:13,fontWeight:700,color:'var(--brand-3)',cursor:'pointer'}}>
                         {m.name}
                       </button>
-                      <span style={{fontSize:13,fontWeight:900,color:'var(--brand-3)'}}>{progress.toFixed(1)}%</span>
+                      <span style={{fontSize:13,fontWeight:900,color:'var(--brand-3)'}}>진도 {Math.round(progress)}%</span>
                       {canPoke && (
                         <button
                           onClick={() => handlePoke(m.name)}
@@ -278,37 +284,6 @@ function TownDetailView({ state, townId, onBack }) {
               </div>
             )}
 
-            {/* NPC 구분선 + NPC 카드 */}
-            <div style={{display:'flex',alignItems:'center',gap:8,margin:'20px 0 12px'}}>
-              <div style={{flex:1,height:1,background:'var(--line-2)'}} />
-              <div style={{fontSize:11,fontWeight:700,color:'var(--ink-3)',letterSpacing:'0.08em'}}>NPC</div>
-              <div style={{flex:1,height:1,background:'var(--line-2)'}} />
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
-              {npcMembers.map(m => (
-                <div key={m.name} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                  <div style={{fontSize:13,fontWeight:900,color:'transparent',userSelect:'none'}}>—</div>
-                  <div
-                    style={{
-                      width:'100%',
-                      padding:'10px 6px',
-                      borderRadius:14,
-                      border:'1.5px solid var(--brand)',
-                      background:'var(--brand-tint)',
-                      textAlign:'center',
-                    }}
-                  >
-                    <div style={{fontSize:26,lineHeight:1,marginBottom:3}}>
-                      {m.nest}
-                      <span style={{fontSize:9,marginLeft:1,color:'#F5A623'}}>●</span>
-                    </div>
-                    <div style={{fontSize:11,fontWeight:800,color:'var(--ink-1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',padding:'0 2px'}}>{m.name}</div>
-                    <div style={{fontSize:12,marginTop:2,lineHeight:1}}>🤖</div>
-                    <div style={{fontSize:13,fontWeight:900,color:'var(--brand-3)',marginTop:4}}>100.0%</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         );
       })()}
