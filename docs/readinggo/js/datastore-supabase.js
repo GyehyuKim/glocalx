@@ -514,7 +514,66 @@
           .eq('id', villageId).single());
       },
       async members(villageId) {
-        return unwrap(await sb().from('village_members').select('joined_at, user:users(*)').eq('village_id', villageId));
+        const today = _today();
+
+        // 1. Village의 book_id
+        const vRow = unwrap(await sb().from('villages').select('book_id').eq('id', villageId).maybeSingle());
+        const bookId = vRow && vRow.book_id;
+
+        // 2. 멤버 목록 (user 기본 정보)
+        const memberRows = unwrap(await sb().from('village_members')
+          .select('joined_at, user:users(id, handle, name, nest_emoji, streak)')
+          .eq('village_id', villageId)) || [];
+        if (!memberRows.length || !bookId) return memberRows;
+
+        const memberIds = memberRows.map(r => r.user && r.user.id).filter(Boolean);
+        if (!memberIds.length) return memberRows;
+
+        // 3. 이 책의 user_books (현재 페이지)
+        const ubRows = unwrap(await sb().from('user_books')
+          .select('id, user_id, current_page')
+          .eq('book_id', bookId)
+          .in('user_id', memberIds)) || [];
+        const userBookIds = ubRows.map(r => r.id);
+
+        // 4. 오늘 독서 세션 여부 (todayRecorded)
+        const todaySessions = userBookIds.length
+          ? unwrap(await sb().from('reading_sessions')
+              .select('user_book_id')
+              .in('user_book_id', userBookIds)
+              .eq('session_date', today)) || []
+          : [];
+        const todayUbIdSet = new Set(todaySessions.map(s => s.user_book_id));
+
+        // 5. 최근 한 문장 per member (어제 포함, 최신 1개)
+        const sentRows = userBookIds.length
+          ? unwrap(await sb().from('sentences')
+              .select('user_id, user_book_id, text, page')
+              .in('user_book_id', userBookIds)
+              .order('created_at', { ascending: false })
+              .limit(userBookIds.length * 5)) || []
+          : [];
+        // user_book_id → 최신 sentence (첫 번째가 최신)
+        const sentByUbId = {};
+        for (const s of sentRows) {
+          if (!sentByUbId[s.user_book_id]) sentByUbId[s.user_book_id] = s;
+        }
+
+        // 6. 병합
+        return memberRows.map(r => {
+          const u = r.user || {};
+          const ub = ubRows.find(x => x.user_id === u.id);
+          const sent = ub ? sentByUbId[ub.id] : null;
+          return {
+            ...r,
+            user: {
+              ...u,
+              cumulativePage: (ub && ub.current_page) || 0,
+              todayRecorded: ub ? todayUbIdSet.has(ub.id) : false,
+              todaySentence: sent ? { text: sent.text, page: sent.page } : null,
+            },
+          };
+        });
       },
       async listPublic({ limit } = {}) {
         let q = sb().from('villages')

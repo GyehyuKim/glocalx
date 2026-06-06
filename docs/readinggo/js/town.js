@@ -79,7 +79,16 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
       }
       town.members = rows.map(r => {
         const u = r.user || {};
-        return { name: u.handle || u.name || u.email || '멤버', nest: u.nest_emoji || '🪺', streak: u.streak || 0, cumulativePage: 0, todayRecorded: false };
+        return {
+          name: u.handle || u.name || u.email || '멤버',
+          nest: u.nest_emoji || '🪺',
+          streak: u.streak || 0,
+          cumulativePage: u.cumulativePage || 0,
+          todayRecorded: !!u.todayRecorded,
+          quote: u.todaySentence ? u.todaySentence.text : '',
+          page: u.todaySentence ? u.todaySentence.page : null,
+          claps: 0,
+        };
       });
       setMembersKey(k => k + 1);
     }).catch(() => {});
