@@ -277,7 +277,7 @@ const INITIAL_STATE = {
       id: "town_004",
       bookId: "b002",
       name: "KAIST 독서 챌린지",
-      collection: "active",
+      collection: "recommended",
       visibility: "public",
       inviteCode: "KAIST1",
       capacity: 20,
