@@ -8,9 +8,15 @@ function _villageRowToTown(v, collection, myUserId) {
   const parts = Array.isArray(v.parts) ? v.parts : [];
   const totalParts = parts.length || 1;
   const isMyVillage = myUserId && v.created_by === myUserId;
+  // book_id 는 Supabase UUID — ISBN 경유로 로컬 TSV ID 매핑, 미매핑 시 UUID 유지
+  let bookId = v.book_id || '';
+  if (v.book && v.book.isbn13) {
+    const found = (window.ALL_BOOKS || []).find(b => b.isbn === v.book.isbn13);
+    if (found) bookId = found.book_id;
+  }
   return {
     id: v.id,
-    bookId: v.book_id || '',
+    bookId,
     name: v.name || '',
     description: v.description || '',
     collection: collection || 'active',
@@ -32,7 +38,7 @@ function _villageRowToTown(v, collection, myUserId) {
   };
 }
 
-function VillageView({ state, onSelectTown }) {
+function VillageView({ state, onSelectTown, onTownsChange }) {
   const { useMemo, useState, useEffect } = React;
   const [isFinderOpen, setIsFinderOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -90,6 +96,12 @@ function VillageView({ state, onSelectTown }) {
 
     return () => { alive = false; };
   }, []);
+
+  // towns 변경 시 부모(App)에 동기화 — TownDetailView가 appState.towns로 조회하기 때문
+  useEffect(() => {
+    if (onTownsChange) onTownsChange(towns);
+  }, [towns]);
+
   const codeInputRef = React.useRef(null);
 
   const getDday = (dday) => {
@@ -227,8 +239,13 @@ function VillageView({ state, onSelectTown }) {
       })).then(v => {
         if (!v) { setCreateError('마을 생성에 실패했어요. 다시 시도해주세요.'); return; }
         const newTown = _villageRowToTown(v, 'active', v.created_by);
+        // create 직후 응답엔 member_count·parts 미포함 → 입력값으로 보정
+        newTown.bookId = createBookId;
         newTown.myRole = 'admin';
         newTown.memberCount = 1;
+        newTown.totalParts = partCount;
+        newTown.currentPart = 1;
+        newTown.milestones = Array.from({ length: partCount }).map((_, i) => ({ part: i + 1, dueDate: createPartDueDates[i] || null, completed: false }));
         setTowns(prev => [...prev, newTown]);
         setMyVillageIds(prev => [...prev, newTown.id]);
         showToast(`마을을 만들었어요: ${newTown.name}`);

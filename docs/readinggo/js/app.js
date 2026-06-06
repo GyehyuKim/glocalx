@@ -115,6 +115,7 @@ function App() {
   const [dataReady, setDataReady] = useState(!_supa);
   const [activeTab, setActiveTab] = useState('nest');
   const [selectedTownId, setSelectedTownId] = useState(null);
+  const [villageTowns, setVillageTowns] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   // 스포일러 전역 토글 (§5.7.1): true 면 모든 페이지 블라인드 해제.
   const [spoilerReveal, setSpoilerReveal] = useState(false);
@@ -482,12 +483,13 @@ function App() {
               key="village"
               state={appState}
               onSelectTown={handleSelectTown}
+              onTownsChange={setVillageTowns}
             />
           )}
           {activeTab === 'village' && selectedTownId && (
             <TownDetailView
               key={`town_${selectedTownId}`}
-              state={appState}
+              state={villageTowns.length > 0 ? { ...appState, towns: villageTowns } : appState}
               townId={selectedTownId}
               onBack={handleBackToVillage}
             />
