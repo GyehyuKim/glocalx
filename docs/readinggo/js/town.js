@@ -3,7 +3,8 @@
    마을 내부: 멤버 / 한 문장 / 게시판 + 설정 시트 (Phase0: 로컬 모의)
    ========================================================= */
 
-/* 상황별 재치 문구 — spec §5.5.4 우선순위 순 */
+/* 상황별 재치 문구 — spec §5.5.4 우선순위 순
+   dday 관례: 음수 = 미래(남은 일수), 양수 = 초과(지난 일수). D-1 = dday:-1 */
 function _getVillageMottoLine(town, myHandle) {
   const members = town.members || [];
   const total = members.length;
@@ -15,9 +16,9 @@ function _getVillageMottoLine(town, myHandle) {
   const doneCount = members.filter(m => m.todayRecorded).length;
   const doneRatio = total > 0 ? doneCount / total : 0;
 
-  // 우선순위 1: D-1 + 내가 미완료
-  if (dday >= -1 && dday < 0 && !myDone) return '내일이 마감이에요 😱 오늘 꼭 읽어요!';
-  // 우선순위 2: D-3 이내 + 내가 미완료
+  // 우선순위 1: D-1 + 내가 미완료 (dday=-1: 1일 남음)
+  if (dday === -1 && !myDone) return '내일이 마감이에요 😱 오늘 꼭 읽어요!';
+  // 우선순위 2: D-3 이내 + 내가 미완료 (dday=-2 또는 -3)
   if (dday >= -3 && dday < 0 && !myDone) return `마감 D${dday}! 지금 펼치면 딱 좋아요 📚`;
   // 우선순위 3: 내 완료 O
   if (myDone) {
@@ -27,8 +28,6 @@ function _getVillageMottoLine(town, myHandle) {
     return '오늘은 내가 선두예요 ✨ 마을 불씨가 됐어요!';
   }
   // 우선순위 3: 내 완료 X
-  const avgProgress = total > 0 ? members.reduce((s, m) => s + (m.cumulativePage || 0), 0) / total : 0;
-  const bookTotal = 1; // 상대 비교용 — 70% 기준은 완료 인원 비율로 대체
   if (doneRatio > 0.7) return '멤버들이 쌩쌩 달리는 중 💨 뒤처지지 마세요!';
   if (doneRatio > 0.5) return '절반 넘게 읽었는데 나만 아직이에요 😅 얼른요!';
   if (doneCount === 0) return '오늘 마을 전체 정전 🌑 첫 불꽃이 되어볼까요?';
@@ -57,6 +56,11 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
   const [inviteResults, setInviteResults] = useState([]);
   const [isEditingMilestones, setIsEditingMilestones] = useState(false);
   const [milestoneDates, setMilestoneDates] = useState([]);
+  const [coAdminList, setCoAdminList] = useState(() => {
+    const t = (state.towns || []).find(x => x.id === townId);
+    return (t && t.coAdmins || []).map(h => String(h).replace(/^@/, ''));
+  });
+  const [transferTarget, setTransferTarget] = useState('');
 
   const town = (state.towns || []).find(t => t.id === townId);
   const book = town ? resolveBook(town) : null;
@@ -134,7 +138,11 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
 
   const myHandle = (window.RG_ME && window.RG_ME.handle) || '';
   const leaderHandle = String(town.leader || '').replace(/^@/, '');
-  const isAdmin = (town.myRole === 'admin' || (leaderHandle && leaderHandle === myHandle) || (town.coAdmins || []).includes(myHandle)) && town.collection !== 'past';
+  // 전체 관리자: 마을 설정·멤버 관리·권한 이양·삭제 가능
+  const isAdminFull = (town.myRole === 'admin' || (leaderHandle && leaderHandle === myHandle)) && town.collection !== 'past';
+  // 공동관리자: 마일스톤 수정·게시판 주제 관리 가능 (단, 멤버 관리·마을 삭제 불가)
+  const isCoAdmin = !isAdminFull && (town.coAdmins || []).includes(String(myHandle || '').replace(/^@/, '')) && town.collection !== 'past';
+  const isAdmin = isAdminFull || isCoAdmin; // 게시판 주제 등록·수정 등 공통 권한
   // 모든 노출 닉네임 → 프로필 (#3·7·8·9). @ 접두 정규화 후 RG_openProfile.
   const goProfile = (h) => { const handle = String(h || '').replace(/^@/, ''); if (handle && window.RG_openProfile) window.RG_openProfile(handle); };
   const _norm = (h) => String(h || '').replace(/^@/, '');
@@ -166,13 +174,60 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
     catch (e) { showToast('공유 링크: ' + url); }
   };
 
-  // 마을 나가기 (#9) — 실제 탈퇴 후 목록으로
+  // 마을 나가기 (#9) — 관리자는 권한 이양 후 나가기 가능 (spec §5.5.5)
   const leaveVillage = () => {
+    if (isAdminFull && membersList.length > 1) {
+      showToast('관리자는 권한을 이양한 후 나갈 수 있어요 (설정 > 관리자 > 권한 이양)');
+      return;
+    }
     if (!window.confirm(`'${town.name}' 마을에서 나갈까요?`)) return;
     const done = () => { showToast('마을에서 나왔어요'); setIsSettingsOpen(false); onBack(); };
     if (window.DataStore && window.DataStore.villages && window.DataStore.villages.leave) {
       Promise.resolve(window.DataStore.villages.leave(town.id)).then(done).catch(() => showToast('나가기 실패 — 잠시 후 다시'));
     } else { done(); }
+  };
+
+  // 멤버 강퇴 (관리자 전용)
+  const kickMember = (memberName) => {
+    if (!window.confirm(`@${memberName}을 마을에서 강퇴할까요?`)) return;
+    setMembersList(prev => prev.filter(m => m.name !== memberName));
+    showToast(`@${memberName}을 강퇴했어요`);
+    const DS = window.DataStore;
+    if (DS && DS.villages && DS.villages.kick) {
+      Promise.resolve(DS.villages.kick(town.id, memberName)).catch(() => {});
+    }
+  };
+
+  // 공동관리자 지정·해제 (관리자 전용)
+  const toggleCoAdmin = (memberName) => {
+    const handle = String(memberName).replace(/^@/, '');
+    const next = coAdminList.includes(handle)
+      ? coAdminList.filter(h => h !== handle)
+      : [...coAdminList, handle];
+    setCoAdminList(next);
+    town.coAdmins = next;
+    if (onTownUpdate) onTownUpdate({ id: townId, coAdmins: next });
+    showToast(coAdminList.includes(handle) ? `@${handle} 공동관리자 해제` : `@${handle} 공동관리자 지정`);
+    const DS = window.DataStore;
+    if (DS && DS.villages && DS.villages.update) {
+      Promise.resolve(DS.villages.update(town.id, { co_admins: next })).catch(() => {});
+    }
+  };
+
+  // 관리자 권한 이양 (관리자 전용)
+  const transferAdmin = () => {
+    if (!transferTarget) { showToast('이양할 멤버를 선택해주세요'); return; }
+    if (!window.confirm(`@${transferTarget}에게 관리자 권한을 이양할까요?\n이양 후 내 역할은 일반 멤버로 변경돼요.`)) return;
+    town.myRole = 'member';
+    town.leader = '@' + transferTarget;
+    if (onTownUpdate) onTownUpdate({ id: townId, myRole: 'member', leader: '@' + transferTarget });
+    showToast(`@${transferTarget}에게 관리자 권한을 이양했어요`);
+    setTransferTarget('');
+    setIsSettingsOpen(false);
+    const DS = window.DataStore;
+    if (DS && DS.villages && DS.villages.transferAdmin) {
+      Promise.resolve(DS.villages.transferAdmin(town.id, transferTarget)).catch(() => {});
+    }
   };
 
   // 마을 삭제 (관리자 전용) — ⚠️ 확인 다이얼로그 필수
@@ -342,6 +397,22 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
           </div>
         );
       })()}
+
+      {/* 완독 배너 — 마지막 파트 완료 시 (spec §5.5.4 파트 마감 후 동작) */}
+      {town.status === 'completed' && (
+        <div style={{
+          margin:'0 16px 12px',
+          padding:'14px 18px',
+          borderRadius:18,
+          background:'linear-gradient(135deg, #2D6A4F 0%, #52B788 100%)',
+          color:'white',
+          textAlign:'center',
+        }}>
+          <div style={{fontSize:26, marginBottom:4}}>🎉</div>
+          <div style={{fontSize:16, fontWeight:900, marginBottom:4}}>《{book.title}》 완독!</div>
+          <div style={{fontSize:13, fontWeight:700, opacity:0.9}}>함께 읽어줘서 고마워요 🐦</div>
+        </div>
+      )}
 
       <div style={{padding:'0 16px',position:'sticky',top:0,zIndex:20,background:'var(--paper)',borderBottom:'1px solid var(--line)',marginBottom:12}}>
         <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,paddingBottom:10}}>
@@ -677,8 +748,54 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
                   </div>
                 </div>
 
+                {/* 공동관리자 전용 섹션 — 마일스톤 수정 (spec §5.5.6) */}
+                {isCoAdmin && !isAdminFull && (
+                  <div style={{padding:10, background:'var(--card)', borderRadius:10, border:'1px solid var(--line)'}}>
+                    <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:8}}>⭐ 공동관리자</div>
+                    {(() => {
+                      const toc = book.toc || [];
+                      if (toc.length === 0) return <div style={{fontSize:12, color:'var(--ink-3)'}}>목차 데이터가 없어요</div>;
+                      const saveMilestones = () => {
+                        const newMs = toc.map((ch, i) => ({
+                          part: ch[0], title: ch[1], startPage: ch[2], endPage: ch[3],
+                          dueDate: milestoneDates[i] || null, completed: false,
+                        }));
+                        if (onTownUpdate) onTownUpdate({ id: townId, milestones: newMs });
+                        setIsEditingMilestones(false);
+                        showToast('파트 마감일이 저장되었습니다');
+                      };
+                      return !isEditingMilestones ? (
+                        <button onClick={() => {
+                          setMilestoneDates(toc.map((ch, i) => {
+                            const ms = (town.milestones || []).find(m => m.part === ch[0]);
+                            return (ms && ms.dueDate) || '';
+                          }));
+                          setIsEditingMilestones(true);
+                        }} style={{padding:'8px 0', width:'100%', background:'none', border:'none', color:'var(--ink-1)', fontWeight:800, fontSize:13, cursor:'pointer', textAlign:'left'}}>
+                          📅 파트 마감일 수정
+                        </button>
+                      ) : (
+                        <div>
+                          <div style={{display:'flex', flexDirection:'column', gap:6, marginBottom:8}}>
+                            {toc.map((ch, i) => (
+                              <div key={i} style={{display:'flex', alignItems:'center', gap:6, padding:'6px 10px', borderRadius:8, background:'var(--paper)', border:'1px solid var(--line-2)'}}>
+                                <span style={{fontSize:11, fontWeight:800, flex:1}}>{ch[1]}</span>
+                                <input type="date" value={milestoneDates[i]||''} onChange={e => setMilestoneDates(prev => { const n=[...prev]; n[i]=e.target.value; return n; })} style={{padding:'3px 6px', borderRadius:6, border:'1.5px solid var(--line)', fontSize:11}} />
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{display:'flex', gap:6}}>
+                            <button onClick={() => setIsEditingMilestones(false)} style={{flex:1, padding:'6px 0', border:'1.5px solid var(--line)', borderRadius:8, background:'var(--card)', fontWeight:800, fontSize:12, cursor:'pointer'}}>취소</button>
+                            <button onClick={saveMilestones} style={{flex:1, padding:'6px 0', border:'none', borderRadius:8, background:'var(--brand)', color:'white', fontWeight:800, fontSize:12, cursor:'pointer'}}>저장</button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 {/* 관리자 전용 섹션 */}
-                {town.myRole === 'admin' && (
+                {isAdminFull && (
                   <div style={{padding:10, background:'var(--card)', borderRadius:10, border:'1px solid var(--brand-tint)'}}>
                     <div style={{fontSize:12, fontWeight:800, color:'var(--brand-3)', marginBottom:8}}>👑 관리자</div>
                     {!isEditingInfo ? (
@@ -823,6 +940,85 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
                               </button>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{height:'1px', background:'var(--line)', margin:'8px 0'}} />
+                    {/* 공동관리자 지정·해제 (spec §5.5.6) */}
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:6}}>⭐ 공동관리자 지정·해제</div>
+                      {membersList.filter(m => _norm(m.name) !== myHandle).length === 0 ? (
+                        <div style={{fontSize:12, color:'var(--ink-3)'}}>다른 멤버가 없어요</div>
+                      ) : (
+                        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                          {membersList.filter(m => _norm(m.name) !== myHandle).map(m => {
+                            const handle = _norm(m.name);
+                            const isCo = coAdminList.includes(handle);
+                            return (
+                              <div key={m.name} style={{display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:10, background:'var(--paper)', border:'1px solid var(--line-2)'}}>
+                                <span style={{fontSize:16}}>{m.nest}</span>
+                                <span style={{flex:1, fontSize:12, fontWeight:700}}>@{handle}</span>
+                                {isCo && <span style={{fontSize:11, color:'var(--brand-3)', fontWeight:800}}>⭐ 공동관리자</span>}
+                                <button
+                                  onClick={() => toggleCoAdmin(m.name)}
+                                  style={{padding:'4px 10px', borderRadius:16, background: isCo ? 'var(--rose-soft)' : 'var(--brand-tint)', border:'1.5px solid '+(isCo?'var(--rose)':'var(--brand)'), color: isCo ? 'var(--rose)' : 'var(--brand-3)', fontWeight:800, fontSize:11, cursor:'pointer', whiteSpace:'nowrap'}}
+                                >
+                                  {isCo ? '해제' : '지정'}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{height:'1px', background:'var(--line)', margin:'8px 0'}} />
+                    {/* 멤버 강퇴 (spec §5.5.6) */}
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:6}}>🚫 멤버 강퇴</div>
+                      {membersList.filter(m => _norm(m.name) !== myHandle).length === 0 ? (
+                        <div style={{fontSize:12, color:'var(--ink-3)'}}>강퇴할 멤버가 없어요</div>
+                      ) : (
+                        <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                          {membersList.filter(m => _norm(m.name) !== myHandle).map(m => (
+                            <div key={m.name} style={{display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:10, background:'var(--paper)', border:'1px solid var(--line-2)'}}>
+                              <span style={{fontSize:16}}>{m.nest}</span>
+                              <span style={{flex:1, fontSize:12, fontWeight:700}}>@{_norm(m.name)}</span>
+                              <button
+                                onClick={() => kickMember(m.name)}
+                                style={{padding:'4px 10px', borderRadius:16, background:'var(--rose-soft)', border:'1.5px solid var(--rose)', color:'var(--rose)', fontWeight:800, fontSize:11, cursor:'pointer'}}
+                              >
+                                강퇴
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{height:'1px', background:'var(--line)', margin:'8px 0'}} />
+                    {/* 관리자 권한 이양 (spec §5.5.5) */}
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:12, fontWeight:800, color:'var(--ink-2)', marginBottom:6}}>👑 관리자 권한 이양</div>
+                      {membersList.filter(m => _norm(m.name) !== myHandle).length === 0 ? (
+                        <div style={{fontSize:12, color:'var(--ink-3)'}}>이양할 멤버가 없어요 — 마을 삭제만 가능해요</div>
+                      ) : (
+                        <div>
+                          <select
+                            value={transferTarget}
+                            onChange={e => setTransferTarget(e.target.value)}
+                            style={{width:'100%', padding:'7px 10px', borderRadius:8, border:'1.5px solid var(--line)', fontSize:12, background:'var(--paper)', marginBottom:6}}
+                          >
+                            <option value="">멤버 선택...</option>
+                            {membersList.filter(m => _norm(m.name) !== myHandle).map(m => (
+                              <option key={m.name} value={_norm(m.name)}>@{_norm(m.name)}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={transferAdmin}
+                            disabled={!transferTarget}
+                            style={{width:'100%', padding:'7px 0', border:'none', borderRadius:8, background: transferTarget ? 'var(--brand)' : 'var(--line-2)', color: transferTarget ? 'white' : 'var(--ink-3)', fontWeight:800, fontSize:12, cursor: transferTarget ? 'pointer' : 'not-allowed'}}
+                          >
+                            권한 이양하기
+                          </button>
                         </div>
                       )}
                     </div>

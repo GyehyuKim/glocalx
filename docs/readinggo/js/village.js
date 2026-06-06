@@ -37,10 +37,10 @@ function _villageRowToTown(v, collection, myUserId) {
   // 만료된 파트 수로 currentPart 계산 (마감일이 오늘 이전인 파트 = 완료된 파트)
   const _expiredCount = parts.filter(p => p.due_date && new Date(p.due_date + 'T00:00:00') < new Date(_todayStr + 'T00:00:00')).length;
   const currentPart = Math.min(_expiredCount + 1, totalParts);
-  // currentPart 기준 마감일로 dday 계산
+  // currentPart 기준 마감일로 dday 계산 (음수=미래, 양수=초과 — seed 데이터 관례와 동일)
   const _currentPartDue = parts[currentPart - 1] && parts[currentPart - 1].due_date;
   const dday = _currentPartDue
-    ? Math.round((new Date(_currentPartDue + 'T00:00:00') - new Date(_todayStr + 'T00:00:00')) / 86400000)
+    ? Math.round((new Date(_todayStr + 'T00:00:00') - new Date(_currentPartDue + 'T00:00:00')) / 86400000)
     : 0;
   // 마지막 파트 마감일이 오늘 이전이면 자동 완료(지난 마을) 처리 — active 마을만 대상
   const _lastPart = parts[parts.length - 1];
