@@ -520,9 +520,9 @@
         const vRow = unwrap(await sb().from('villages').select('book_id').eq('id', villageId).maybeSingle());
         const bookId = vRow && vRow.book_id;
 
-        // 2. 멤버 목록 (user 기본 정보)
+        // 2. 멤버 목록 (user 기본 정보 + streak 조인)
         const memberRows = unwrap(await sb().from('village_members')
-          .select('joined_at, user:users(id, handle, name, nest_emoji, streak)')
+          .select('joined_at, user:users(id, handle, display_name, nest_emoji, streak:streak(current))')
           .eq('village_id', villageId)) || [];
         if (!memberRows.length || !bookId) return memberRows;
 
