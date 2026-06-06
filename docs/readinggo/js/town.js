@@ -46,15 +46,14 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
   const [editDesc, setEditDesc] = useState('');
   const [editVisibility, setEditVisibility] = useState('public');
   const [membersKey, setMembersKey] = useState(0);
+  const [topics, setTopics] = useState(() => {
+    const t = (state.towns || []).find(x => x.id === townId);
+    return (t && t._topics) || [];
+  });
 
   const town = (state.towns || []).find(t => t.id === townId);
   const book = town ? resolveBook(town) : null;
   if (!town || !book) return (<section className="view active"><div>마을을 찾을 수 없습니다</div></section>);
-
-  // Local board data (Phase0 in-memory) — 빈 배열로 시작, 하드코딩 샘플 없음
-  if (!town._topics) {
-    town._topics = [];
-  }
 
   // 마을 멤버 비동기 로드 (Supabase) — 나를 포함한 실제 멤버 표시
   useEffect(() => {
@@ -171,29 +170,38 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
     } else { done(); }
   };
 
-  // Board handlers (in-memory)
-  const [renderKey, setRenderKey] = useState(0);
+  // Board handlers — React state 기반, setTopics로 불변 업데이트
   const addTopic = (title, desc, days) => {
     if (!title || title.trim().length===0) { showToast('주제는 필수입니다'); return; }
     const id = 't' + Math.random().toString(36).slice(2,8);
-    town._topics.unshift({ id, title: title.slice(0,100), desc: desc ? desc.slice(0,200):'', status:'open', due: days, createdBy: myHandle, createdAt: '방금', opinions: [] });
+    setTopics(prev => [{ id, title: title.slice(0,100), desc: desc ? desc.slice(0,200):'', status:'open', due: days, createdBy: myHandle, createdAt: '방금', opinions: [] }, ...prev]);
     showToast('주제가 등록되었습니다');
-    setRenderKey(k=>k+1);
   };
   const updateTopic = (id, title, desc, days) => {
-    const t = town._topics.find(x=>x.id===id); if(!t) return;
+    const t = topics.find(x=>x.id===id); if(!t) return;
     if (!canEditTopic(t)) { showToast('내가 등록한 주제만 수정할 수 있어요'); return; }
-    t.title = title.slice(0,100); t.desc = desc ? desc.slice(0,200) : ''; t.due = days;
-    showToast('주제를 수정했습니다'); setRenderKey(k=>k+1);
+    setTopics(prev => prev.map(x => x.id===id ? {...x, title: title.slice(0,100), desc: desc ? desc.slice(0,200):'', due: days} : x));
+    showToast('주제를 수정했습니다');
   };
   const addOpinion = (topicId, text, author) => {
     if (!text || text.trim().length===0) { showToast('의견을 입력하세요'); return; }
-    const t = town._topics.find(x=>x.id===topicId); if(!t) return;
-    t.opinions.push({ id: 'o'+Math.random().toString(36).slice(2,8), author: author||myHandle, text: text.slice(0,300), createdAt: '방금' });
-    showToast('의견이 등록되었습니다'); setRenderKey(k=>k+1);
+    const newOp = { id: 'o'+Math.random().toString(36).slice(2,8), author: author||myHandle, text: text.slice(0,300), createdAt: '방금' };
+    setTopics(prev => prev.map(t => t.id===topicId ? {...t, opinions: [...(t.opinions||[]), newOp]} : t));
+    showToast('의견이 등록되었습니다');
   };
-  const deleteTopic = (topicId) => { const t=town._topics.find(x=>x.id===topicId); if(t && !canEditTopic(t)) { showToast('내가 등록한 주제만 삭제할 수 있어요'); return; } town._topics = town._topics.filter(t=>t.id!==topicId); showToast('주제를 삭제했습니다'); setRenderKey(k=>k+1); };
-  const deleteOpinion = (topicId, opinionId) => { const t=town._topics.find(x=>x.id===topicId); if(!t) return; const o=t.opinions.find(x=>x.id===opinionId); if(o && !canEditOpinion(o)) { showToast('내가 쓴 의견만 삭제할 수 있어요'); return; } t.opinions = t.opinions.filter(o=>o.id!==opinionId); showToast('의견이 삭제되었습니다'); setRenderKey(k=>k+1); };
+  const deleteTopic = (topicId) => {
+    const t = topics.find(x=>x.id===topicId);
+    if (t && !canEditTopic(t)) { showToast('내가 등록한 주제만 삭제할 수 있어요'); return; }
+    setTopics(prev => prev.filter(x=>x.id!==topicId));
+    showToast('주제를 삭제했습니다');
+  };
+  const deleteOpinion = (topicId, opinionId) => {
+    const t = topics.find(x=>x.id===topicId); if(!t) return;
+    const o = t.opinions.find(x=>x.id===opinionId);
+    if (o && !canEditOpinion(o)) { showToast('내가 쓴 의견만 삭제할 수 있어요'); return; }
+    setTopics(prev => prev.map(x => x.id===topicId ? {...x, opinions: x.opinions.filter(op=>op.id!==opinionId)} : x));
+    showToast('의견이 삭제되었습니다');
+  };
 
   // Topic editor control (parent-controlled)
   const [topicEditorOpen, setTopicEditorOpen] = useState(false);
@@ -467,7 +475,12 @@ function TownDetailView({ state, townId, onBack, onTownUpdate }) {
           </div>
 
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {(town._topics||[]).map(topic=> (
+            {topics.length === 0 && (
+              <div style={{padding:'24px 16px', borderRadius:12, border:'1px dashed var(--line-2)', color:'var(--ink-2)', fontSize:13, fontWeight:700, textAlign:'center'}}>
+                아직 주제가 없어요<br/>{isAdmin ? '+ 주제 등록으로 첫 토론을 시작해보세요 🐦' : '관리자가 주제를 등록하면 여기에 나타나요'}
+              </div>
+            )}
+            {topics.map(topic=> (
               <div key={topic.id} style={{padding:12,borderRadius:12,background:'var(--card)',border:'1.5px solid var(--line)'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
                   <div style={{flex:1,minWidth:0}}>

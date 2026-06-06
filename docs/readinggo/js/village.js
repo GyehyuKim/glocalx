@@ -39,13 +39,18 @@ function _villageRowToTown(v, collection, myUserId) {
   const dday = _currentDue
     ? Math.round((new Date(_currentDue + 'T00:00:00') - new Date(_todayStr + 'T00:00:00')) / 86400000)
     : 0;
+  // 마지막 파트 마감일이 오늘 이전이면 자동 완료(지난 마을) 처리 — active 마을만 대상
+  const _lastPart = parts[parts.length - 1];
+  const _isExpired = _lastPart && _lastPart.due_date
+    && new Date(_lastPart.due_date + 'T00:00:00') < new Date(_todayStr + 'T00:00:00');
+  const autoCollection = (collection === 'active' && _isExpired) ? 'past' : (collection || 'active');
   return {
     id: v.id,
     bookId,
     _bookData,
     name: v.name || '',
     description: v.description || '',
-    collection: collection || 'active',
+    collection: autoCollection,
     visibility: v.visibility || 'public',
     inviteCode: v.invite_code || null,
     capacity: null,
