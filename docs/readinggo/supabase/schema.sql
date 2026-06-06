@@ -299,12 +299,29 @@ create policy wish_all on public.wish_books for all using (user_id = auth.uid())
 drop policy if exists bm_all on public.sentence_bookmarks;
 create policy bm_all on public.sentence_bookmarks for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
+-- SECURITY DEFINER 헬퍼: RLS 우회 멤버십 확인 (순환 참조 방지용)
+-- village_members 정책 안에서 village_members 를 직접 조회하면 무한순환 발생.
+-- 이 함수는 SECURITY DEFINER 로 RLS 를 우회하므로 순환 없이 멤버십 체크 가능.
+create or replace function public.is_village_member(p_village_id uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.village_members
+    where village_id = p_village_id
+      and user_id = auth.uid()
+  );
+$$;
+
 -- villages: 공개 마을·생성자·멤버만 select. insert 로그인. 생성자 update
 drop policy if exists villages_sel on public.villages;
 create policy villages_sel on public.villages for select using (
   visibility = 'public'
   or created_by = auth.uid()
-  or exists (select 1 from public.village_members m where m.village_id = id and m.user_id = auth.uid())
+  or public.is_village_member(id)
 );
 drop policy if exists villages_ins on public.villages;
 create policy villages_ins on public.villages for insert with check (created_by = auth.uid());
@@ -314,10 +331,11 @@ create policy villages_upd on public.villages for update using (created_by = aut
 -- village_parts: 마을 볼 수 있으면 select, 생성자만 write
 drop policy if exists vparts_sel on public.village_parts;
 create policy vparts_sel on public.village_parts for select using (
-  exists (select 1 from public.villages v where v.id = village_id and (
-    v.visibility = 'public' or v.created_by = auth.uid()
-    or exists (select 1 from public.village_members m where m.village_id = v.id and m.user_id = auth.uid())
-  ))
+  exists (
+    select 1 from public.villages v
+    where v.id = village_id
+      and (v.visibility = 'public' or v.created_by = auth.uid() or public.is_village_member(v.id))
+  )
 );
 drop policy if exists vparts_mod on public.village_parts;
 create policy vparts_mod on public.village_parts for all using (
@@ -327,10 +345,11 @@ create policy vparts_mod on public.village_parts for all using (
 );
 
 -- village_members: 본인 가입/탈퇴만, 같은 마을/공개 마을 멤버 select
+-- ※ 자기참조(village_members 안에서 village_members 조회) 제거 → is_village_member() 사용
 drop policy if exists vmembers_sel on public.village_members;
 create policy vmembers_sel on public.village_members for select using (
   user_id = auth.uid()
-  or exists (select 1 from public.village_members m2 where m2.village_id = village_id and m2.user_id = auth.uid())
+  or public.is_village_member(village_id)
   or exists (select 1 from public.villages v where v.id = village_id and v.visibility = 'public')
 );
 drop policy if exists vmembers_mod on public.village_members;
