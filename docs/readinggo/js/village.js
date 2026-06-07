@@ -37,10 +37,10 @@ function _villageRowToTown(v, collection, myUserId) {
   // 만료된 파트 수로 currentPart 계산 (마감일이 오늘 이전인 파트 = 완료된 파트)
   const _expiredCount = parts.filter(p => p.due_date && new Date(p.due_date + 'T00:00:00') < new Date(_todayStr + 'T00:00:00')).length;
   const currentPart = Math.min(_expiredCount + 1, totalParts);
-  // currentPart 기준 마감일로 dday 계산
+  // currentPart 기준 마감일로 dday 계산 (음수=미래, 양수=초과 — seed 데이터 관례와 동일)
   const _currentPartDue = parts[currentPart - 1] && parts[currentPart - 1].due_date;
   const dday = _currentPartDue
-    ? Math.round((new Date(_currentPartDue + 'T00:00:00') - new Date(_todayStr + 'T00:00:00')) / 86400000)
+    ? Math.round((new Date(_todayStr + 'T00:00:00') - new Date(_currentPartDue + 'T00:00:00')) / 86400000)
     : 0;
   // 마지막 파트 마감일이 오늘 이전이면 자동 완료(지난 마을) 처리 — active 마을만 대상
   const _lastPart = parts[parts.length - 1];
@@ -315,7 +315,11 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
         newTown.totalParts = partCount;
         newTown.currentPart = 1;
         newTown.milestones = parts.map(p => ({ part: p.part_order, title: p.title, startPage: p.start_page, endPage: p.end_page, dueDate: p.due_date || null, completed: false }));
-        setTowns(prev => [...prev, newTown]);
+        setTowns(prev => {
+          const next = [...prev, newTown];
+          if (onTownsChange) onTownsChange(next); // villageTowns 즉시 동기화 → TownDetailView timing fix
+          return next;
+        });
         setMyVillageIds(prev => [...prev, newTown.id]);
         showToast(`마을을 만들었어요: ${newTown.name}`);
         closeCreateTown();
@@ -348,7 +352,11 @@ function VillageView({ state, onSelectTown, onTownsChange }) {
         milestones: parts.map(p => ({ part: p.part_order, title: p.title, startPage: p.start_page, endPage: p.end_page, dueDate: p.due_date || null, completed: false })),
         members: [ { name: 'jerome', nest: '🏠', avatar: '🐦', todayRecorded: false, quote: '', cumulativePage: state.book ? state.book.cur || 0 : 0, streak: 0, xp: state.xp || 0 } ],
       };
-      setTowns(prev => [...prev, newTown]);
+      setTowns(prev => {
+        const next = [...prev, newTown];
+        if (onTownsChange) onTownsChange(next); // villageTowns 즉시 동기화 → TownDetailView timing fix
+        return next;
+      });
       showToast(`마을을 만들었어요: ${newTown.name}`);
       closeCreateTown();
       onSelectTown(newTown.id);

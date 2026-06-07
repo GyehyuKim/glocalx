@@ -115,6 +115,11 @@ function App() {
   const [dataReady, setDataReady] = useState(!_supa);
   const [activeTab, setActiveTab] = useState('nest');
   const [selectedTownId, setSelectedTownId] = useState(null);
+
+  // 마을 패치 — DataStore 어댑터 경유 (localStorage 직접 호출 금지)
+  const _loadPatches = () => DataStore.villages.patches.load();
+  const _savePatches = (p) => DataStore.villages.patches.save(p);
+
   const [villageTowns, setVillageTowns] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   // 스포일러 전역 토글 (§5.7.1): true 면 모든 페이지 블라인드 해제.
@@ -223,7 +228,20 @@ function App() {
   }, []);
 
   const handleTownUpdate = useCallback((updatedFields) => {
-    setVillageTowns(prev => prev.map(t => t.id === updatedFields.id ? { ...t, ...updatedFields } : t));
+    const { id, ...rest } = updatedFields;
+    setVillageTowns(prev => prev.map(t => t.id === id ? { ...t, ...rest } : t));
+    // 멤버·게시판·마일스톤 변경 → localStorage 패치에 저장
+    const PERSIST = ['members', '_topics', 'milestones', 'name', 'description', 'visibility'];
+    const patches = _loadPatches();
+    if (!patches[id]) patches[id] = {};
+    PERSIST.forEach(k => { if (rest[k] !== undefined) patches[id][k] = rest[k]; });
+    _savePatches(patches);
+  }, []);
+
+  // VillageView가 towns 목록을 넘길 때 localStorage 패치를 merge하여 변경사항 복원
+  const handleTownsChange = useCallback((towns) => {
+    const patches = _loadPatches();
+    setVillageTowns(towns.map(t => patches[t.id] ? { ...t, ...patches[t.id] } : t));
   }, []);
 
   // NestView가 체크인/simskip 후 자체 업데이트하고 콜백으로 상위 동기화.
@@ -488,7 +506,7 @@ function App() {
               key="village"
               state={appState}
               onSelectTown={handleSelectTown}
-              onTownsChange={setVillageTowns}
+              onTownsChange={handleTownsChange}
             />
           )}
           {activeTab === 'village' && selectedTownId && (
