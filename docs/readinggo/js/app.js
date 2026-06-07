@@ -116,10 +116,9 @@ function App() {
   const [activeTab, setActiveTab] = useState('nest');
   const [selectedTownId, setSelectedTownId] = useState(null);
 
-  // 마을 패치 — localStorage에 멤버·게시판·마일스톤 변경사항 영속
-  const _PATCH_KEY = 'rg_town_patches_v1';
-  const _loadPatches = () => { try { return JSON.parse(localStorage.getItem(_PATCH_KEY) || '{}'); } catch(e) { return {}; } };
-  const _savePatches = (p) => { try { localStorage.setItem(_PATCH_KEY, JSON.stringify(p)); } catch(e) {} };
+  // 마을 패치 — DataStore 어댑터 경유 (localStorage 직접 호출 금지)
+  const _loadPatches = () => DataStore.villages.patches.load();
+  const _savePatches = (p) => DataStore.villages.patches.save(p);
 
   const [villageTowns, setVillageTowns] = useState([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
