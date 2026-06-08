@@ -226,6 +226,12 @@ function App() {
       try {
         await syncPendingToSupabase();   // 게스트 → 로그인: pending 책·문장 흡수(§7.7)
         const next = await buildStateFromSupabase();
+        // PostHog 유저 식별 (analytics.md §3.2) — 로그인 유저에 person profile 연결
+        try {
+          if (window.posthog && authUser && authUser.id) {
+            window.posthog.identify(authUser.id, { email: authUser.email || undefined, books_count: (next && next.castleCount) || 0 });
+          }
+        } catch (e) {}
         if (alive && next) {
           setAppState(s => ({ ...s, ...next }));
           if (typeof next.castleCount === 'number') setCastleCount(next.castleCount);

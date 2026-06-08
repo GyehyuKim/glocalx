@@ -351,6 +351,7 @@ function ReadingMode({ book, onClose, onArchive, onCheckin }) {
       setText('');
       showToast(p != null ? ('📍 ' + p + 'p 한 문장 저장됨') : '한 문장 저장됨');
       if (onArchive) onArchive({ text: t, bookId: book.id, page: p, when: '방금' });
+      rgTrack('highlight_selected', { book_id: book.id, page: p, sentence_length: t.length });
       // 혼자만의 독서모임 — 저장 직후 "왜 남겼어?" (companion.md §2, DEMO_MODE)
       if (RG_COMPANION_DEMO) setCompanion({ sentenceId: row && row.id, question: pickCompanionQ(t), answer: '' });
     }).catch(() => showToast('저장 실패 — 다시 시도'));
@@ -362,6 +363,7 @@ function ReadingMode({ book, onClose, onArchive, onCheckin }) {
     if (companion.sentenceId && DataStore.sentences && DataStore.sentences.setNote) {
       Promise.resolve(DataStore.sentences.setNote(companion.sentenceId, a)).catch(() => {});
     }
+    rgTrack('answer_saved', { book_id: book.id, lens: 'why', answer_length: a.length });
     showToast('🐦 답을 남겼어요');
     setCompanion(null);
   };
@@ -371,6 +373,7 @@ function ReadingMode({ book, onClose, onArchive, onCheckin }) {
   const finish = () => {
     const fp = pageNum(finalPage); // pageNum 이 total 로 클램프 → 초과 입력 방지
     const finalP = fp != null ? fp : (book.cur || 0);
+    rgTrack('reading_session_end', { book_id: book.id, duration_sec: secs, pages_logged: Math.max(0, finalP - (book.cur || 0)) });
     if (onCheckin) onCheckin({ page: finalP, sentence: null });
     onClose();
   };
@@ -668,7 +671,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
       </div>
 
       {/* 읽기 모드 진입 (#184·#203) — 2줄 가운데 정렬, 주 CTA */}
-      <button className="checkin-cta" onClick={() => setReadingOpen(true)}
+      <button className="checkin-cta" onClick={() => { rgTrack('book_opened', { book_id: nestState.book.id, entry_point: 'reading_mode' }); setReadingOpen(true); }}
         style={{ background: 'var(--brand)', marginBottom: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, lineHeight: 1.3 }}>
         <span style={{ fontSize: 16, fontWeight: 900 }}>📖 읽기 모드</span>
         <span style={{ fontSize: 12, opacity: 0.72, fontWeight: 700 }}>타이머 + 한 문장 모으기</span>
