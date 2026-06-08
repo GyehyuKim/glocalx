@@ -45,6 +45,15 @@ function Toast() {
   );
 }
 
+// PostHog 커스텀 이벤트 (analytics.md §3.1). posthog 미로드/차단 시 안전 no-op.
+function rgTrack(event, props) {
+  try {
+    if (window.posthog && typeof window.posthog.capture === 'function') {
+      window.posthog.capture(event, props || {});
+    }
+  } catch (e) { /* analytics 실패는 무시 */ }
+}
+
 /* ── Confetti ─────────────────────────────────────────── */
 function Confetti({ active, nestUp }) {
   const boxRef = useRef(null);
@@ -502,6 +511,7 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
 }
 
 window.showToast = showToast;
+window.rgTrack = rgTrack;
 window.Toast = Toast;
 window.Confetti = Confetti;
 window.SentenceCard = SentenceCard;

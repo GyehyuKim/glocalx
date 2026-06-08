@@ -26,17 +26,22 @@
 
 ### 3.1 커스텀 이벤트 목록 (Phase 1)
 
+`window.rgTrack(event, props)` 헬퍼(components.js)로 호출 — posthog 미로드/차단 시 안전 no-op.
+
 ```js
-posthog.capture('highlight_selected',   { book_id, page, sentence_length })
-posthog.capture('lens_switched',        { book_id, from_lens, to_lens })
-posthog.capture('answer_saved',         { book_id, lens, answer_length })
-posthog.capture('resurface_triggered',  { book_id, days_since_original })
-posthog.capture('import_completed',     { source: 'bookmory', count })
-posthog.capture('book_opened',          { book_id, entry_point })
-posthog.capture('reading_session_end',  { book_id, duration_sec, pages_logged })
+// ✅ 구현됨 (#293)
+rgTrack('book_opened',         { book_id, entry_point })          // 읽기 모드 진입 (nest.js)
+rgTrack('highlight_selected',  { book_id, page, sentence_length }) // 한 문장 저장 (nest.js save)
+rgTrack('answer_saved',        { book_id, lens, answer_length })   // 독서모임 답변 (nest.js, lens='why')
+rgTrack('reading_session_end', { book_id, duration_sec, pages_logged }) // 독서 종료 (nest.js finish)
+
+// ⏳ 후속 (해당 기능 구현 시)
+rgTrack('lens_switched',       { book_id, from_lens, to_lens })   // 렌즈 도입 후 (companion.md §6)
+rgTrack('resurface_triggered', { book_id, days_since_original })  // 시간차 되감기 (#289)
+rgTrack('import_completed',    { source: 'bookmory', count })     // BookMory 임포트 (#288)
 ```
 
-### 3.2 유저 식별
+### 3.2 유저 식별 (✅ 구현 #293 — app.js 로그인 effect)
 
 Supabase 로그인 후:
 
