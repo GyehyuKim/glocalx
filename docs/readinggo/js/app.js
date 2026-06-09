@@ -177,6 +177,7 @@ function App() {
   const [dataReady, setDataReady] = useState(!_supa);
   const [showLogin, setShowLogin] = useState(false);        // 로그인 화면 온디맨드(벽 아님)
   const [guestBannerOff, setGuestBannerOff] = useState(false); // 게스트 안내 배너 세션 닫기
+  const [showConsent, setShowConsent] = useState(() => !!(window.RG_consent && window.RG_consent.get() === null)); // 진입 동의 배너 (#331)
   const [activeTab, setActiveTab] = useState('nest');
   const [selectedTownId, setSelectedTownId] = useState(null);
 
@@ -659,6 +660,11 @@ function App() {
             </button>
           ))}
         </nav>
+
+        {/* 진입 동의 배너 (#331) — 비차단 하단. 첫 방문(consent===null) 시 1회. */}
+        {showConsent && (
+          <ConsentBanner onChoose={(v) => { if (window.RG_consent) window.RG_consent.set(v); if (window.rgTrack) window.rgTrack('data_consent', { value: v, source: 'banner' }); setShowConsent(false); }} />
+        )}
 
         {/* 전역 Toast */}
         <Toast />
