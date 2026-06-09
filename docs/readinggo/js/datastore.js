@@ -303,6 +303,14 @@ const DataStore = {
         return se;
       });
     },
+    // 한 문장 본문 편집 (오타 수정, #325)
+    updateText(sentenceId, text) {
+      return localStorageAdapter.mutate(s => {
+        const se = _findSentence(s, sentenceId);
+        if (se) se.text = text || '';
+        return se;
+      });
+    },
     // 무작위 회상 (§5.8.7)
     random() {
       return localStorageAdapter.mutate(s => {

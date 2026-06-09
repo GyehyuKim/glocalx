@@ -196,6 +196,10 @@
       async setNote(sentenceId, my_note) {
         return unwrap(await sb().from('sentences').update({ my_note }).eq('id', sentenceId).select().single());
       },
+      // 한 문장 본문 편집 (오타 수정, #325) — 본인 행만(RLS)
+      async updateText(sentenceId, text) {
+        return unwrap(await sb().from('sentences').update({ text: text || '' }).eq('id', sentenceId).eq('user_id', await uid()).select().single());
+      },
       // 한 문장/감상 공개·비공개 토글 (QA #12).
       // patch: { visibility?: 'public'|'followers'|'private', note_private?: boolean }
       // note_private(감상 비공개)는 유지. is_private는 deprecated — visibility로 대체(v7.2).

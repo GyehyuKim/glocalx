@@ -865,9 +865,17 @@ function CompanionModal({ sentence, onClose }) {
   const [loading, setLoading] = _useState(true);
   const [answer, setAnswer] = _useState('');
   const [done, setDone] = _useState(false);
+  const [editing, setEditing] = _useState(false);          // 한 문장 본문 편집 (#325)
+  const [stext, setStext] = _useState(sentence.text || '');
   const MAX = 3;
   const consent = window.RG_consent ? window.RG_consent.get() : 'yes';
   const bt = sentence.bookTitle || '', au = sentence.author || '';
+  const saveText = () => {
+    const v = stext.trim();
+    if (!v) { setEditing(false); return; }
+    if (DataStore.sentences && DataStore.sentences.updateText) Promise.resolve(DataStore.sentences.updateText(sentence.id, v)).catch(() => {});
+    sentence.text = v; setEditing(false); showToast('✏️ 문장 수정됨');
+  };
   _useEffect(() => {
     const past = parseNoteToExchanges(sentence.note);
     const gen = (consent !== 'yes')
@@ -898,7 +906,22 @@ function CompanionModal({ sentence, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-3)', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 18px 18px' }}>
-          <div style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.5, padding: '10px 12px', background: 'var(--paper-2)', borderRadius: 10, marginBottom: 12 }}>"{sentence.text}"</div>
+          {editing ? (
+            <div style={{ marginBottom: 12 }}>
+              <textarea value={stext} onChange={(e) => { if (e.target.value.length <= 1000) setStext(e.target.value); }} rows={3}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--brand)', borderRadius: 10, padding: 10, fontSize: 14, fontFamily: 'inherit', lineHeight: 1.5, resize: 'none' }} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button onClick={() => { setStext(sentence.text || ''); setEditing(false); }} style={{ flex: '0 0 auto', padding: '7px 12px', borderRadius: 8, border: '1.5px solid var(--line)', background: 'transparent', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>취소</button>
+                <button onClick={saveText} style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>저장</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', fontSize: 14, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.5, padding: '10px 30px 10px 12px', background: 'var(--paper-2)', borderRadius: 10, marginBottom: 12 }}>
+              "{sentence.text}"
+              <button onClick={() => { setStext(sentence.text || ''); setEditing(true); }} title="문장 수정" aria-label="문장 수정"
+                style={{ position: 'absolute', top: 6, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, opacity: 0.6 }}>✏️</button>
+            </div>
+          )}
           {exchanges.map((e, ei) => (
             <div key={ei} style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.5 }}>{e.q}</div>
