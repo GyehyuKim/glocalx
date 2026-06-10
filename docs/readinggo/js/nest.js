@@ -344,7 +344,10 @@ function archiveCompanion(bookId, sentenceText, q, a) {
   } catch (e) {}
 }
 
-function ReadingMode({ book, onClose, onArchive, onCheckin }) {
+function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
+  // book 스냅샷 — 세션 중 부모가 appState.book 을 빈 값으로 갱신(탭 복귀 시 transient 새로고침,
+  // 만료 세션 등)해도 읽기 세션이 비워지거나 깨지지 않도록 진입 시점 book 을 고정한다.
+  const [book] = _useState(() => bookProp);
   const [secs, setSecs] = _useState(0);
   const [running, setRunning] = _useState(true);
   const [page, setPage] = _useState(String(book.cur || 0)); // 문자열 — 빈칸 허용(페이지 미상)
@@ -355,15 +358,45 @@ function ReadingMode({ book, onClose, onArchive, onCheckin }) {
   const [companion, setCompanion] = _useState(null);         // 혼자만의 독서모임 — 저장 직후 질문 (#305)
   const ubRef = _useRef(null);
   const total = book.total || 0;
+  // 벽시계 타이머 — setInterval 틱 누적은 백그라운드 스로틀/절전 시 시간이 손실됨.
+  // 누적초(accum) + 현재 러닝 세그먼트 시작 ts(segStart)로 실제 경과를 계산 → 스로틀돼도 값 정확.
+  const accumRef = _useRef(0);
+  const segStartRef = _useRef(Date.now());
+  const autoPausedRef = _useRef(false);
+  const computeSecs = () => accumRef.current + (segStartRef.current != null ? Math.floor((Date.now() - segStartRef.current) / 1000) : 0);
   _useEffect(() => {
     Promise.resolve(DataStore.activeBook.get()).then((ub) => { if (ub) ubRef.current = ub.id; }).catch(() => {});
   }, []);
+  // 읽기 세션 중 플래그 — app.js 탭 복귀 재로드(#191)가 이걸 보고 보류. 빈 상태 덮어쓰기로
+  // NestView가 빈 둥지 UI로 바뀌며 portal(ReadingMode) 언마운트되던 세션 파괴 방지(1h QA 재현).
+  _useEffect(() => {
+    window.RG_READING_OPEN = true;
+    return () => { window.RG_READING_OPEN = false; };
+  }, []);
+  // 러닝/정지 전환 시 진행분을 누적에 반영
+  _useEffect(() => {
+    if (running && !closing) {
+      if (segStartRef.current == null) segStartRef.current = Date.now();
+    } else if (segStartRef.current != null) {
+      accumRef.current += Math.floor((Date.now() - segStartRef.current) / 1000);
+      segStartRef.current = null;
+    }
+    setSecs(computeSecs());
+  }, [running, closing]);
+  // 디스플레이 틱 — 벽시계 기반이라 스로틀돼도 표시값은 정확
   _useEffect(() => {
     if (!running || closing) return;
-    const t = setInterval(() => setSecs((s) => s + 1), 1000);
-    const onVis = () => { if (document.hidden) setRunning(false); };
+    const t = setInterval(() => setSecs(computeSecs()), 1000);
+    return () => clearInterval(t);
+  }, [running, closing]);
+  // 가시성 — 숨기면 자동 일시정지, 복귀 시 자동 재개(수동 정지는 존중). 복귀 후 타이머가 죽던 버그 수정.
+  _useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) { if (running && !closing) { autoPausedRef.current = true; setRunning(false); } }
+      else if (autoPausedRef.current) { autoPausedRef.current = false; setRunning(true); }
+    };
     document.addEventListener('visibilitychange', onVis);
-    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVis); };
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [running, closing]);
   const fmt = (s) => {
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;

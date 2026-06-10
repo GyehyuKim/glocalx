@@ -99,6 +99,12 @@
         if (typeof opts.review_text !== 'undefined') patch.review_text = opts.review_text;
         return unwrap(await sb().from('user_books').update(patch).eq('id', userBookId).select().single());
       },
+      // 참새 완독 회고 캐시 (#352) — user_books.companion_recap. 본인 행만(RLS ub_mod).
+      async saveRecap(userBookId, recap) {
+        const id = await uid();
+        return unwrap(await sb().from('user_books').update({ companion_recap: recap || null })
+          .eq('id', userBookId).eq('user_id', id).select().single());
+      },
       // social.md §5.7 "이번 주 신규 시작러 Top3" — 공개 집계 RPC(17_social_newcomers.sql).
       async startedThisWeek(lim = 3) {
         const rows = unwrap(await sb().rpc('social_newcomers_weekly', { lim }));
@@ -199,6 +205,11 @@
       // 한 문장 본문 편집 (오타 수정, #325) — 본인 행만(RLS)
       async updateText(sentenceId, text) {
         return unwrap(await sb().from('sentences').update({ text: text || '' }).eq('id', sentenceId).eq('user_id', await uid()).select().single());
+      },
+      // 한 문장 삭제 — 본인 행만(RLS). 연결된 companion_sessions 는 FK 정리 정책에 위임.
+      async remove(sentenceId) {
+        unwrap(await sb().from('sentences').delete().eq('id', sentenceId).eq('user_id', await uid()));
+        return true;
       },
       // 한 문장/감상 공개·비공개 토글 (QA #12).
       // patch: { visibility?: 'public'|'followers'|'private', note_private?: boolean }

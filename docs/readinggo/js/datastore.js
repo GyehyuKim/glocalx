@@ -311,6 +311,17 @@ const DataStore = {
         return se;
       });
     },
+    // 한 문장 삭제 — 소속 책의 sentences 배열에서 제거 (Supabase 어댑터와 표면 일치 §7.2)
+    remove(sentenceId) {
+      return localStorageAdapter.mutate(s => {
+        for (const ub of s.user_books) {
+          const arr = ub.sentences || [];
+          const i = arr.findIndex(se => se.id === sentenceId);
+          if (i >= 0) { arr.splice(i, 1); return true; }
+        }
+        return false;
+      });
+    },
     // 무작위 회상 (§5.8.7)
     random() {
       return localStorageAdapter.mutate(s => {
@@ -370,6 +381,15 @@ const DataStore = {
         ub.completed_at = _today();
         if (typeof opts.rating !== 'undefined') ub.rating = opts.rating;
         if (typeof opts.review_text !== 'undefined') ub.review_text = opts.review_text;
+        return ub;
+      });
+    },
+    // 참새 완독 회고 캐시 (#352) — Supabase 어댑터와 표면 일치(§7.2)
+    saveRecap(userBookId, recap) {
+      return localStorageAdapter.mutate(s => {
+        const ub = _ubById(s, userBookId);
+        if (!ub) return null;
+        ub.companion_recap = recap || null;
         return ub;
       });
     },
