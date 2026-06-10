@@ -275,11 +275,23 @@ function App() {
   }, [authUser]);
 
   // 멀티 디바이스 정합(#191) — 탭이 다시 보일 때 Supabase 상태 재로드(다른 기기 변경 반영, stale view 방지)
+  // ⚠️ 가드(장시간 세션 버그 — 1h QA 재현): 게스트/세션만료 상태에서 재로드하면 모든 fetch가
+  // 401→catch 폴백 → "빈 상태"가 기존 상태를 덮어 둥지가 빈 화면이 되고, NestView가
+  // 빈 둥지 UI로 갈아끼워지며 portal(ReadingMode)이 언마운트 → 타이머·세션 소멸 + 콘솔 400 에러.
   useEffect(() => {
     if (!_supa) return;
     let busy = false;
     const onVis = async () => {
       if (document.hidden || busy || !window.SupabaseDataStore) return;
+      // 읽기 세션 중엔 보류 — 백그라운드 갱신이 둥지/읽기모드를 교체하지 않도록.
+      if (window.RG_READING_OPEN) return;
+      // 인증 세션 없으면(게스트·만료 직후) 재로드 금지 — 빈 상태 덮어쓰기 사고 방지.
+      try {
+        const c = window.RG_SB && window.RG_SB.client && window.RG_SB.client();
+        if (!c) return;
+        const { data } = await c.auth.getSession();
+        if (!data || !data.session) return;
+      } catch (e) { return; }
       busy = true;
       try { const next = await buildStateFromSupabase(); if (next) { setAppState(s => ({ ...s, ...next })); if (typeof next.castleCount === 'number') setCastleCount(next.castleCount); } }
       catch (e) {} finally { busy = false; }

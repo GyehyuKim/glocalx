@@ -367,6 +367,12 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
   _useEffect(() => {
     Promise.resolve(DataStore.activeBook.get()).then((ub) => { if (ub) ubRef.current = ub.id; }).catch(() => {});
   }, []);
+  // 읽기 세션 중 플래그 — app.js 탭 복귀 재로드(#191)가 이걸 보고 보류. 빈 상태 덮어쓰기로
+  // NestView가 빈 둥지 UI로 바뀌며 portal(ReadingMode) 언마운트되던 세션 파괴 방지(1h QA 재현).
+  _useEffect(() => {
+    window.RG_READING_OPEN = true;
+    return () => { window.RG_READING_OPEN = false; };
+  }, []);
   // 러닝/정지 전환 시 진행분을 누적에 반영
   _useEffect(() => {
     if (running && !closing) {
