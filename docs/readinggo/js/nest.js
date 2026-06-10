@@ -197,14 +197,16 @@ function Ceremony({ data, onClose, onComplete }) {
   );
 }
 
-/* ── NestTheatre — 활성 책 진척률 5단계 (§5.2) ──────────── */
-// 진척률 단계별 격려 카피 (health 무관, 이 책 진도만 반영).
+/* ── NestTheatre — 누적 XP 5단계 (§5.2, #313) ──────────── */
+// XP 단계 진행 카피 (QA ISSUE-001): pct = 다음 단계까지 진행률(책 진도 아님).
+// 구버전은 pct 구간별 이모지 하드코딩 + '곧 완독' 책 기준 문구 → 단계명과 어긋났음.
 function stageMicrocopy(pct, stage) {
-  if (pct >= 100) return `🏰 ${stage.name} — 완독! 성이 컬렉션에 남았어요.`;
-  if (pct >= 81)  return `🏡 ${stage.name} — 곧 완독이에요. 마지막 장까지 함께해요.`;
-  if (pct >= 51)  return `🏠 ${stage.name} — 둥지가 따뜻해졌어요. 오늘도 한 쪽 더!`;
-  if (pct >= 21)  return `🪹 ${stage.name} — 둥지가 모양을 갖춰가요. 계속 쌓아봐요.`;
-  return `🪵 ${stage.name} — 첫 가지를 놓았어요. 한 쪽이면 둥지가 자라요.`;
+  const em = stage.short || '🪹';
+  if (pct >= 100) return `${em} ${stage.name} — 둥지가 진화했어요!`;
+  if (pct >= 81)  return `${em} ${stage.name} — 다음 둥지가 코앞이에요. 오늘도 한 쪽!`;
+  if (pct >= 51)  return `${em} ${stage.name} — 둥지가 부쩍 자랐어요. 계속 쌓아봐요.`;
+  if (pct >= 21)  return `${em} ${stage.name} — 둥지가 모양을 갖춰가요.`;
+  return `${em} ${stage.name} — 가지를 하나 놓았어요. 활동이 둥지를 키워요.`;
 }
 
 // health(0~100) → 4단계 시각 상태 클래스 + 탈색량(--decay). (§6.2)
