@@ -200,6 +200,11 @@
       async updateText(sentenceId, text) {
         return unwrap(await sb().from('sentences').update({ text: text || '' }).eq('id', sentenceId).eq('user_id', await uid()).select().single());
       },
+      // 한 문장 삭제 — 본인 행만(RLS). 연결된 companion_sessions 는 FK 정리 정책에 위임.
+      async remove(sentenceId) {
+        unwrap(await sb().from('sentences').delete().eq('id', sentenceId).eq('user_id', await uid()));
+        return true;
+      },
       // 한 문장/감상 공개·비공개 토글 (QA #12).
       // patch: { visibility?: 'public'|'followers'|'private', note_private?: boolean }
       // note_private(감상 비공개)는 유지. is_private는 deprecated — visibility로 대체(v7.2).

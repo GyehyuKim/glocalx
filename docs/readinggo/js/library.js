@@ -9,7 +9,16 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
   // 실 book item: { id, title, author, pub, cover, fb, total, isbn, cur, status, rating, comment }
   const prog = { cur: book.cur || 0 };
   const progressPct = book.total ? Math.round((prog.cur / book.total) * 100) : 0;
-  const bookQuotes = (allQuotes || []).filter(q => q.bookId === book.id);
+  // 삭제(#325 후속): 낙관적 제거 — bookQuotes 는 prop 파생이라 삭제분을 로컬에서 즉시 거름.
+  const [removedIds, setRemovedIds] = _useState({});
+  const bookQuotes = (allQuotes || []).filter(q => q.bookId === book.id && !removedIds[q.id]);
+  const delQuote = (q) => {
+    if (!q.id) return;
+    if (!window.confirm('이 한 문장을 삭제할까요? 되돌릴 수 없어요.')) return;
+    Promise.resolve(DataStore.sentences.remove(q.id))
+      .then(() => { setRemovedIds(m => ({ ...m, [q.id]: true })); showToast('🗑 한 문장을 삭제했어요'); if (window.rgTrack) window.rgTrack('sentence_deleted', { book_id: book.id }); })
+      .catch(() => showToast('삭제 실패 — 잠시 후 다시'));
+  };
   const bookshelfEntry = (book.status === 'completed') ? { rating: book.rating, comment: book.comment } : null;
   // 스포일러 전역 토글 + 카드별 탭 공개 (§5.7.1)
   const revealAll = React.useContext(SpoilerContext);
@@ -332,6 +341,10 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
                           <button onClick={() => toggleFav(q)} title="좋아요(즐겨찾기)"
                             style={{background:'none', border:'none', cursor:'pointer', fontSize:14, padding:0, lineHeight:1}}>
                             {(bmarks && bmarks.has(q.id)) ? '❤️' : '🤍'}
+                          </button>
+                          <button onClick={() => delQuote(q)} title="이 한 문장 삭제"
+                            style={{background:'none', border:'none', cursor:'pointer', fontSize:13, padding:0, lineHeight:1, opacity:0.7}}>
+                            🗑
                           </button>
                         </span>
                       )}
