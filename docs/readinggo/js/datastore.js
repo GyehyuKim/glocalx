@@ -69,6 +69,20 @@ const localStorageAdapter = (function () {
         sessions: [],
         sentences: [],
       });
+
+      // 게스트 데모 시드 문장 (QA ISSUE-006) — UI 시드(INITIAL_STATE.myQuotes)만 있고
+      // DataStore 가 비어 피드·컬렉션이 0개로 어긋나던 문제. id 부여해 관리도 가능.
+      const seedQuotes = (window.INITIAL_STATE && window.INITIAL_STATE.myQuotes) || [];
+      const ub0 = user_books[0];
+      seedQuotes.forEach((q, i) => {
+        if (!q || q.bookId !== ub0.book_id) return;
+        const days = q.when === '어제' ? 1 : (parseInt(q.when, 10) || (i + 1));
+        ub0.sentences.push({
+          id: _dsId('se'), user_book_id: ub0.id, book_id: ub0.book_id, session_id: null,
+          page: (typeof q.page === 'number') ? q.page : null, text: q.text || '',
+          my_note: null, kind: 'quote', created_at: Date.now() - days * 86400000,
+        });
+      });
     }
 
     // 완독 책(성 컬렉션)을 INITIAL_BOOKSHELF 에서 시드 → castles.list 가
