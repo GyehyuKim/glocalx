@@ -5,6 +5,13 @@
    ========================================================= */
 const { useState: _useState, useEffect: _useEffect, useRef: _useRef, useMemo: _useMemo } = React;
 
+// 안전 래퍼 — data.js 전역(nestXpProgress) 미준비/캐시 스큐 시에도 nest 탭 전체 크래시 방지.
+// 정상 시 동일 동작, 미정의·예외 시 0(=진행 0%). 근본 원인은 _RG_V 캐시버전으로 차단.
+function _xpProg(xp) {
+  try { return (typeof nestXpProgress === 'function') ? nestXpProgress(xp) : (window.nestXpProgress ? window.nestXpProgress(xp) : 0); }
+  catch (e) { return 0; }
+}
+
 /* ── CheckinModal ─────────────────────────────────────── */
 function CheckinModal({ book, onClose, onSubmit }) {
   const [page, setPage] = _useState(book.cur);
@@ -237,7 +244,7 @@ const NEST_CRACK_SVG = (
 
 function NestTheatre({ xp, streak, prevTwigs, health = 100 }) {
   // 둥지 = 누적 활동(XP). 책 진척률 아님 (#313). pct = 현재 레벨 내 진행도.
-  const pct = nestXpProgress(xp);
+  const pct = _xpProg(xp);
   const stage = getNestStageByXp(xp);
   const { cur, next } = nestInfo(stage.lv);
   // 둥지 일러스트는 진척률(stage.lv)로 그린다. health 는 §6.2 시각 상태(흔들림/균열)용.
@@ -629,7 +636,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
     skipStreakRisk: false,   // 데모 '하루 거르기' — 방패 1회 흡수 후 다음 거르기에 스트릭 리셋
   });
   // 직전 진척률 가지 수 — 새 가지 stack 애니메이션 기준.
-  const prevTwigsRef = _useRef(twigsForProgress(nestXpProgress(state.xp)));
+  const prevTwigsRef = _useRef(twigsForProgress(_xpProg(state.xp)));
   // 한 문장 삭제(#1)·종류변경(#381) 이벤트 → 둥지 '내 한 문장' 목록 즉시 반영.
   _useEffect(() => {
     const onRm = (e) => { const id = e && e.detail && e.detail.id; if (!id) return; setNestState((ns) => ({ ...ns, myQuotes: (ns.myQuotes || []).filter((q) => q.id !== id) })); };
@@ -641,7 +648,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
 
   // 활성 책이 바뀌면(또는 마운트) 부모 상태에서 재시드. 둥지(XP 기반)는 유지 — 책과 무관(#313).
   _useEffect(() => {
-    prevTwigsRef.current = twigsForProgress(nestXpProgress(state.xp));
+    prevTwigsRef.current = twigsForProgress(_xpProg(state.xp));
     setNestState({
       streak: state.streak,
       xp: state.xp,
@@ -752,7 +759,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
       ns.myQuotes = [{ text: sentence, bookId: ns.book.id, page, when: '방금' }, ...ns.myQuotes];
     }
 
-    prevTwigsRef.current = twigsForProgress(nestXpProgress(prevXp));
+    prevTwigsRef.current = twigsForProgress(_xpProg(prevXp));
     setNestState(ns);
     onCheckin(ns, newLv, xpGain, sentence);
 
