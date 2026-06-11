@@ -205,7 +205,7 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
             style={{ width:100, height:140, margin:'0 auto 12px' }}
           />
           <h2 style={{fontSize:18, fontWeight:900, margin:'0 0 4px', color:'var(--ink)'}}>{book.title}</h2>
-          <p style={{fontSize:13, color:'var(--ink-2)', fontWeight:700, margin:'0 0 12px'}}>{book.author} · {book.pub}</p>
+          <p style={{fontSize:13, color:'var(--ink-2)', fontWeight:700, margin:'0 0 12px'}}>{[book.author, book.pub].map(x => (x || '').trim()).filter(Boolean).join(' · ')}</p>
         </div>
 
         <div style={{padding:'16px 20px', maxHeight:'50vh', overflowY:'auto'}}>

@@ -114,8 +114,9 @@ function SentenceCard({ item, bookId }) {
   const [liked, setLiked] = useState(false);
   const initialLikedRef = React.useRef(false);
   const [bookmarked, setBookmarked] = useState(false);
+  // getBook 은 미스 시 RG_BOOKS[0](=사피엔스)로 폴백 → id 실제 일치 시에만 그 제목 사용(사피엔스 오표시 방지, #374 동일).
   const bk = getBook(bookId);
-  const cardTitle = item.bookTitle || (bk && bk.title) || '';
+  const cardTitle = item.bookTitle || (bk && bk.id === bookId ? bk.title : '') || '';
   // optimistic likeCount: item.claps(피드 로드 시점) + 현재 상태 - 초기 상태 delta (#156)
   const likeCount = (item.claps || 0) + (liked ? 1 : 0) - (initialLikedRef.current ? 1 : 0);
   React.useEffect(() => {
