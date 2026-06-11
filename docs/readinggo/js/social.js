@@ -78,7 +78,7 @@ function SocialView({ state }) {
           claps: 0,
           time: rgRelTime(s.created_at),
           bookTitle: bk.title || '',
-          bookId: bk.id || '',
+          bookId: bk.id || s.book_id || '',   // 로컬 문장은 user_book embed 없음 → s.book_id 폴백(사피엔스 오표시 방지)
           bookCover: bk.cover_url || '',
           bookAuthor: bk.author || '',
           isMine: !!(myId && s.user_id === myId),

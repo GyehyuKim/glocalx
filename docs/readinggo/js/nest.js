@@ -944,8 +944,8 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
                 <span className="bk">{bkTitle}</span>
                 <span className="dot">·</span>
                 <span>{q.page}p</span>
-                <span className="dot">·</span>
-                <span>{q.when}</span>
+                {q.when ? <span className="dot">·</span> : null}
+                {q.when ? <span>{q.when}</span> : null}
               </div>
               <div className="quote" style={q.kind === 'thought' ? { fontStyle: 'normal' } : null}>{q.kind === 'thought' ? `💭 ${q.text}` : `"${q.text}"`}</div>
             </div>
