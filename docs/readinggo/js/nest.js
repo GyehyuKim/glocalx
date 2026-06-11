@@ -444,6 +444,8 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
     if (!sid || !(DataStore.sentences && DataStore.sentences.setNote)) return;
     const note = (exchanges || []).map((e) => `Q. ${e.q}\nA. ${e.a}`).join('\n\n');
     Promise.resolve(DataStore.sentences.setNote(sid, note)).catch(() => {});
+    // 같은 세션 정합 — appState/nestState myQuotes의 note 갱신 → 재오픈 시 대화 이어보기(처음부터 X).
+    window.dispatchEvent(new CustomEvent('rg:sentence-note', { detail: { id: sid, note } }));
   };
   // 답 남기기 — 멀티턴(#327). 최대 3턴, 그 후/비동의 시 마무리. 매 답마다 대화 저장.
   const MAX_TURNS = 3;
@@ -634,9 +636,11 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onGoSocial, onOpen
   _useEffect(() => {
     const onRm = (e) => { const id = e && e.detail && e.detail.id; if (!id) return; setNestState((ns) => ({ ...ns, myQuotes: (ns.myQuotes || []).filter((q) => q.id !== id) })); };
     const onKind = (e) => { const d = e && e.detail; if (!d || !d.id) return; setNestState((ns) => ({ ...ns, myQuotes: (ns.myQuotes || []).map((q) => q.id === d.id ? { ...q, kind: d.kind } : q) })); };
+    const onNote = (e) => { const d = e && e.detail; if (!d || !d.id) return; setNestState((ns) => ({ ...ns, myQuotes: (ns.myQuotes || []).map((q) => q.id === d.id ? { ...q, note: d.note } : q) })); };
     window.addEventListener('rg:sentence-removed', onRm);
     window.addEventListener('rg:sentence-kind', onKind);
-    return () => { window.removeEventListener('rg:sentence-removed', onRm); window.removeEventListener('rg:sentence-kind', onKind); };
+    window.addEventListener('rg:sentence-note', onNote);
+    return () => { window.removeEventListener('rg:sentence-removed', onRm); window.removeEventListener('rg:sentence-kind', onKind); window.removeEventListener('rg:sentence-note', onNote); };
   }, []);
 
   // 활성 책이 바뀌면(또는 마운트) 부모 상태에서 재시드. 둥지(XP 기반)는 유지 — 책과 무관(#313).
@@ -1035,7 +1039,10 @@ function CompanionModal({ sentence, onClose }) {
   }, []);
   const persist = (ex) => {
     if (!sentence.id || !(DataStore.sentences && DataStore.sentences.setNote)) return;
-    Promise.resolve(DataStore.sentences.setNote(sentence.id, ex.map((e) => `Q. ${e.q}\nA. ${e.a}`).join('\n\n'))).catch(() => {});
+    const note = ex.map((e) => `Q. ${e.q}\nA. ${e.a}`).join('\n\n');
+    Promise.resolve(DataStore.sentences.setNote(sentence.id, note)).catch(() => {});
+    sentence.note = note; // 모달 내 즉시 정합
+    window.dispatchEvent(new CustomEvent('rg:sentence-note', { detail: { id: sentence.id, note } }));
   };
   // 한 문장 삭제 (#1) — 둥지 한 문장 상세에도 삭제. 이벤트로 둥지·서재 목록 즉시 반영.
   const delQuote = () => {
