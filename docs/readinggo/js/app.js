@@ -273,8 +273,6 @@ function App() {
   // 한 문장 대화 모달 (#326) — 내 한 문장 탭으로 열림.
   const [companionSentence, setCompanionSentence] = useState(null);
   useEffect(() => { window.RG_openCompanion = (s) => setCompanionSentence(s); return () => { window.RG_openCompanion = null; }; }, []);
-  // 스트릭 캘린더(#173) — 🔥 탭으로 열림.
-  const [streakOpen, setStreakOpen] = useState(false);
   // 한 문장 모아보기(#171) — 둥지 '전체 보기'로 열림.
   const [collectionOpen, setCollectionOpen] = useState(false);
   useEffect(() => { window.RG_openCollection = () => setCollectionOpen(true); return () => { window.RG_openCollection = null; }; }, []);
@@ -283,11 +281,6 @@ function App() {
     // village sent 상태는 로컬 복사
     village: INITIAL_STATE.village.map(v => ({ ...v })),
   }));
-
-  // 성(🏰) 개수 — 로컬: 동기 파생 / Supabase: 데이터 로드 시 주입 (§5.2.1).
-  const [castleCount, setCastleCount] = useState(() => {
-    try { return _supa ? 0 : DataStore.castles.list().length; } catch { return 0; }
-  });
 
   // XP 적립 이벤트 버스 — 방문·반응 XP(grantXp → 'rg:xp')를 상단바 appState.xp 에 반영.
   useEffect(() => {
@@ -373,7 +366,6 @@ function App() {
         } catch (e) {}
         if (alive && next) {
           setAppState(s => ({ ...s, ...next }));
-          if (typeof next.castleCount === 'number') setCastleCount(next.castleCount);
         }
       } catch (e) { console.error('[ReadingGo] 데이터 로드 실패:', e); }
       finally { if (alive) setDataReady(true); }
@@ -400,7 +392,7 @@ function App() {
         if (!data || !data.session) return;
       } catch (e) { return; }
       busy = true;
-      try { const next = await buildStateFromSupabase(); if (next) { setAppState(s => ({ ...s, ...next })); if (typeof next.castleCount === 'number') setCastleCount(next.castleCount); } }
+      try { const next = await buildStateFromSupabase(); if (next) { setAppState(s => ({ ...s, ...next })); } }
       catch (e) {} finally { busy = false; }
     };
     document.addEventListener('visibilitychange', onVis);
@@ -676,35 +668,12 @@ function App() {
               <span>reading<span className="go">GO</span></span>
             </div>
             <div className="topbar-stats">
-              <button
-                onClick={() => switchTab('profile')}
-                className="stat"
-                title="성 컬렉션 (완독 권수)"
-                style={{
-                  background:'transparent',
-                  border:'none',
-                  cursor:'pointer',
-                  padding:0,
-                  font:'inherit',
-                }}
-              >
-                <span className="ico">🏰</span>
-                <span>×{castleCount}</span>
-              </button>
-              <button className="stat fire" title="스트릭 캘린더 — 탭" onClick={() => setStreakOpen(true)} style={{ cursor: 'pointer', font: 'inherit' }}>
-                <span className="ico">🔥</span>
-                <span>{appState.streak}</span>
-              </button>
               <span className="stat gold" title="누적 XP">
                 <span className="ico">⚡</span>
                 <span>{appState.xp}</span>
               </span>
               <span className="stat lv" title="레벨 (systems.md §6.3)">
                 <span>Lv.{calcLevel(appState.xp)}</span>
-              </span>
-              <span className="stat shield" title="방패 개수">
-                <span className="ico">🪶</span>
-                <span>{appState.shield}</span>
               </span>
               {/* 스포일러 토글은 설정(프로필 ⚙️)으로 이전 (#3) */}
               <button
@@ -848,12 +817,6 @@ function App() {
 
         {bookDetailId && ReactDOM.createPortal(
           <BookInfoModal bookId={bookDetailId} onClose={() => setBookDetailId(null)} />,
-          document.body
-        )}
-
-        {/* 스트릭 캘린더 (#173) — 🔥 탭 */}
-        {streakOpen && ReactDOM.createPortal(
-          <StreakCalendarModal streak={appState.streak} onClose={() => setStreakOpen(false)} />,
           document.body
         )}
 
