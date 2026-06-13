@@ -12,6 +12,21 @@ function _xpProg(xp) {
   catch (e) { return 0; }
 }
 
+// 한 문장 종류(인용/내 생각) 휴리스틱 추정 (#420) — 기본 quote 오분류 완화.
+// 따옴표로 시작/끝나면 인용으로 보고, "~같다/닮았다/생각한다/느꼈다" 등 메타·1인칭 서술이나
+// 다른 작가·작품명 언급이면 내 생각(thought)로 제안. 토글 prefill용 — 사용자가 직접 고치면 덮어쓰지 않음.
+function estimateSentenceKind(text) {
+  const t = (text || '').trim();
+  if (!t) return 'quote';
+  // 따옴표로 감싸진 문장 — 인용 유지
+  const quoteWrapped = /^["'“‘『「《].*["'”’』」》]$/.test(t);
+  if (quoteWrapped) return 'quote';
+  // 메타·1인칭·비교 서술 — 내 생각으로 제안
+  const thoughtPattern = /(같다|닮았다|닮은|떠올랐다|떠오른다|생각이?\s*들었다|생각한다|느꼈다|느낀다|느껴졌다|싶다|것\s*같(아|네|다)|작가|작품|소설|이\s*책|이\s*문장|나는|내가|저는|제가)/;
+  if (thoughtPattern.test(t)) return 'thought';
+  return 'quote';
+}
+
 /* ── CheckinModal ─────────────────────────────────────── */
 function CheckinModal({ book, onClose, onSubmit }) {
   const [page, setPage] = _useState(book.cur);
@@ -442,6 +457,8 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
   const [page, setPage] = _useState(String(book.cur || 0)); // 문자열 — 빈칸 허용(페이지 미상)
   const [text, setText] = _useState('');
   const [kind, setKind] = _useState('quote'); // 'quote'=책 속 인용 | 'thought'=내 의견 (#360)
+  const kindTouchedRef = _useRef(false); // 사용자가 토글을 직접 눌렀는지 — 직접 누르면 자동 추정이 덮어쓰지 않음 (#420)
+  const ocrUsedRef = _useRef(false); // OCR로 채운 텍스트 — 추정과 무관하게 quote 유지 (#420)
   const [ocrBusy, setOcrBusy] = _useState(false); // 책 사진 OCR 추출 중 (#382)
   const [ocrFile, setOcrFile] = _useState(null);  // 크롭 오버레이로 넘길 원본 사진 (#396)
   const _ocrInputRef = _useRef(null);
@@ -513,6 +530,9 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
         if (d && d.text) {
           // 기존 입력에 이어 붙임(있으면 줄바꿈) — 여러 장도 누적 가능.
           setText((cur) => (cur && cur.trim() ? cur.trim() + '\n' + d.text : d.text).slice(0, 1000));
+          // OCR로 채운 텍스트는 원문 인용으로 본다 — 휴리스틱 추정이 thought로 덮어쓰지 않음 (#420)
+          ocrUsedRef.current = true;
+          if (!kindTouchedRef.current) setKind('quote');
           showToast('✨ 추출했어요 — 원하는 부분만 남기고 저장하세요');
           rgTrack('ocr_extracted', { book_id: book.id, chars: d.text.length });
         } else if (d && d.empty) {
@@ -536,6 +556,9 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
       const sid = row && row.id;
       setSaved((list) => [{ id: sid, text: t, page: p, kind: k }, ...list]);
       setText('');
+      setKind('quote');
+      kindTouchedRef.current = false;
+      ocrUsedRef.current = false;
       showToast(chat ? '🐦 참새와 대화해요' : (k === 'thought' ? '💭 내 생각 저장됨 💬' : (p != null ? ('📍 ' + p + 'p 저장됨 💬') : '저장됨 💬')));
       // id+bookTitle 전달 (#358·사피엔스버그) — bookTitle 누락 시 둥지 카드가 getBook 폴백(RG_BOOKS[0]=사피엔스)으로 오표시.
       if (onArchive) onArchive({ id: sid, text: t, bookId: book.id, bookTitle: book.title || '', page: p, when: '방금', kind: k });
@@ -708,14 +731,19 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin }) {
         {/* 인용 ↔ 내 생각 토글 (#360) — 의견도 한 문장처럼 가볍게 남긴다 */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 8, justifyContent: 'center' }}>
           {[['quote', '📖 책 속 문장'], ['thought', '💭 내 생각']].map(([k, label]) => (
-            <button key={k} onClick={() => setKind(k)}
+            <button key={k} onClick={() => { kindTouchedRef.current = true; setKind(k); }}
               style={{ padding: '6px 14px', borderRadius: 14, border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer',
                 background: kind === k ? 'var(--brand)' : 'rgba(255,255,255,0.1)', color: kind === k ? '#fff' : 'rgba(244,242,236,0.7)' }}>
               {label}
             </button>
           ))}
         </div>
-        <textarea value={text} onChange={(e) => { if (e.target.value.length <= 1000) setText(e.target.value); }}
+        <textarea value={text} onChange={(e) => {
+          if (e.target.value.length > 1000) return;
+          setText(e.target.value);
+          // 직접 타이핑은 추정 대상 — OCR로 채운 텍스트(원문)는 quote 유지, 사용자가 토글을 직접 만진 뒤로는 추정이 덮어쓰지 않음 (#420)
+          if (!kindTouchedRef.current && !ocrUsedRef.current) setKind(estimateSentenceKind(e.target.value));
+        }}
           placeholder={kind === 'thought' ? '지금 드는 내 생각·의견을 가볍게 적어요…' : '떠오른 한 문장을 바로 옮겨 적어요…'} rows={3}
           style={{ width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: '#F4F2EC', fontSize: 15, lineHeight: 1.6, padding: 12, resize: 'none', boxSizing: 'border-box' }} />
         {/* 책 사진 OCR 추출 (#382) — 인용 모드에서만(내 생각은 직접 적는 것). */}
