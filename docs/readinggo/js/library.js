@@ -438,22 +438,13 @@ function _mapWish(w) {
   return { id: b.id || w.book_id, title: b.title || '', author: b.author || '', pub: b.publisher || '', cover: b.cover_url || '', fb: ['#9AA7B2', '#C7D0D8'], total: b.total_pages || 0, isbn: b.isbn13 || '', cur: 0, status: 'wish' };
 }
 
-// 독서 시간(초) → "N시간 N분" / "N분" 표시 (#430)
-function formatDuration(sec) {
-  const totalMin = Math.round((sec || 0) / 60);
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
-}
-
 function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
   const [selectedBookId, setSelectedBookId] = _useState(null);
   const [archiveOpen, setArchiveOpen] = _useState(false); // 성 컬렉션 책장 상세 (#312)
   const [activeSubtab, setActiveSubtab] = _useState('reading'); // 'wishlist' | 'reading' | 'completed'
   const [myBooks, setMyBooks] = _useState(null);   // null=로딩
   const [wishlistBooks, setWishlistBooks] = _useState([]);
-  const [recall, setRecall] = _useState(null);     // 무작위 회상 (§5.8.7)
-  const [readingStats, setReadingStats] = _useState(null); // 독서 시간 통계 (#430) — null=로딩/세션없음
+  const [savedCount, setSavedCount] = _useState(0); // ❤️ 저장(북마크) 문장 수 — stats행 (#471/#472)
   // 좋아요한 문장은 내 한 문장 "전체 보기" 컬렉션 모달 내 필터로 이동 (#12)
   const [adminOpen, setAdminOpen] = _useState(false); // 운영 대시보드 (#161)
   const isAdmin = !!(window.RG_ME && window.RG_ME.isAdmin);
@@ -480,29 +471,10 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
       if (!alive) return;
       setWishlistBooks((rows || []).map(_mapWish));
     }).catch(() => { if (alive) setWishlistBooks([]); });
-    // 무작위 한 문장 회상 (§5.8.7)
-    Promise.resolve(DataStore.sentences.random()).then(s => { if (alive) setRecall(s || null); }).catch(() => {});
+    // ❤️ 저장(북마크) 문장 수 — stats행 저장 카운트 (#471/#472)
+    Promise.resolve((DataStore.bookmarks && DataStore.bookmarks.list) ? DataStore.bookmarks.list() : []).then(rows => { if (alive) setSavedCount((rows || []).length); }).catch(() => {});
     return () => { alive = false; };
   }, []);
-
-  // 독서 시간 통계 (#430) — 전 책의 세션을 합산해 총 독서 시간·일평균(읽은 날 수 기준) 계산.
-  // 세션 0개(또는 duration_sec 전부 0)면 readingStats=null → 섹션 미표시.
-  _useEffect(() => {
-    if (!myBooks) return;
-    let alive = true;
-    Promise.all(myBooks.map(b => Promise.resolve(DataStore.sessions.list(b.ubId)).catch(() => [])))
-      .then(lists => {
-        if (!alive) return;
-        let totalSec = 0;
-        let daysRead = 0;
-        (lists || []).forEach(sess => (sess || []).forEach(se => {
-          const d = se.duration_sec || 0;
-          if (d > 0) { totalSec += d; daysRead += 1; }
-        }));
-        setReadingStats(totalSec > 0 ? { totalSec, daysRead } : null);
-      }).catch(() => { if (alive) setReadingStats(null); });
-    return () => { alive = false; };
-  }, [myBooks]);
 
   // 회고 저장 시 myBooks 의 해당 book.recap 즉시 갱신 (#404) — 모달 재오픈 시 stale 빈 화면 방지.
   _useEffect(() => {
@@ -574,62 +546,46 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
       {/* 둥지 캐릭터(NestTheatre) — 홈에서 프로필 최상단으로 이동 (#428) */}
       {window.NestTheatre && <NestTheatre xp={state.xp} />}
 
-      {/* 프로필 상단 */}
-      <div style={{background:'linear-gradient(135deg, var(--brand), var(--brand-3))', color:'white', padding:'20px 16px', marginBottom:20, position:'relative'}}>
-        <button onClick={() => window.RG_openSettings && window.RG_openSettings()} title="설정"
-          style={{position:'absolute', top:12, right:12, background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:34, height:34, fontSize:17, cursor:'pointer', color:'#fff', lineHeight:1}}>⚙️</button>
-        {isAdmin && (
-          <button onClick={() => setAdminOpen(true)} title="운영 대시보드"
-            style={{position:'absolute', top:12, right:52, background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:34, height:34, fontSize:17, cursor:'pointer', color:'#fff', lineHeight:1}}>📊</button>
-        )}
-        <div style={{textAlign:'center'}}>
-          <div style={{fontSize:24, fontWeight:900}}>🐦 {(window.RG_ME && (window.RG_ME.displayName || window.RG_ME.handle)) || '독자'}</div>
-          <div style={{fontSize:13, opacity:0.9, marginTop:4, minHeight:18}}>
-            {(window.RG_ME && window.RG_ME.bio) || '한 줄 소개를 설정에서 적어보세요'}
+      {/* 프로필 정보 (#471) — 그라디언트 배너 제거, NestTheatre 아래 깔끔한 행 + stats */}
+      <div style={{padding:'4px 16px 16px', position:'relative'}}>
+        <div style={{position:'absolute', top:0, right:12, display:'flex', gap:8}}>
+          {isAdmin && (
+            <button onClick={() => setAdminOpen(true)} title="운영 대시보드"
+              style={{background:'var(--card)', border:'1px solid var(--line)', borderRadius:'50%', width:34, height:34, fontSize:16, cursor:'pointer', color:'var(--ink-2)', lineHeight:1}}>📊</button>
+          )}
+          <button onClick={() => window.RG_openSettings && window.RG_openSettings()} title="설정"
+            style={{background:'var(--card)', border:'1px solid var(--line)', borderRadius:'50%', width:34, height:34, fontSize:16, cursor:'pointer', color:'var(--ink-2)', lineHeight:1}}>⚙️</button>
+        </div>
+        <div style={{fontSize:22, fontWeight:900, color:'var(--ink)'}}>🐦 {(window.RG_ME && (window.RG_ME.displayName || window.RG_ME.handle)) || '독자'}</div>
+        <div style={{fontSize:13, color:'var(--ink-3)', marginTop:4, minHeight:18}}>
+          {(window.RG_ME && window.RG_ME.bio) || '한 줄 소개를 설정에서 적어보세요'}
+        </div>
+        {/* 팔로잉/팔로워/저장 (#471/#472) — Phase 0: 저장만 실데이터, 팔로우는 Phase 1 Supabase 연동 */}
+        <div style={{display:'flex', gap:24, marginTop:14}}>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:17, fontWeight:900, color:'var(--ink)'}}>0</div>
+            <div style={{fontSize:11, color:'var(--ink-3)', marginTop:2}}>팔로잉</div>
           </div>
-          {/* 통계 뱃지 — ⚡ XP · Lv.N (🏰 성·🔥 스트릭 제거 #428·#425. 성 컬렉션은 서재로 #429) */}
-          <div style={{display:'flex', justifyContent:'center', gap:16, marginTop:10, fontSize:14, fontWeight:800, opacity:0.95}}>
-            <span>⚡ {(state.xp || 0).toLocaleString()} XP</span>
-            <span>Lv.{calcLevel(state.xp || 0)}</span>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:17, fontWeight:900, color:'var(--ink)'}}>0</div>
+            <div style={{fontSize:11, color:'var(--ink-3)', marginTop:2}}>팔로워</div>
           </div>
+          <button onClick={() => window.RG_openCollection && window.RG_openCollection()}
+            style={{textAlign:'center', background:'none', border:'none', cursor:'pointer', padding:0}}>
+            <div style={{fontSize:17, fontWeight:900, color:'var(--ink)'}}>{savedCount}</div>
+            <div style={{fontSize:11, color:'var(--ink-3)', marginTop:2}}>❤️ 저장</div>
+          </button>
         </div>
       </div>
 
-      {/* 무작위 한 문장 회상 (§5.8.7) — 과거 내 문장 1개 */}
-      {recall && (
-        <div
-          onClick={() => { const bid = (recall.user_book && recall.user_book.book_id) || recall.book_id; if (bid) setSelectedBookId(bid); }}
-          style={{margin:'0 12px 20px', padding:'14px 16px', background:'var(--brand-tint)', border:'1px solid var(--brand)', borderRadius:12, cursor:'pointer'}}
-        >
-          <div style={{fontSize:12, fontWeight:800, color:'var(--brand-3)', marginBottom:6}}>💭 그때 이런 문장을 남겼어요</div>
-          <div style={{fontSize:14, color:'var(--ink)', fontStyle:'italic', lineHeight:1.5, marginBottom:6}}>"{recall.text}"</div>
-          <div style={{fontSize:11, color:'var(--ink-3)', fontWeight:700}}>
-            {(() => { const t = recall.user_book && recall.user_book.book && recall.user_book.book.title; return t ? t + ' · ' : ''; })()}{recall.page}p
-          </div>
-        </div>
-      )}
+      {/* 💭 과거 문장 회상 카드 제거 (#471) */}
 
       {/* 독서 활동 잔디 (#195) — 좌우 여백 축소로 스크롤 방지 (#11) */}
       <div style={{padding:'0 8px', marginBottom:20}}>
         <ActivityHeatmap days={182} />
       </div>
 
-      {/* 독서 시간 통계 (#430) — 총 독서 시간 · 일평균. 세션 0개면 미표시. */}
-      {readingStats && (
-        <div style={{margin:'0 12px 20px', padding:'14px 16px', background:'var(--card)', border:'1px solid var(--line)', borderRadius:12}}>
-          <div style={{fontSize:13, fontWeight:800, color:'var(--ink-2)', marginBottom:10}}>📖 독서 기록</div>
-          <div style={{display:'flex', justifyContent:'space-around', textAlign:'center'}}>
-            <div>
-              <div style={{fontSize:18, fontWeight:900, color:'var(--ink)'}}>{formatDuration(readingStats.totalSec)}</div>
-              <div style={{fontSize:11, color:'var(--ink-3)', marginTop:2}}>총 독서 시간</div>
-            </div>
-            <div>
-              <div style={{fontSize:18, fontWeight:900, color:'var(--ink)'}}>{formatDuration(Math.round(readingStats.totalSec / readingStats.daysRead))}</div>
-              <div style={{fontSize:11, color:'var(--ink-3)', marginTop:2}}>일평균</div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 📖 독서 기록 섹션(총 독서시간·일평균) 제거 (#471). duration_sec 저장(#430)은 유지(미표시). */}
 
       {/* 내 한 문장 섹션 제거(#439) — 프로필 → 내서재 → 읽고 있는 책 클릭 → 책 상세에서 그 책의 한 문장 + 참새 대화 확인 */}
 
