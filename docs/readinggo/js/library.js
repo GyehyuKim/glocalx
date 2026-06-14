@@ -559,6 +559,16 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
   const currentTab = tabsData.find(t => t.id === activeSubtab);
   const currentBooks = currentTab?.books || [];
 
+  // 탭에 속한 책들의 ID 목록 추출 및 문장 필터링
+  const currentBookIds = currentBooks.map(b => b.id);
+  const tabQuotes = (state.myQuotes || [])
+    .filter(q => currentBookIds.includes(q.bookId))
+    .sort((a, b) => {
+      const dateA = a.when || a.createdAt || '';
+      const dateB = b.when || b.createdAt || '';
+      return dateB.localeCompare(dateA); // 최신순
+    });
+
   return (
     <section className="view active">
       {/* 둥지 캐릭터(NestTheatre) — 홈에서 프로필 최상단으로 이동 (#428) */}
@@ -696,29 +706,26 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
         {myBooks === null ? (
           <div style={{textAlign:'center', padding:'40px 20px', color:'var(--ink-3)', fontSize:13, fontWeight:700}}>불러오는 중…</div>
         ) : currentBooks.length > 0 ? (
-          <div style={{display:'flex', flexDirection:'column', gap:0}}>
+          <div className="shelf-grid">
             {currentBooks.map(b => {
               const isCompleted = b.status === 'completed';
               const progText = isCompleted
-                ? (typeof b.rating === 'number' ? `⭐ ${b.rating.toFixed(1)} / 5 · 완독` : '완독')
-                : (b.cur > 0 ? `${b.cur} / ${b.total}p` : '아직 안 펼침');
+                ? (typeof b.rating === 'number' ? `⭐ ${b.rating.toFixed(1)}` : '완독')
+                : (b.cur > 0 ? `${b.cur}/${b.total}p` : '미완독');
               return (
                 <div
                   key={b.ubId || b.id}
-                  className={'shelf-row' + (b.id === state.book.id ? ' active' : '')}
+                  className={'shelf-grid-item' + (b.id === state.book.id ? ' active' : '')}
                   onClick={() => setSelectedBookId(b.id)}
-                  style={{cursor:'pointer'}}
                 >
-                  <BookCover className="shelf-cover" title={b.title} author={b.author} cover={b.cover} fb={b.fb} />
-                  <div className="shelf-meta">
-                    <div className="shelf-title">{b.title}</div>
-                    <div className="shelf-prog">{b.status === 'wish' ? (b.author || '읽고 싶은 책') : progText}</div>
-                  </div>
-                  {b.id === state.book.id && <span className="shelf-active-pill">읽는 중</span>}
+                  {b.id === state.book.id && <span className="shelf-grid-active-pill">읽는중</span>}
                   {b.status === 'wish' && (
                     <button onClick={(e) => removeWish(e, b.id)} title="찜 삭제" aria-label="찜 삭제"
-                      style={{ background:'none', border:'none', cursor:'pointer', fontSize:14, color:'var(--ink-3)', padding:'4px 6px', flexShrink:0 }}>✕</button>
+                      className="shelf-grid-remove-wish">✕</button>
                   )}
+                  <BookCover className="shelf-grid-cover" title={b.title} author={b.author} cover={b.cover} fb={b.fb} />
+                  <div className="shelf-grid-title">{b.title}</div>
+                  <div className="shelf-grid-prog">{b.status === 'wish' ? (b.author || '관심책') : progText}</div>
                 </div>
               );
             })}
@@ -731,6 +738,55 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
               {activeSubtab === 'reading' && '읽는 책이 없어요'}
               {activeSubtab === 'completed' && '완독한 책이 없어요'}
             </div>
+          </div>
+        )}
+
+        {/* 탭별 문장·감상 섹션 */}
+        {myBooks !== null && (
+          <div style={{marginTop:24, padding:'0 4px'}}>
+            <div style={{fontSize:16, fontWeight:900, marginBottom:12, color:'var(--ink)'}}>💬 이 책들의 문장·감상</div>
+            {tabQuotes.length > 0 ? (
+              <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                {tabQuotes.map((q, i) => {
+                  const getB = window.getBook;
+                  const _bk = typeof getB === 'function' ? getB(q.bookId) : null;
+                  const bkTitle = q.bookTitle || (_bk && (_bk.id === q.bookId || _bk.book_id === q.bookId) ? _bk.title : '') || '책';
+                  const typeText = q.kind === 'thought' ? '💭내생각' : '📖책속';
+                  const pageText = q.page ? `${q.page}p` : '';
+                  const dateText = q.when || (q.createdAt ? String(q.createdAt).slice(0, 10) : '');
+
+                  return (
+                    <div key={i} className="my-q-card" onClick={() => setSelectedBookId(q.bookId)} style={{cursor:'pointer'}}>
+                      <div className="meta">
+                        <span className="kind">{typeText}</span>
+                        <span className="dot">·</span>
+                        <span className="bk" style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:120}}>{bkTitle}</span>
+                        {pageText ? <span className="dot">·</span> : null}
+                        {pageText ? <span>{pageText}</span> : null}
+                        {dateText ? <span className="dot">·</span> : null}
+                        {dateText ? <span>{dateText}</span> : null}
+                      </div>
+                      <div className="quote" style={{
+                        fontStyle: q.kind === 'thought' ? 'normal' : 'italic',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxHeight: '4.65em',
+                        lineHeight: '1.55'
+                      }}>
+                        {q.kind === 'thought' ? `💭 ${q.text}` : `"${q.text}"`}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{textAlign:'center', padding:'24px 16px', background:'var(--card)', border:'1.5px dashed var(--line)', borderRadius:'var(--r-md)', color:'var(--ink-3)', fontSize:13, fontWeight:700}}>
+                저장된 문장·감상이 없습니다.
+              </div>
+            )}
           </div>
         )}
       </div>
