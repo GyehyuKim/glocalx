@@ -708,7 +708,7 @@ function ReadingMode({ book: bookProp, onClose, onArchive, onCheckin, inline = f
   const renderCompanionBody = () => (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: '#7BE0A8', marginBottom: 8 }}>
-        <span>🐦</span><span>혼자만의 독서모임</span>
+        <span>🐦</span><span>Jacky와 대화하기</span>
       </div>
       {(companion.exchanges || []).map((e, ei) => (
         <div key={ei}>
@@ -1200,7 +1200,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={resurfaceTalk}
               style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-              다시 대화하기
+              Jacky와 다시 대화하기
             </button>
             <button onClick={resurfaceLater}
               style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
@@ -1244,7 +1244,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
               </div>
               <div className="quote" style={q.kind === 'thought' ? { fontStyle: 'normal' } : null}>{q.kind === 'thought' ? `💭 ${q.text}` : `"${q.text}"`}</div>
               {q.id && (
-                <button className="q-ai" onClick={() => window.RG_openCompanion && window.RG_openCompanion({ id: q.id, text: q.text, bookId: q.bookId, bookTitle: bkTitle, page: q.page, note: q.note, kind: q.kind })}>🤖 AI와 이야기</button>
+                <button className="q-ai" onClick={() => window.RG_openCompanion && window.RG_openCompanion({ id: q.id, text: q.text, bookId: q.bookId, bookTitle: bkTitle, page: q.page, note: q.note, kind: q.kind })}>🐦 Jacky와 대화하기</button>
               )}
             </div>
           );
@@ -1373,7 +1373,7 @@ function CompanionModal({ sentence, onClose }) {
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div style={{ background: 'var(--card)', width: '100%', maxWidth: 430, maxHeight: '85vh', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px 8px' }}>
-          <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--brand-3)' }}>🐦 혼자만의 독서모임</div>
+          <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--brand-3)' }}>🐦 Jacky와 대화하기</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--ink-3)', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 18px 18px' }}>
