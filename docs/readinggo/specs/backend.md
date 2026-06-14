@@ -80,12 +80,12 @@ sentences.setVisibility(id, {visibility?, note_private?})    // v7.2: visibility
 sentences.listMine()                       → Sentence[]
 sentences.random()                         → Sentence        // 무작위 회상 — 내 과거 한 문장 1개 (§profile 5.8.7)
 
-// 스트릭 / XP / 성(완독)
+// 스트릭 / XP / 성(XP 주기 완료)
 streak.get()                               → Streak
 streak.bumpOnCheckIn()                                      // 입력 즉시 호출
 xp.get() / xp.add(amount, reason)
-books.complete(userBookId, {rating?, review_text?})         // 완독 → 🏰 1개 (성 = 파생)
-castles.list()                             → UserBook[]      // status='completed' (성 컬렉션)
+books.complete(userBookId, {rating?, review_text?})         // 완독 상태·별점·소감 저장. 성 직접 지급 없음
+castles.list()                             → Castle[]        // DB 조회 없이 users.xp 파생. length=floor(totalXp/1600)
 
 // 일일 기록 (추가)
 sessions.calendar(days?)               → {readDates, shieldDates}  // 스트릭 캘린더 — 최근 N일(기본 35) 읽은/방패 날짜
@@ -154,7 +154,7 @@ users
   xp                    int  DEFAULT 0
   created_at            timestamptz
   -- v7 제거: is_operator (운영자 짹 폐기)
-  -- 성(🏰) 개수는 user_books(status='completed') 에서 파생 — 별도 컬럼 없음
+  -- 성(🏰) 개수는 floor(xp / 1600) 에서 파생 — 별도 컬럼/테이블 없음
 
 books
   id            uuid PK
@@ -400,7 +400,7 @@ OAuth 콜백 직후 동기화 → localStorage 비움:
 
 - 로컬 어댑터 `sentences.add`는 게스트가 직접 남긴 문장에 **`_guest: true`** 태그(시드 `_seed()` 문장은 태그 없음 → 백필 제외).
 - `syncPendingToSupabase`(app.js)는 `_guest` 문장을 가진 **모든 user_book**을 이전: 책 upsert → 문장 `add({text, page, my_note, kind})`로 **대화(my_note)·종류까지 보존**. 활성 책은 로컬 `active_user_book_id` 매핑 유지.
-- 이전 후 `pending` 비우고 `_guest` 플래그 제거(재동기화 방지). 시드 완독 책(성 컬렉션)은 `_guest` 문장이 없어 미이전(폴루션 방지).
+- 이전 후 `pending` 비우고 `_guest` 플래그 제거(재동기화 방지). 시드 완독 책은 `_guest` 문장이 없어 미이전(폴루션 방지).
 - 참여 가시화: `answer_saved`(PostHog)는 동의와 무관하게 발화(`rgTrack`→`posthog.capture`) — 미동의 게스트의 engagement도 집계됨.
 - **동의 유저 my_note → `companion_sessions` 백필 (#394, 구현)**: 로그인 시 `backfillCompanionSessions()`(app.js) — 동의(`yes`)·기존 세션 0건일 때만(중복 방지) sentence `my_note`의 `Q./A.` 쌍을 파싱(`parseQAPairs`)해 `companionSessions.add`. 가드용 `companionSessions.countMine()` 양 어댑터 추가(로컬=0). 미동의 유저 제외(PIPA). 해자 집계(`companion_sessions`)를 과거 대화로 채움.
 
