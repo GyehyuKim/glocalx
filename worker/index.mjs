@@ -161,11 +161,17 @@ async function companionProxy(request, env) {
 }
 
 /* ── 관련 도서 추천 — 이 책과 함께 읽을 책 (#496) ──────────────
-   LLM은 "제목 — 저자"만 제시한다(설명·ISBN 생성 금지 — 환각 최소화).
-   실존 여부 판정(환각 필터)은 클라가 books DB와 fuzzy 매칭으로 수행하므로
-   여기서는 후보 목록만 돌려준다. 키/설정 없으면 빈 목록(데모 무중단).
+   LLM은 각 후보의 ISBN-13 + 제목 + 저자를 제시한다. 단, LLM이 준 ISBN은 신뢰하지 않는다.
+   실존 여부 판정(ISBN 환각 필터)은 클라가 books DB의 ISBN과 정확 일치로 수행한다.
+   여기서는 형식이 유효한(ISBN-13 13자리) 후보만 추려 돌려준다. 키/설정 없으면 빈 목록(데모 무중단).
    Phase 0은 LLM 추천 기반. Supabase 함께읽기(공동독서) 집계는 Phase 1 (#496 결정). */
-const RELATED_SYSTEM = '당신은 한국 독자에게 책을 추천하는 사서입니다. 사용자가 좋아한 책 한 권을 주면, 그 책을 좋아한 독자가 함께 읽으면 좋을 다른 책을 추천하세요. 반드시 실존하는, 한국에서 정식 출간된 책만 고르세요(존재하지 않는 책·지어낸 제목 절대 금지). 입력한 책 자신은 제외하세요. 형식은 오직 JSON 배열 하나로만 답하세요: [{"title":"책 제목","author":"저자"}]. 설명·머리말·코드펜스·그 외 텍스트를 일절 붙이지 말고 JSON 배열만 출력하세요. 최대 8권.';
+const RELATED_SYSTEM = '당신은 한국 독자에게 책을 추천하는 사서입니다. 사용자가 좋아한 책 한 권을 주면, 그 책을 좋아한 독자가 함께 읽으면 좋을 다른 책을 추천하세요. 반드시 실존하는, 한국에서 정식 출간된 책만 고르세요(존재하지 않는 책·지어낸 제목·가짜 ISBN 절대 금지). 입력한 책 자신은 제외하세요. 각 책마다 정확한 ISBN-13(하이픈 없이 13자리 숫자)을 함께 제시하세요. 형식은 오직 JSON 배열 하나로만 답하세요: [{"isbn":"9788937460000","title":"책 제목","author":"저자"}]. 설명·머리말·코드펜스·그 외 텍스트를 일절 붙이지 말고 JSON 배열만 출력하세요. 최대 8권.';
+
+// ISBN-13 정규화 — 숫자만 남겨 정확히 13자리일 때만 반환, 아니면 '' (형식 오류).
+function normIsbn13(s) {
+  const d = String(s == null ? '' : s).replace(/[^0-9]/g, '');
+  return d.length === 13 ? d : '';
+}
 
 function parseRelated(raw) {
   // LLM 응답에서 JSON 배열만 추출 (코드펜스·잡텍스트 방어).
@@ -179,13 +185,13 @@ function parseRelated(raw) {
   const seen = new Set();
   for (const it of arr) {
     if (!it || typeof it !== 'object') continue;
+    const isbn = normIsbn13(it.isbn);                       // 형식 오류·누락 → '' → 버림
     const title = String(it.title || '').trim().slice(0, 200);
     const author = String(it.author || '').trim().slice(0, 120);
-    if (!title) continue;
-    const key = title.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ title, author });
+    if (!isbn || !title) continue;                          // 최종 환각 필터(DB 매칭)는 클라가 수행
+    if (seen.has(isbn)) continue;                           // ISBN 기준 중복 제거
+    seen.add(isbn);
+    out.push({ isbn, title, author });
     if (out.length >= 8) break;
   }
   return out;
@@ -197,6 +203,7 @@ async function relatedProxy(request, env) {
   try { body = await request.json(); } catch { return json({ error: 'invalid json' }, 400); }
   const title = String((body && body.title) || '').slice(0, 200).trim();
   const author = String((body && body.author) || '').slice(0, 120).trim();
+  const isbn = normIsbn13(body && body.isbn);               // 현재 책 ISBN — LLM이 같은 책을 추천하지 않도록 전달
   if (!title) return json({ error: 'title 필요' }, 422);
   // 키/설정 없으면 빈 목록 (데모 안전 — 클라는 빈 결과를 조용히 숨김)
   if (!env.UPSTAGE_API_KEY || !env.LLM_BASE_URL || !env.LLM_MODEL) {
@@ -204,7 +211,7 @@ async function relatedProxy(request, env) {
   }
   const messages = [
     { role: 'system', content: RELATED_SYSTEM },
-    { role: 'user', content: `좋아한 책: ${title}${author ? ` — ${author}` : ''}\n이 책을 좋아한 독자가 함께 읽으면 좋을 책을 JSON 배열로 추천해줘.` },
+    { role: 'user', content: `좋아한 책: ${title}${author ? ` — ${author}` : ''}${isbn ? ` (ISBN ${isbn})` : ''}\n이 책을 좋아한 독자가 함께 읽으면 좋을 책을, 각 책의 ISBN-13과 함께 JSON 배열로 추천해줘. 위 책 자신은 제외.` },
   ];
   try {
     const raw = await callLLM({ messages, env, maxTokens: 600 });

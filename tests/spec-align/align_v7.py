@@ -124,6 +124,8 @@ INVARIANTS = [
         ["datastore.js"], r"setNote[\s\S]*random\(\)|random\(\)[\s\S]*setNote"),
     ("B", "present", "관련 도서 추천 — recommendRelated + books.related (#496)",
         ["data.js", "datastore.js"], r"recommendRelated"),
+    ("B", "present", "관련 도서 ISBN 환각 필터 — filterRelatedCandidates (#496)",
+        ["data.js"], r"filterRelatedCandidates"),
     ("B", "present", "책 상세 관련 도서 캐러셀 (#496)",
         ["library.js"], r"함께 읽으면 좋은 책"),
 

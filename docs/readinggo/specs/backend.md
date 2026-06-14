@@ -437,8 +437,8 @@ Phase 0 (localStorage, `rg_v41`):
 
 책 상세 "함께 읽으면 좋은 책"([profile.md §5.8.4](./profile.md)) 의 호출 경로. companion/ocr 과 동일한 동일출처 가드 + `callLLM(env)` 프록시 패턴(키 서버 보관).
 
-- **라우트**: `POST /api/related` (`worker/index.mjs` `relatedProxy`). 입력 `{title, author}` → 출력 `{books:[{title, author}]}` (최대 8). system = 사서(실존 한국 출간서만, JSON 배열만 출력). 키/설정 없거나 호출 실패 시 `{books:[]}` 폴백(무중단).
-- **환각 필터(클라)**: LLM 은 **제목·저자만** 제시(ISBN·설명 생성 금지). `data.js recommendRelated` 가 후보 제목을 **실존 books DB 와 매칭**(정규화 후 완전일치 또는 권번호/부제 prefix) 해 지어낸 책을 버리고 실제 책 객체만 반환. 책 단위 메모리 캐시. #489 외서 보강의 LLM 환각 필터와 동일 원칙.
+- **라우트**: `POST /api/related` (`worker/index.mjs` `relatedProxy`). 입력 `{isbn, title, author}`(현재 책) → 출력 `{books:[{isbn, title, author}]}` (최대 8). system = 사서(실존 한국 출간서만, 각 책의 **ISBN-13** 포함, JSON 배열만 출력). worker 는 ISBN-13(13자리 숫자) 형식이 유효한 후보만 추리고 ISBN 기준 중복 제거. 키/설정 없거나 호출 실패 시 `{books:[]}` 폴백(무중단).
+- **ISBN 환각 필터(클라)**: LLM 이 준 ISBN 을 **신뢰하지 않는다**. `data.js filterRelatedCandidates`(순수 함수)가 후보를 **실존 books DB 의 ISBN 과 정확 일치할 때만** 통과시킨다. 통과 조건: ① ISBN-13 형식 유효 ② 현재 책 ISBN 아님 ③ 중복 ISBN 아님 ④ DB 에 해당 ISBN 실재 ⑤ DB 책의 정규화 제목이 후보 제목과 일치. **제목 prefix/부분 매칭은 환각 필터로 쓰지 않는다**(다른 책·다른 권·다른 판본 오통과 방지). 매칭된 실제 DB 책 객체만 반환, 책 단위 메모리 캐시. #489 외서 보강의 ISBN 매칭 환각 필터와 동일 원칙.
 - **DataStore 계약**: `books.related(book)` — 두 어댑터 표면 일치(§7.2). Phase 0 은 양쪽 모두 LLM 폴백. **Phase 1**: Supabase 어댑터를 `user_books` 공동독서 집계 RPC(예: `books_also_read`)로 교체 → '이 책 읽은 사람들이 읽은 책'(실데이터). 그 전까지 허위 카피 금지.
 
 ---
