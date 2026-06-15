@@ -21,7 +21,7 @@ async function buildStateFromSupabase() {
   if (ub && ub.book) {
     const total = ub.book.total_pages || 0; // 0 = 쪽수 미상 (#204) — 진척률 계산 시 가드
     out.book = {
-      id: ub.book_id, title: ub.book.title, author: ub.book.author || '', pub: ub.book.publisher || '',
+      id: ub.book_id, ubId: ub.id, title: ub.book.title, author: ub.book.author || '', pub: ub.book.publisher || '',
       cur: ub.current_page || 0, total, days: 1,
       cover: ub.book.cover_url, fb: ['#9AA7B2', '#C7D0D8'], toc: [],
     };
@@ -428,12 +428,20 @@ function App() {
     // sessions.addToday 가 스트릭 bump 까지 연동(양 어댑터). 활성 책 없으면 no-op.
     (async () => {
       try {
-        const ub = await Promise.resolve(DataStore.activeBook.get());
-        if (!ub || !ub.id) { console.warn('[ReadingGo] 체크인: 활성 책 없음 — 등록 먼저 필요'); return; }
-        await Promise.resolve(DataStore.sessions.addToday({ userBookId: ub.id, page: ns.book.cur }));
-        if (sentence) await Promise.resolve(DataStore.sentences.add({ userBookId: ub.id, page: ns.book.cur, text: sentence, kind: kind || 'quote' }));
+        // #565: 화면 책(ns.book)에 정확히 귀속 — 전역 activeBook 타이밍(리볼빙 전환 race)에 의존하지 않는다.
+        // 1순위 ns.book.ubId(readingBooks·buildState 에서 동결한 user_book id). 없으면 ns.book.id 로 내 책을 해소
+        // (active 폴백 아님 — 화면 책 기준). 둘 다 실패하면 잘못 저장하지 말고 중단.
+        let ubId = ns.book && ns.book.ubId;
+        if (!ubId && ns.book && ns.book.id) {
+          const myb = await Promise.resolve(DataStore.myBooks.list()).catch(() => []);
+          const found = (myb || []).find(u => (u.book_id === ns.book.id) || (u.book && u.book.id === ns.book.id));
+          ubId = found && found.id;
+        }
+        if (!ubId) { console.warn('[ReadingGo] 체크인: 화면 책의 user_book 미해소 — 잘못된 귀속 방지 위해 저장 건너뜀'); return; }
+        await Promise.resolve(DataStore.sessions.addToday({ userBookId: ubId, page: ns.book.cur }));
+        if (sentence) await Promise.resolve(DataStore.sentences.add({ userBookId: ubId, page: ns.book.cur, text: sentence, kind: kind || 'quote' }));
         if (xpGain) await Promise.resolve(DataStore.xp.add(xpGain, 'checkin'));
-        console.log('[ReadingGo] ✅ 체크인 저장 완료 (ub=' + ub.id + ')');
+        console.log('[ReadingGo] ✅ 체크인 저장 완료 (ub=' + ubId + ')');
         // DB 권위값으로 스트릭·XP·내 한 문장 정합 (낙관 표시 어긋남 + 새 문장 id 부재 → 감상 버튼 지연 방지, H2/§5.8.4)
         const [stDb, xpDb, mineDb] = await Promise.all([
           Promise.resolve(DataStore.streak.get()).catch(() => null),

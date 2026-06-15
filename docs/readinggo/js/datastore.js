@@ -335,7 +335,9 @@ const DataStore = {
   sentences: {
     add({ userBookId, sessionId, page, text, my_note, kind }) {
       return localStorageAdapter.mutate(s => {
-        const ub = _ubById(s, userBookId) || _activeUB(s);
+        // #565: userBookId 가 명시됐는데 못 찾으면 active 책으로 폴백하지 않는다(잘못된 귀속 방지) — null 로 실패.
+        // userBookId 미명시(레거시 호출)일 때만 active 책 사용.
+        const ub = userBookId ? _ubById(s, userBookId) : _activeUB(s);
         if (!ub) return null;
         ub.sentences = ub.sentences || [];
         const row = {

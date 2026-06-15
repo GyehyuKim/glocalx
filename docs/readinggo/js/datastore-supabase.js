@@ -228,6 +228,8 @@
     /* 한 문장 (sentences) */
     sentences: {
       async add({ userBookId, sessionId, page, text, my_note, kind }) {
+        // #565: userBookId 없이는 insert 금지 — 무효/누락 ID 로 조용히 잘못 저장하지 않는다(명확히 실패).
+        if (!userBookId) throw new Error('sentences.add: userBookId 필요 (#565)');
         const id = await uid();
         return unwrap(await sb().from('sentences').insert({
           user_id: id, user_book_id: userBookId, session_id: sessionId || null,
