@@ -102,7 +102,7 @@ castleCount = floor(totalXp / 1600)
 - **독서 타이머**: 상단 경과 시간(⏱). 일시정지/계속. 백그라운드 시 Page Visibility로 일시정지(근사 정확)
 - **상시 한 문장 입력칸**: 화면에 항상 열려 있어 떠오른 문장을 즉시 저장(아카이브). 저장마다 `sessions.addToday`(당일 1회 idempotent — 체크인/스트릭 충족) + `sentences.add`
 - **저장 = 토스트만, 참새는 체크인(읽기 종료) 직후에만 (#347/#438)**: 읽는 중 저장은 토스트(흐름 유지) + `[저장]` 버튼만 — 인라인 '💬 지금 대화' 제거. 참새 질문은 **읽기 종료(✕/독서 종료/완독)** 시 세션 문장 1개로 1회, 말풍선 채팅 UI(#435) — 오늘 요약과 함께. SSOT: [companion-reading-end.md](./companion-reading-end.md)
-- **인용 ↔ 내 생각 토글 (#360)**: 입력칸 위 「📖 책 속 문장 | 💭 내 생각」 칩. 의견도 한 문장처럼 가볍게 저장 — `sentences.kind`('quote' 기본 | 'thought'). 표시는 인용="이탤릭", 의견=💭. LLM엔 kind 전달(companion.md §2)
+- **인용 ↔ 내 생각 토글 — 폐기 (#596, was #360/#381/#420)**: '내 생각'(thought) 개념 멸종. 생성·설정 진입점(책장·CompanionModal 토글, `estimateSentenceKind` 휴리스틱) 전부 제거, `DataStore.sentences.add` 는 `kind:'quote'` 고정, 기존 thought 행은 `27_extinct_thought.sql` 로 quote 전환. `sentences.kind` 컬럼은 롤백 안전상 유지하되 사실상 **quote 단일**.
 - **문장별 페이지**: 매 문장마다 "📍 이 문장의 페이지" 입력. **미입력 시 페이지 없이 문장만** 저장
 - **읽기 모드가 오늘의 한 문장을 대체**: 읽기 모드에서 기록하면 둥지의 별도 "오늘의 한 문장"은 불필요(동일 체크인 경로)
 - **종료**: "독서 종료" → 마지막 읽은 페이지 확인 입력 → `current_page` 갱신. 미입력 시 최근 페이지 유지
@@ -118,5 +118,5 @@ castleCount = floor(totalXp / 1600)
 - **촬영 가이드 (#395)**: OCR 버튼 아래 "한 페이지·한 구절만, 배경 없이" 안내 — 벤치마크 결론(Upstage OCR 본문 정확도 0.93, 변수는 *구도*).
 - **결과**: 추출(보정) 텍스트를 입력칸에 **프리필(이어붙임)** → 사용자가 다듬어 저장. 여러 장 누적 가능.
 - **키 보호**: `UPSTAGE_API_KEY`(companion과 동일 secret) **서버에서만**. 클라 노출 금지. 동일출처(Origin)만 허용. 이미지 ≤8MB.
-- **내 생각(thought) 모드엔 미표시**: 내 생각은 직접 적는 것이라 OCR 불필요.
+- ~~**내 생각(thought) 모드엔 미표시**~~ — 폐기(#596): 'thought' 멸종으로 무의미. OCR은 항상 노출.
 - 분석 이벤트: `ocr_extracted`(book_id, chars).

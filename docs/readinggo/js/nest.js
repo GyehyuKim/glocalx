@@ -12,20 +12,7 @@ function _xpProg(xp) {
   catch (e) { return 0; }
 }
 
-// 한 문장 종류(인용/내 생각) 휴리스틱 추정 (#420) — 기본 quote 오분류 완화.
-// 따옴표로 시작/끝나면 인용으로 보고, "~같다/닮았다/생각한다/느꼈다" 등 메타·1인칭 서술이나
-// 다른 작가·작품명 언급이면 내 생각(thought)로 제안. 토글 prefill용 — 사용자가 직접 고치면 덮어쓰지 않음.
-function estimateSentenceKind(text) {
-  const t = (text || '').trim();
-  if (!t) return 'quote';
-  // 따옴표로 감싸진 문장 — 인용 유지
-  const quoteWrapped = /^["'“‘『「《].*["'”’』」》]$/.test(t);
-  if (quoteWrapped) return 'quote';
-  // 메타·1인칭·비교 서술 — 내 생각으로 제안
-  const thoughtPattern = /(같다|닮았다|닮은|떠올랐다|떠오른다|생각이?\s*들었다|생각한다|느꼈다|느낀다|느껴졌다|싶다|것\s*같(아|네|다)|작가|작품|소설|이\s*책|이\s*문장|나는|내가|저는|제가)/;
-  if (thoughtPattern.test(t)) return 'thought';
-  return 'quote';
-}
+// 한 문장 종류 휴리스틱(estimateSentenceKind, #420) 제거 — '내 생각'(thought) 폐기 (#596). 호출부 없던 죽은 코드.
 
 /* ── CheckinModal ─────────────────────────────────────── */
 function CheckinModal({ book, onClose, onSubmit }) {
@@ -1081,12 +1068,7 @@ function CompanionModal({ sentence, onClose }) {
     const v = stext.trim();
     if (!v) { setEditing(false); return; }
     if (DataStore.sentences && DataStore.sentences.updateText) Promise.resolve(DataStore.sentences.updateText(sentence.id, v)).catch(() => {});
-    // 종류 변경(#381) — 바뀐 경우에만 setKind.
-    if (skind !== (sentence.kind || 'quote') && DataStore.sentences && DataStore.sentences.setKind) {
-      Promise.resolve(DataStore.sentences.setKind(sentence.id, skind)).catch(() => {});
-      sentence.kind = skind;
-      window.dispatchEvent(new CustomEvent('rg:sentence-kind', { detail: { id: sentence.id, kind: skind } }));
-    }
+    // 종류 변경(#381) 제거 — '내 생각'(thought) 폐기 (#596). 텍스트만 수정.
     sentence.text = v; setEditing(false); showToast('✏️ 문장 수정됨');
   };
   _useEffect(() => {
@@ -1151,14 +1133,7 @@ function CompanionModal({ sentence, onClose }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 18px 18px' }}>
           {editing ? (
             <div style={{ marginBottom: 12 }}>
-              {/* 인용↔내 의견 토글 (#381) — 편집 시 종류 변경 */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                {[['quote', '📖 책 속 문장'], ['thought', '💭 내 생각']].map(([k, label]) => (
-                  <button key={k} onClick={() => setSkind(k)}
-                    style={{ padding: '5px 12px', borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                      background: skind === k ? 'var(--brand)' : 'var(--paper-2)', color: skind === k ? '#fff' : 'var(--ink-3)' }}>{label}</button>
-                ))}
-              </div>
+              {/* 인용↔내 생각 토글 (#381) 제거 — '내 생각'(thought) 폐기 (#596). 텍스트만 편집. */}
               <textarea value={stext} onChange={(e) => { if (e.target.value.length <= 1000) setStext(e.target.value); }} rows={3}
                 style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--brand)', borderRadius: 10, padding: 10, fontSize: 14, fontFamily: 'inherit', lineHeight: 1.5, resize: 'none' }} />
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>

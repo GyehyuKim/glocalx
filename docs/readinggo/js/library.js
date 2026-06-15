@@ -35,7 +35,6 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
   const [addOpen, setAddOpen] = _useState(false);
   const [addText, setAddText] = _useState('');
   const [addPage, setAddPage] = _useState('');
-  const [addKind, setAddKind] = _useState('quote');
   const [addBusy, setAddBusy] = _useState(false);
   const saveNewQuote = async () => {
     const t = (addText || '').trim();
@@ -45,16 +44,17 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
     setAddBusy(true);
     try {
       const pg = addPage === '' ? null : (parseInt(addPage, 10) || null);
-      const row = await Promise.resolve(DataStore.sentences.add({ userBookId: book.ubId, page: pg, text: t, kind: addKind }));
-      const id = (row && row.id) || ('se_' + Date.now());
+      const row = await Promise.resolve(DataStore.sentences.add({ userBookId: book.ubId, page: pg, text: t, kind: 'quote' }));
+      // #595: DB 행 확정 시에만 낙관 반영(가짜 id 유령 → 리로드 시 사라짐 방지). id 없으면 실패 처리.
+      if (!row || !row.id) { showToast('저장 실패 — 잠시 후 다시'); return; }
       window.dispatchEvent(new CustomEvent('rg:sentence-added', { detail: { quote: {
-        id, text: t, bookId: book.id, bookTitle: book.title, author: book.author,
-        page: (typeof pg === 'number' ? pg : 0), when: '방금', createdAt: (row && row.created_at) || '',
-        note: '', kind: addKind, visibility: 'public',
+        id: row.id, text: row.text || t, bookId: book.id, bookTitle: book.title, author: book.author,
+        page: (typeof row.page === 'number' ? row.page : (typeof pg === 'number' ? pg : 0)), when: '방금',
+        createdAt: row.created_at || '', note: row.my_note || '', kind: 'quote', visibility: row.visibility || 'public',
       } } }));
-      setAddText(''); setAddPage(''); setAddKind('quote'); setAddOpen(false);
+      setAddText(''); setAddPage(''); setAddOpen(false);
       showToast('✍️ 한 문장을 남겼어요');
-      if (window.rgTrack) window.rgTrack('sentence_added', { book_id: book.id, kind: addKind });
+      if (window.rgTrack) window.rgTrack('sentence_added', { book_id: book.id, kind: 'quote' });
     } catch (e) { showToast('저장 실패 — 잠시 후 다시'); }
     finally { setAddBusy(false); }
   };
@@ -463,15 +463,10 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
               ) : (
                 <div style={{background:'var(--card)', border:'1.5px solid var(--line)', borderRadius:8, padding:12}}>
                   <textarea value={addText} onChange={e => { if (e.target.value.length <= 1000) setAddText(e.target.value); }}
-                    placeholder="이 책에서 남기고 싶은 한 문장 (인용 또는 내 생각)" rows={3} autoFocus
+                    placeholder="이 책에서 남기고 싶은 한 문장" rows={3} autoFocus
                     style={{width:'100%', boxSizing:'border-box', border:'1.5px solid var(--line)', borderRadius:8, padding:10, fontSize:14, lineHeight:1.5, resize:'none'}} />
+                  {/* 인용/내 생각 토글 제거 (#596) — '내 생각' 폐기, 항상 인용(quote) 저장 */}
                   <div style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
-                    <div style={{display:'flex', gap:6}}>
-                      {[['quote','" 인용'],['thought','💭 내 생각']].map(([k,label]) => (
-                        <button key={k} onClick={() => setAddKind(k)} aria-pressed={addKind===k}
-                          style={{padding:'6px 10px', borderRadius:14, border:addKind===k?'none':'1px solid var(--line)', background:addKind===k?'var(--brand)':'transparent', color:addKind===k?'#fff':'var(--ink-2)', fontSize:12, fontWeight:800, cursor:'pointer'}}>{label}</button>
-                      ))}
-                    </div>
                     <input type="number" inputMode="numeric" min="0" max="99999" value={addPage} onChange={e => setAddPage(e.target.value)} placeholder="페이지"
                       style={{width:72, textAlign:'center', padding:'7px 4px', border:'1.5px solid var(--line)', borderRadius:8, fontSize:13, fontWeight:700}} />
                   </div>

@@ -348,7 +348,7 @@ const DataStore = {
           page: typeof page === 'number' ? page : (ub.current_page || 0),
           text: text || '',
           my_note: my_note || null,
-          kind: kind === 'thought' ? 'thought' : 'quote',   // 인용 vs 내 의견 (#360)
+          kind: 'quote',   // '내 생각'(thought) 폐기 — 항상 인용(quote) (#596)
           _guest: true,   // 게스트가 직접 남긴 문장(시드 아님) — 로그인 시 backfill 대상 (#370)
           created_at: Date.now(),
         };
