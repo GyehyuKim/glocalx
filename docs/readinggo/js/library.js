@@ -520,6 +520,15 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
   const [followModal, setFollowModal] = _useState(null); // null | 'following' | 'followers' — 유저 목록 모달 (#509)
   // 좋아요한 문장은 내 한 문장 "전체 보기" 컬렉션 모달 내 필터로 이동 (#12)
   const [adminOpen, setAdminOpen] = _useState(false); // 운영 대시보드 (#161)
+  // 한 줄 소개 인라인 편집 (#515) — 설정 탭에서 이동, 프로필 헤더에서 직접 수정.
+  const [bioEditing, setBioEditing] = _useState(false);
+  const [bioText, setBioText] = _useState((window.RG_ME && window.RG_ME.bio) || '');
+  const saveBio = () => {
+    const v = bioText.trim().slice(0, 100);
+    Promise.resolve(DataStore.profile.update({ bio: v || null }))
+      .then(() => { if (window.RG_ME) window.RG_ME.bio = v; setBioEditing(false); showToast('소개 저장됨'); })
+      .catch(() => showToast('저장 실패 — 잠시 후 다시'));
+  };
   const isAdmin = !!(window.RG_ME && window.RG_ME.isAdmin);
 
   // 내 책(읽는중/완독) + 관심책 — 실 Supabase (양 어댑터 정규화). 데모 상수 미사용.
@@ -638,9 +647,25 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           )}
         </div>
         <div style={{fontSize:22, fontWeight:900, color:'var(--ink)'}}>🐦 {(window.RG_ME && (window.RG_ME.displayName || window.RG_ME.handle)) || '독자'}</div>
-        <div style={{fontSize:13, color:'var(--ink-3)', marginTop:4, minHeight:18}}>
-          {(window.RG_ME && window.RG_ME.bio) || '한 줄 소개를 설정에서 적어보세요'}
-        </div>
+        {/* 한 줄 소개 인라인 편집 (#515) — 탭 → 입력, Enter/저장 → 저장, ESC/바깥 → 취소 */}
+        {bioEditing ? (
+          <div style={{marginTop:4, display:'flex', gap:6, alignItems:'center'}}>
+            <input value={bioText} maxLength={100} autoFocus
+              onChange={e => setBioText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveBio(); else if (e.key === 'Escape') { setBioText((window.RG_ME && window.RG_ME.bio) || ''); setBioEditing(false); } }}
+              onBlur={() => { setBioText((window.RG_ME && window.RG_ME.bio) || ''); setBioEditing(false); }}
+              placeholder="한 줄 소개를 입력해보세요"
+              style={{flex:1, fontSize:13, padding:'4px 8px', border:'1px solid var(--line)', borderRadius:6, color:'var(--ink)', background:'var(--card)'}} />
+            <button onMouseDown={e => { e.preventDefault(); saveBio(); }}
+              style={{padding:'4px 12px', borderRadius:6, border:'none', background:'var(--brand)', color:'#fff', fontSize:12, fontWeight:800, cursor:'pointer'}}>저장</button>
+          </div>
+        ) : (
+          <div onClick={() => { setBioText((window.RG_ME && window.RG_ME.bio) || ''); setBioEditing(true); }}
+            title="탭하여 한 줄 소개 편집"
+            style={{fontSize:13, color:'var(--ink-3)', marginTop:4, minHeight:18, cursor:'pointer'}}>
+            {(window.RG_ME && window.RG_ME.bio) ? `${window.RG_ME.bio} ✏️` : '한 줄 소개를 입력해보세요 ✏️'}
+          </div>
+        )}
         {/* 팔로잉/팔로워/저장 (#471/#472) — 팔로우 수는 Supabase friends.counts 실데이터 (#516). 탭 시 유저 목록 모달 (#509) */}
         <div style={{display:'flex', gap:24, marginTop:14}}>
           <button onClick={() => setFollowModal('following')}

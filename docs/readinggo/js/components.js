@@ -384,17 +384,7 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
   const [hmsg, setHmsg] = useState('');
   const [consentOn, setConsentOn] = useState(window.RG_consent && window.RG_consent.get() === 'yes'); // 데이터 활용 동의 (#294)
   const [qPreset, setQPreset] = useState(window.RG_companionPreset ? window.RG_companionPreset.get() : 'balanced'); // 참새 질문 결 (#375)
-  const [bio, setBio] = useState(me.bio || '');
-  const [bmsg, setBmsg] = useState('');
-  const saveBio = async () => {
-    const v = bio.trim().slice(0, 100);
-    if (!(DataStore.profile && DataStore.profile.update)) return;
-    try {
-      await Promise.resolve(DataStore.profile.update({ bio: v || null }));
-      if (window.RG_ME) window.RG_ME.bio = v;
-      setBmsg('✓ 저장됨'); showToast('소개 저장됨');
-    } catch (e) { setBmsg('저장 실패'); }
-  };
+  // 한 줄 소개(bio) 편집은 프로필 헤더 인라인으로 이동 (#515) — 여기서 제거.
   // 닉네임 1개 통합(Model A): 화면 표시·고유성은 handle 로, 저장 시 display_name 도 동기화.
   // 내부 식별은 불변 UUID — 닉네임을 바꿔도 기록은 갈리지 않는다.
   const saveHandle = async () => {
@@ -482,16 +472,7 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
             </div>
             {hmsg && <div style={{ fontSize: 12, color: hmsg.indexOf('✓') === 0 ? 'var(--brand)' : '#d33', marginTop: 6 }}>{hmsg}</div>}
           </div>
-          {/* 한 줄 소개 (#10) */}
-          <div style={{ padding: '14px 0', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--ink)', marginBottom: 4 }}>한 줄 소개</div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input value={bio} maxLength={100} onChange={e => { setBio(e.target.value); setBmsg(''); }} placeholder="책 속에서 길을 찾는 중…"
-                style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--line)', fontSize: 14, outline: 'none' }} />
-              <button onClick={saveBio} style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>저장</button>
-            </div>
-            {bmsg && <div style={{ fontSize: 12, color: bmsg.indexOf('✓') === 0 ? 'var(--brand)' : '#d33', marginTop: 6 }}>{bmsg}</div>}
-          </div>
+          {/* 한 줄 소개 편집은 프로필 헤더 인라인으로 이동 (#515) — 설정에서 제거 */}
           {/* 데이터 내보내기 (#172) — 데이터 주권: 내 기록은 내 것 */}
           <button onClick={exportData} style={{ marginTop: 18, width: '100%', padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>📦 내 데이터 내보내기 (JSON)</button>
 
