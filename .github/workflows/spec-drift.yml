@@ -36,6 +36,9 @@ jobs:
       - name: books Supabase canonical + isbn13 매칭 (#490)
         run: node tests/supabase-books.test.mjs
 
+      - name: 한 문장 책 귀속 — 명시 userBookId 정확/무효 폴백 금지 (#565)
+        run: node tests/sentence-book-binding.test.mjs
+
       - name: Worker syntax
         run: node --check worker/index.mjs
 
