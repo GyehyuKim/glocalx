@@ -867,7 +867,7 @@ input,textarea{font-family:inherit;}
 
 .shelf-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* #553: 트랙 최소폭 0 — 긴 제목이 열을 밀어 비대해지던 것 방지(항상 3등분) */
   gap: 12px;
   margin-bottom: 20px;
 }
