@@ -36,7 +36,7 @@ async function buildStateFromSupabase() {
   // 소셜 isMine 판정 + 스포일러 동기맵: 현재 사용자 + 내 책별 현재 페이지 preload
   try {
     const me = await window.RG_SB.myProfile();
-    if (me) window.RG_ME = { id: me.id, handle: me.handle, displayName: me.display_name, avatar: me.avatar_url, bio: me.bio || '', isAdmin: !!me.is_admin };
+    if (me) window.RG_ME = { id: me.id, handle: me.handle, displayName: me.display_name, avatar: me.avatar_url, bio: me.bio || '', isAdmin: !!me.is_admin, wishlist_public: !!me.wishlist_public };
   } catch (e) {}
   try {
     const myb = await DS.myBooks.list();
