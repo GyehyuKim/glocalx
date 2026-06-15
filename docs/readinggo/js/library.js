@@ -324,8 +324,21 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
               ) : (
                 <>
                   {typeof bookshelfEntry.rating === 'number' ? (
-                    <div style={{fontSize:13, color:'var(--ink)', fontWeight:700, marginBottom:8}}>
-                      ⭐ {bookshelfEntry.rating.toFixed(1)} / 5
+                    // 별점 있음 — 빈 별 트랙 + 채움(반별점)으로 표시, 탭하면 수정 모드 진입 (#592).
+                    // 기존엔 '⭐ 4.0 / 5' 텍스트만이라 빈 별이 안 보이고 어디를 눌러 조정할지 불명확했음.
+                    <div style={{display:'flex', gap:3, alignItems:'center', marginBottom:8}}>
+                      {[1,2,3,4,5].map(n => {
+                        const fillPct = Math.max(0, Math.min(1, bookshelfEntry.rating - (n - 1))) * 100;
+                        return (
+                          <button key={n} type="button" aria-label={`${n}점 — 탭하여 별점 수정`}
+                            onClick={() => { setRt(bookshelfEntry.rating); setRv(book.comment || ''); setEditMeta(true); }}
+                            style={{position:'relative', display:'inline-block', width:26, height:26, fontSize:24, lineHeight:'26px', background:'none', border:'none', cursor:'pointer', padding:0}}>
+                            <span style={{color:'var(--line-2, #d0d4da)'}}>★</span>
+                            <span style={{position:'absolute', left:0, top:0, width:fillPct+'%', overflow:'hidden', color:'#f5b301'}}>★</span>
+                          </button>
+                        );
+                      })}
+                      <span style={{marginLeft:6, fontSize:12, color:'var(--ink-3)', fontWeight:700}}>{bookshelfEntry.rating.toFixed(1)}</span>
                     </div>
                   ) : (
                     // 미입력 — 빈 별 실루엣 노출(탭하면 입력 모드 진입) (#314). 기존엔 '별점 없음' 텍스트만 떠서 입력 불가.
