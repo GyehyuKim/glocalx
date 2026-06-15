@@ -790,8 +790,11 @@ window.StreakCalendarModal = StreakCalendarModal;
 /* ── SentenceCollectionModal: 내 한 문장 모아보기(전체/책별/좋아요) + 읽었음 카운터(#171) ── */
 function SentenceCollectionModal({ onClose, initialFilter }) {
   const [mine, setMine] = useState(undefined);
+  const [saved, setSaved] = useState([]);   // #608: 북마크한 타인 문장 — '좋아요' 필터 전용(전체/책별엔 미혼입)
   const [favIds, setFavIds] = useState(new Set());
   const [filter, setFilter] = useState(initialFilter || 'all'); // all | book | fav — 저장(❤️) 진입 시 'fav' (#510)
+  // 작성일자 표기 (#608) — created_at 은 number(localStorage)·ISO(Supabase) 모두 new Date 로 처리. 월/일만.
+  const fmtWhen = (t) => { if (!t) return ''; const d = new Date(t); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }); };
   useEffect(() => {
     let alive = true;
     const DS = window.DataStore || {}; // 활성 어댑터 — 게스트가 Supabase로 새던 400 수정 (QA ISSUE-004)
@@ -808,9 +811,10 @@ function SentenceCollectionModal({ onClose, initialFilter }) {
         note: s.my_note || '',   // 저장된 참새 대화 — 재오픈 시 이어보기(#418)
         kind: s.kind || 'quote',
         isPrivate: !!s.is_private,
+        when: fmtWhen(s.created_at),   // #608: 작성일자
       }));
-      // 저장(❤️)한 타인/소셜 문장 — bookmarks 임베드 중 내 문장 목록에 없는 것 추가 (#510).
-      // 이게 없으면 저장한 타인 문장이 listMine 에 없어 '좋아요' 필터가 비어 보였다.
+      // 저장(❤️)한 타인/소셜 문장 — bookmarks 임베드 중 내 문장 목록에 없는 것. (#510)
+      // #608: '전체'·'책별'엔 내 문장만 보이도록 별도 보관 → '좋아요' 필터에서만 합친다.
       const mineIds = new Set(mineList.map(s => s.id));
       const savedExtra = (bms || []).filter(b => b && b.sentence && !mineIds.has(b.sentence_id)).map(b => {
         const se = b.sentence || {};
@@ -821,23 +825,27 @@ function SentenceCollectionModal({ onClose, initialFilter }) {
           bookId: ub.book_id || se.book_id || '',
           author: (ub.book && ub.book.author) || se.author || '',
           note: '', kind: se.kind || 'quote', isPrivate: false, saved: true,
+          when: fmtWhen(se.created_at),   // #608: 작성일자
         };
       });
-      setMine([...mineList, ...savedExtra]);
+      setMine(mineList);
+      setSaved(savedExtra);
       setFavIds(new Set((bms || []).map(b => b.sentence_id)));
-    }).catch(() => { if (alive) setMine([]); });
+    }).catch(() => { if (alive) { setMine([]); setSaved([]); } });
     return () => { alive = false; };
   }, []);
   const list = mine || [];
-  const favCount = list.filter(s => favIds.has(s.id)).length;
-  const filtered = filter === 'fav' ? list.filter(s => favIds.has(s.id)) : list;
+  // #608: 좋아요 필터 풀 = 내 문장 + 북마크한 타인 문장. 전체/책별은 내 문장(list)만.
+  const favPool = list.concat(saved);
+  const favCount = favPool.filter(s => favIds.has(s.id)).length;
+  const filtered = filter === 'fav' ? favPool.filter(s => favIds.has(s.id)) : list;
   const byBook = {};
   if (filter === 'book') filtered.forEach(s => { const k = s.bookTitle || '기타'; (byBook[k] = byBook[k] || []).push(s); });
   const renderLine = (s) => (
     <div key={s.id} onClick={() => { if (window.RG_openCompanion) window.RG_openCompanion({ id: s.id, text: s.text, bookId: s.bookId, bookTitle: s.bookTitle, author: s.author, page: s.page, note: s.note || s.my_note || '', kind: s.kind }); }}
       style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 10, marginBottom: 8, cursor: 'pointer' }}>
       <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>
-        {s.bookTitle ? s.bookTitle + ' · ' : ''}{s.page}p{s.isPrivate ? ' · 🔒' : ''}{favIds.has(s.id) ? ' · ❤️' : ''}
+        {s.bookTitle ? s.bookTitle + ' · ' : ''}{s.page != null ? s.page + 'p' : ''}{s.when ? ' · ' + s.when : ''}{s.isPrivate ? ' · 🔒' : ''}{favIds.has(s.id) ? ' · ❤️' : ''}
       </div>
       <div style={{ fontSize: 13, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>
     </div>
