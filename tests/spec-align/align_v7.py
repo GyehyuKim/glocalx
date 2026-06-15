@@ -142,6 +142,8 @@ INVARIANTS = [
         ["datastore.js"], r"userBookId \? _ubById"),
     ("B", "present", "체크인 한 문장 화면 책(ns.book) 귀속 (#565)",
         ["app.js"], r"ns\.book && ns\.book\.ubId"),
+    ("B", "present", "RG_ME 에 wishlist_public 매핑 — 설정 공개 토글 유지 (#591)",
+        ["app.js"], r"wishlist_public: !!me\.wishlist_public"),
     ("B", "present", "관련 도서 추천 — recommendRelated + books.related (#496)",
         ["data.js", "datastore.js"], r"recommendRelated"),
     ("B", "present", "관련 도서 ISBN 환각 필터 — filterRelatedCandidates (#496)",
