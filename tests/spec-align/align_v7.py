@@ -140,6 +140,8 @@ INVARIANTS = [
         ["library.js"], r"book\.description[\s\S]*fetchBookDesc|fetchBookDesc[\s\S]*book\.description"),
     ("B", "present", "저장(❤️) 스탯 → 저장 문장 모달 — bookmarks 임베드 머지 (#510)",
         ["components.js"], r"savedExtra"),
+    ("B", "present", "한 줄 소개 인라인 편집 — 프로필 헤더 (#515)",
+        ["library.js"], r"bioEditing[\s\S]*saveBio|saveBio[\s\S]*bioEditing"),
 
     # ── C: post-beta 기능 (스펙↔구현 동기화 강제, decisions §8.4/§8.5) ──
     # 읽기 모드(ReadingMode/타이머) invariant 폐기 (#505) — 홈 빠른입력으로 일원화, 독서시간 측정 폐기
