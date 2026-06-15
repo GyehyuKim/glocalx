@@ -154,6 +154,8 @@ INVARIANTS = [
         ["components.js"], r"이 책의 한 문장[\s\S]*byBook|byBook\(bookId, \{ limit: 5, sort: 'likes'"),
     ("B", "present", "프로필 스탯 라벨 '책갈피' — §5.8.5 용어 정렬 (#587)",
         ["library.js"], r"📌 책갈피"),
+    ("B", "present", "한 문장 모아보기 — 전체/책별 내 문장만(북마크 타인은 fav 전용) + 작성일자 (#608)",
+        ["components.js"], r"favPool[\s\S]*fmtWhen|fmtWhen[\s\S]*favPool"),
     ("B", "present", "관련 도서 추천 — recommendRelated + books.related (#496)",
         ["data.js", "datastore.js"], r"recommendRelated"),
     ("B", "present", "관련 도서 ISBN 환각 필터 — filterRelatedCandidates (#496)",
