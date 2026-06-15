@@ -753,14 +753,26 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
       .finally(() => setQuickOcrBusy(false));
   };
 
-  const submitQuick = () => {
-    const t = quickText.trim();
+  // 입력 페이지 정규화 — 진도는 현재 이상으로만, total 있으면 상한 클램프.
+  const _quickTargetPage = () => {
     const total = nestState.book.total || 0;
     const cur = nestState.book.cur || 0;
     const raw = quickPage === '' ? cur : (parseInt(quickPage, 10) || 0);
-    const p = Math.max(cur, total ? Math.min(total, raw) : raw); // 진도는 현재 이상으로만
-    if (!t && p <= cur) { showToast('쪽수를 넘기거나 한 문장을 남겨보세요'); return; }
-    handleCheckin({ page: p, sentence: t || null, kind: 'quote' });
+    return Math.max(cur, total ? Math.min(total, raw) : raw);
+  };
+  // 페이지 섹션 [업데이트] (#497) — 페이지만 독립 저장. 문장 입력(quickText)은 보존.
+  const submitPage = () => {
+    const cur = nestState.book.cur || 0;
+    const p = _quickTargetPage();
+    if (p <= cur) { showToast('현재 쪽보다 더 넘겨보세요'); return; }
+    handleCheckin({ page: p, sentence: null, kind: 'quote' });
+    setQuickPage(''); // quickText 보존 — 페이지만 업데이트해도 문장 입력창 유지
+  };
+  // 한 문장 섹션 [저장] (#497) — 문장(+현재 진도) 저장. 페이지 섹션과 독립 동작.
+  const submitSentence = () => {
+    const t = quickText.trim();
+    if (!t) { showToast('한 문장을 입력해주세요'); return; }
+    handleCheckin({ page: _quickTargetPage(), sentence: t, kind: 'quote' });
     setQuickText(''); setQuickPage('');
   };
 
@@ -864,6 +876,8 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
               <button onClick={() => setQuickPage((s) => String((parseInt(s, 10) || nestState.book.cur || 0) + 1))} aria-label="다음 쪽">+</button>
               {nestState.book.total > 0 && <span className="quick-total">/ {nestState.book.total}p</span>}
             </div>
+            {/* 페이지 독립 업데이트 (#497) — 한 문장과 별개로 진도만 저장 + XP */}
+            <button className="checkin-cta quick-submit" onClick={submitPage} style={{ marginTop: 10 }}>📖 페이지 업데이트</button>
           </div>
           {/* 한 문장 */}
           <div className="quick-sec">
@@ -876,8 +890,9 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
             <button className="quick-ocr" onClick={() => { if (!quickOcrBusy && _quickOcrInputRef.current) _quickOcrInputRef.current.click(); }} disabled={quickOcrBusy}>
               {quickOcrBusy ? '읽는 중…' : '📷 촬영해서 입력'}
             </button>
+            {/* 한 문장 독립 저장 (#497) — 페이지 섹션과 별개 버튼 */}
+            <button className="checkin-cta quick-submit" onClick={submitSentence} style={{ marginTop: 10 }}>✍️ 한 문장 저장</button>
           </div>
-          <button className="checkin-cta quick-submit" onClick={submitQuick}>✨ 오늘 기록하기</button>
           {/* 크롭 오버레이 — 사진에서 원하는 영역만 잘라 OCR (#396·#498) */}
           {quickOcrFile && (
             <OcrCropOverlay file={quickOcrFile} onCancel={() => setQuickOcrFile(null)} onCrop={(blob) => { setQuickOcrFile(null); runOcrQuick(blob); }} />
