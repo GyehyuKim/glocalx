@@ -192,6 +192,10 @@ INVARIANTS = [
         ["components.js"], r"const toggleBookmark"),
     ("C", "present", "BookInfoModal 인기 한 문장이 SentenceCard 경유 — 좋아요+책갈피 보장 (#610)",
         ["components.js"], r"SentenceCard key=\{s\.id\} bookId=\{bk\.id\} noBlind"),
+    ("C", "present", "공용 SentenceActions 액션 row — 내문장 공개범위·책갈피·수정·삭제 / 타인 좋아요·책갈피 (#610)",
+        ["components.js"], r"function SentenceActions"),
+    ("C", "present", "SentenceCollectionModal 한 문장이 SentenceActions 경유 (#610 계약)",
+        ["components.js"], r"<SentenceActions sentence=\{s\}"),
 ]
 
 

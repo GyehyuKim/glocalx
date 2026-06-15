@@ -48,7 +48,8 @@
 
 - 디스플레이: **모든 책 상세 아래에 관련 한 문장** — 읽은 책=내 한 문장, 안 읽은 책=타인의 공개 한 문장.
 - `SentenceCard`는 `noBlind` 옵션 지원(발견 맥락=책 상세 인기 문장은 스포일러 블라인드 해제).
-- 점검: align_v7 invariant — "BookInfoModal 인기 한 문장이 SentenceCard 경유", "SentenceCard 책갈피 토글 존재". (`SentenceCollectionModal` 통일은 #608 머지 후 후속.)
+- **공용 단위**: 카드 본문은 `SentenceCard`, **액션 버튼 row는 공용 `SentenceActions`**(components.js) — `mine` 이면 공개범위·책갈피·수정·삭제, 아니면 좋아요·책갈피. 표면(SentenceCollectionModal 등)은 이 공용 컴포넌트만 끼운다.
+- 점검: align_v7 invariant — "BookInfoModal 인기 한 문장이 SentenceCard 경유", "SentenceCard 책갈피 토글", "공용 SentenceActions 존재", "SentenceCollectionModal 한 문장이 SentenceActions 경유". (BookDetailModal/nest 내 문장 카드의 SentenceActions 채택은 후속.)
 
 **한 문장 피드**:
 

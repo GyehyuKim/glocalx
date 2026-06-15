@@ -607,6 +607,55 @@ window.RG_consent = {
 window.Toast = Toast;
 window.Confetti = Confetti;
 window.SentenceCard = SentenceCard;
+
+/* ── SentenceActions: 한 문장 액션 row (#610 계약 SSOT) ──────────
+   내 문장(mine): 공개범위 + 책갈피 + 수정 + 삭제 · 타인 문장: 좋아요 + 책갈피.
+   표면별 버튼 드리프트 방지를 위한 공용 단일 출처. align_v7 invariant 로 락.
+   props: sentence{id,text,bookId,bookTitle,author,page,note,visibility,isPrivate}, mine, fav(초기), onRemoved */
+const _SA_VIS = ['public', 'followers', 'private'];
+const _SA_VIS_ICON = { public: '🌐', followers: '👥', private: '🔒' };
+const _SA_VIS_LABEL = { public: '전체공개', followers: '친구공개', private: '비공개' };
+function SentenceActions({ sentence, mine, fav: favInit, onRemoved }) {
+  const id = sentence && sentence.id;
+  const [vis, setVis] = useState(sentence.visibility || (sentence.isPrivate ? 'private' : 'public'));
+  const [fav, setFav] = useState(!!favInit);
+  const [liked, setLiked] = useState(false);
+  const [likeN, setLikeN] = useState(sentence.claps || sentence.clapCount || 0);
+  useEffect(() => {
+    if (!id || mine || !(DataStore.claps && DataStore.claps.isMine)) return;
+    let alive = true;
+    Promise.resolve(DataStore.claps.isMine(id)).then(v => { if (alive) setLiked(!!v); }).catch(() => {});
+    return () => { alive = false; };
+  }, [id]);
+  if (!id) return null;
+  const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
+  const chip = { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, cursor: 'pointer', fontSize: 11, fontWeight: 800, color: 'var(--ink-2)', padding: '3px 9px', lineHeight: 1 };
+  const chipOn = { ...chip, background: 'var(--brand-tint)', borderColor: 'var(--brand)', color: 'var(--brand-3)' };
+  const toggleFav = (e) => { stop(e); if (!(DataStore.bookmarks && DataStore.bookmarks.toggle)) return; Promise.resolve(DataStore.bookmarks.toggle(id)).then(setFav).catch(() => {}); };
+  const cycleVis = (e) => { stop(e); if (!(DataStore.sentences && DataStore.sentences.setVisibility)) return; const next = _SA_VIS[(_SA_VIS.indexOf(vis) + 1) % _SA_VIS.length]; setVis(next); sentence.visibility = next; Promise.resolve(DataStore.sentences.setVisibility(id, { visibility: next })).catch(() => {}); window.dispatchEvent(new CustomEvent('rg:sentence-vis', { detail: { id, visibility: next } })); };
+  const edit = (e) => { stop(e); if (window.RG_openCompanion) window.RG_openCompanion({ id, text: sentence.text, bookId: sentence.bookId, bookTitle: sentence.bookTitle, author: sentence.author, page: sentence.page, note: sentence.note || sentence.my_note || '', kind: sentence.kind }); };
+  const del = (e) => { stop(e); if (!(DataStore.sentences && DataStore.sentences.remove)) return; if (!window.confirm('이 한 문장을 삭제할까요? 되돌릴 수 없어요.')) return; Promise.resolve(DataStore.sentences.remove(id)).then(() => { if (onRemoved) onRemoved(id); window.dispatchEvent(new CustomEvent('rg:sentence-removed', { detail: { id } })); showToast('🗑 한 문장을 삭제했어요'); }).catch(() => showToast('삭제 실패 — 잠시 후 다시')); };
+  const toggleLike = (e) => { stop(e); if (!(DataStore.claps && DataStore.claps.toggle)) return; Promise.resolve(DataStore.claps.toggle(id)).then((on) => { setLiked(on); setLikeN(n => Math.max(0, n + (on ? 1 : -1))); }).catch(() => {}); };
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }} onClick={stop}>
+      {mine ? (
+        <>
+          <button onClick={cycleVis} title="공개 범위 변경 (전체→친구→비공개)" style={chip}><span>{_SA_VIS_ICON[vis]}</span><span>{_SA_VIS_LABEL[vis]}</span></button>
+          <button onClick={toggleFav} title="책갈피" style={fav ? chipOn : chip}>🔖</button>
+          <button onClick={edit} title="수정·대화" style={chip}>✏️</button>
+          <button onClick={del} title="삭제" style={chip}>🗑</button>
+        </>
+      ) : (
+        <>
+          <button onClick={toggleLike} title="좋아요" style={liked ? chipOn : chip}>좋아요 {likeN}</button>
+          <button onClick={toggleFav} title="책갈피" style={fav ? chipOn : chip}>🔖</button>
+        </>
+      )}
+    </div>
+  );
+}
+window.SentenceActions = SentenceActions;
+
 window.SpoilerContext = SpoilerContext;
 window.isSentenceBlinded = isSentenceBlinded;
 window.UserProfileModal = UserProfileModal;
@@ -839,9 +888,12 @@ function SentenceCollectionModal({ onClose, initialFilter }) {
     <div key={s.id} onClick={() => { if (window.RG_openCompanion) window.RG_openCompanion({ id: s.id, text: s.text, bookId: s.bookId, bookTitle: s.bookTitle, author: s.author, page: s.page, note: s.note || s.my_note || '', kind: s.kind }); }}
       style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 8, padding: 10, marginBottom: 8, cursor: 'pointer' }}>
       <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginBottom: 4 }}>
-        {s.bookTitle ? s.bookTitle + ' · ' : ''}{s.page != null ? s.page + 'p' : ''}{s.when ? ' · ' + s.when : ''}{s.isPrivate ? ' · 🔒' : ''}{favIds.has(s.id) ? ' · ❤️' : ''}
+        {s.bookTitle ? s.bookTitle + ' · ' : ''}{s.page != null ? s.page + 'p' : ''}{s.when ? ' · ' + s.when : ''}
       </div>
       <div style={{ fontSize: 13, color: 'var(--ink)', fontStyle: 'italic', lineHeight: 1.5 }}>"{s.text}"</div>
+      {/* 한 문장 액션 계약 (#610) — 공용 SentenceActions: 내 문장=공개범위+책갈피+수정/삭제, 타인=좋아요+책갈피 */}
+      <SentenceActions sentence={s} mine={!s.saved} fav={favIds.has(s.id)}
+        onRemoved={(rid) => { setMine(m => (m || []).filter(x => x.id !== rid)); setSaved(v => (v || []).filter(x => x.id !== rid)); }} />
     </div>
   );
   return (
