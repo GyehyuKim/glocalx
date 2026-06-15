@@ -55,6 +55,19 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
       })
       .catch(() => showToast('담기 실패 — 잠시 후 다시'));
   };
+  // 책 소개(description) 화면 표시 (#530) — DB 우선(book.description), 없을 때만 알라딘 실시간 폴백(쿼터 절약).
+  const [bookDesc, setBookDesc] = _useState((book.description || '').trim());
+  const [descLoading, setDescLoading] = _useState(false);
+  _useEffect(() => {
+    if ((book.description || '').trim()) { setBookDesc(book.description.trim()); return; }
+    let alive = true;
+    setDescLoading(true);
+    Promise.resolve(fetchBookDesc())
+      .then(d => { if (alive) { setBookDesc((d || '').trim()); setDescLoading(false); } })
+      .catch(() => { if (alive) setDescLoading(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book.id]);
   const loadRecap = async () => {
     if (recapLoading) return;
     setRecapLoading(true);
@@ -350,6 +363,18 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
             교보문고에서 보기 →
           </a>
 
+          {/* 책 소개 (#530) — DB books.description 우선, 없으면 알라딘 실시간 폴백. 둘 다 없으면 섹션 생략. */}
+          {(bookDesc || descLoading) && (
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:14, fontWeight:900, color:'var(--ink)', marginBottom:6}}>📚 책 소개</div>
+              {descLoading && !bookDesc ? (
+                <div style={{fontSize:13, color:'var(--ink-3)', fontWeight:700}}>책 소개를 불러오는 중…</div>
+              ) : (
+                <div style={{fontSize:13, color:'var(--ink-2)', lineHeight:1.65, whiteSpace:'pre-wrap'}}>{bookDesc}</div>
+              )}
+            </div>
+          )}
+
           {/* 함께 읽으면 좋은 책 (#496) — LLM 추천 + 실존 books 매칭(환각 필터). 표지 탭 → 찜.
               실제 '함께 읽은 사람들' 집계는 Phase 1이므로 허위 카피("N명이 읽었어요") 금지. */}
           {related.length > 0 && (
@@ -512,6 +537,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           cur: ub.current_page || 0, status: ub.status,
           rating: ub.rating, comment: ub.review_text, completedAt: ub.completed_at,
           recap: ub.companion_recap || '',   // 참새 완독 회고 캐시 (#352)
+          description: (b.description || '').trim(),   // 책 소개 DB 값 (#530) — 모달이 우선 사용, 없으면 알라딘 폴백
         };
       }));
     }).catch(() => { if (alive) setMyBooks([]); });
@@ -543,7 +569,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
         setWishlistBooks((rows || []).map(_mapWish));
       }).catch(() => {});
       Promise.resolve(DataStore.myBooks.list()).then(rows => {
-        setMyBooks((rows || []).map(ub => { const b = ub.book || {}; return { ubId: ub.id, id: ub.book_id, title: b.title || '제목 없음', author: b.author || '', pub: b.publisher || '', cover: b.cover_url || '', fb: ['#9AA7B2', '#C7D0D8'], total: b.total_pages || 0, isbn: b.isbn13 || '', cur: ub.current_page || 0, status: ub.status, rating: ub.rating, comment: ub.review_text, completedAt: ub.completed_at, recap: ub.companion_recap || '' }; }));
+        setMyBooks((rows || []).map(ub => { const b = ub.book || {}; return { ubId: ub.id, id: ub.book_id, title: b.title || '제목 없음', author: b.author || '', pub: b.publisher || '', cover: b.cover_url || '', fb: ['#9AA7B2', '#C7D0D8'], total: b.total_pages || 0, isbn: b.isbn13 || '', cur: ub.current_page || 0, status: ub.status, rating: ub.rating, comment: ub.review_text, completedAt: ub.completed_at, recap: ub.companion_recap || '', description: (b.description || '').trim() }; }));
       }).catch(() => {});
     };
     window.addEventListener('rg:wish-changed', reload);

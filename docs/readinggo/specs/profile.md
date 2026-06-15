@@ -68,6 +68,7 @@
 - 한 문장 타임라인 (날짜 desc, 페이지/문장 + `my_note` 있으면 함께). 스포일러 블라인드 적용
 - **한 문장 사후 감상**: 각 한 문장에 긴 감상(`my_note`)을 **작성 시점 이후 언제든 추가·편집**. 한 문장은 짧게(인용 ≤200자), 감상은 넉넉하게(권장 500자). 타임라인 항목 탭 → 감상 입력 (`DataStore.sentences.setNote`). 본인만 작성, 본인 프로필·책 상세에서만 표시. UX 참고: [북모리 캡쳐 분석](../bookmory-capture-analysis.md) (인용 위 감상 입력·페이지 메타·사후편집)
 - **교보문고 링크**: `https://search.kyobobook.co.kr/search?keyword={isbn}` — "교보문고에서 보기 →" (Phase 1+ 어필리에이트 파라미터)
+- **책 소개(description) 표시 (#530, #489 후속)**: 책 상세에 `📚 책 소개` 섹션. **DB `books.description` 우선**(있으면 그대로), 없을 때만 `fetchBookDesc()`(알라딘 프록시 ISBN 단건) **실시간 폴백**(쿼터 절약). 둘 다 없으면 섹션 생략. DB 값은 `myBooks` → `book.description` 으로 전달.
 - **함께 읽으면 좋은 책 (#496)**: 책 상세 하단에 관련 도서 가로 캐러셀(표지·제목·저자). 표지 탭 → 찜(`DataStore.wishBooks.add`). 데이터: `DataStore.books.related(book)` → `data.js recommendRelated`.
   - **Phase 0 소스**: worker `POST /api/related`(LLM, `{isbn,title,author}` → `{books:[{isbn,title,author}]}`)가 ISBN-13 포함 후보를 제시 → 클라 `filterRelatedCandidates` 가 **books DB의 ISBN과 정확 일치(+정규화 제목 일치)** 일 때만 통과시키는 **ISBN 환각 필터**로 지어낸 책을 버리고 실제 책만 노출. LLM ISBN 은 신뢰하지 않으며 제목 prefix 매칭은 쓰지 않음. 매칭 0이면 섹션 자체를 숨김(빈 캐러셀·허위 없음).
   - **신뢰 카피 차등 (§5.8.6 정직성)**: Phase 0은 실제 '함께 읽은 사람들' 집계가 없으므로 **"N명이 함께 읽었어요" 류 허위 카피 금지** — "함께 읽으면 좋은 책"으로만 표기. 실제 공동독서 집계('이 책 읽은 사람들이 읽은 책')는 **Phase 1**에 Supabase `user_books` 기반 RPC로 강화(backend.md §7.9). 관련: [backend.md #489 환각 필터](./backend.md)
