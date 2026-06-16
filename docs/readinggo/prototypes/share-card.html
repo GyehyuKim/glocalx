@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReadingGo — 한 문장 외부 공유 카드 시안 (#651)</title>
+<!--
+  DESIGN 시안 — 한 문장 외부 공유 카드 (issue #651, spec: ../specs/share.md)
+  앱에 연결되지 않은 정적 비주얼 목업. 빌드·외부 라이브러리 없음.
+  폰트는 앱과 동일한 Moneygraphy(../fonts) 사용, 미로드 시 Noto Sans KR 폴백.
+  카드는 화면 미리보기용으로 축소(scale)해 보여줄 뿐, 실제 내보내기 픽셀은
+  1:1 = 1080×1080, 9:16 = 1080×1920 (spec §3·§4).
+-->
+<style>
+@font-face{
+  font-family:'Moneygraphy Rounded';
+  src:url('../fonts/Moneygraphy-Rounded.otf') format('opentype');
+  font-display:swap;
+}
+@font-face{
+  font-family:'Moneygraphy Pixel';
+  src:url('../fonts/Moneygraphy-Pixel.otf') format('opentype');
+  font-display:swap;
+}
+
+/* === 브랜드 토큰 (index.html :root 발췌·재사용) === */
+:root{
+  --paper:#FAF6F0; --paper-2:#F4EFE6;
+  --card:#FFFFFF; --card-soft:#FFF9F0;
+  --ink:#2A2D33; --ink-2:#5A5F69; --ink-3:#9097A0; --ink-4:#C7CCD3;
+  --line:#ECE6DA; --line-2:#F2EDE2;
+  --brand:#3FD17F; --brand-2:#2EB867; --brand-3:#1F8E4D;
+  --brand-soft:#DFF6EA; --brand-tint:#F1FBF5;
+  --violet:#B690F0; --violet-soft:#ECE2FB;
+  --shadow-1:0 1px 2px rgba(20,20,30,.04), 0 6px 18px rgba(20,20,30,.06);
+  --shadow-2:0 2px 6px rgba(20,20,30,.06), 0 12px 28px rgba(20,20,30,.08);
+  --r-sm:12px; --r-md:16px; --r-lg:22px; --r-xl:28px;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Moneygraphy Rounded','Noto Sans KR',-apple-system,system-ui,sans-serif;
+  letter-spacing:-0.2px; color:var(--ink);
+  background:var(--paper-2);
+  padding:32px 20px 80px;
+}
+.page-head{max-width:1100px; margin:0 auto 8px;}
+.page-head h1{font-size:22px;}
+.page-head p{color:var(--ink-2); font-size:14px; margin-top:6px; line-height:1.5;}
+.page-head code{font-family:'Moneygraphy Pixel',monospace; font-size:12px; color:var(--brand-3);}
+
+.section-title{
+  max-width:1100px; margin:40px auto 14px;
+  font-size:16px; color:var(--ink-2);
+  border-bottom:1px solid var(--line); padding-bottom:8px;
+}
+
+.row{
+  max-width:1100px; margin:0 auto;
+  display:flex; flex-wrap:wrap; gap:28px; align-items:flex-start;
+}
+.specimen{display:flex; flex-direction:column; gap:8px;}
+.specimen .label{
+  font-family:'Moneygraphy Pixel',monospace; font-size:11px;
+  letter-spacing:.5px; color:var(--ink-3);
+}
+
+/* === 카드 공통 === */
+.card{
+  background:var(--paper);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-2);
+  position:relative;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+/* 미리보기 축소: 실제 1080px 기준을 화면에 맞게 */
+.card.r11{ width:340px; height:340px; padding:28px; }
+.card.r916{ width:248px; height:441px; padding:24px; }
+
+/* ① 종류 칩 */
+.kind-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  align-self:flex-start;
+  font-family:'Moneygraphy Pixel',monospace; font-size:12px; letter-spacing:.5px;
+  padding:5px 11px; border-radius:999px;
+}
+.kind-chip.quote{ color:var(--brand-3); background:var(--brand-soft); }
+.kind-chip.thought{ color:#6B46C1; background:var(--violet-soft); }
+
+/* ② 문장 (주역) */
+.sentence-wrap{ flex:1; display:flex; align-items:center; position:relative; }
+.r11 .sentence-wrap{ justify-content:center; }
+.r916 .sentence-wrap{ align-items:flex-start; padding-top:18px; }
+.sentence{
+  line-height:1.45; letter-spacing:-0.3px; color:var(--ink);
+  position:relative; z-index:1;
+}
+.r11 .sentence{ text-align:center; font-size:27px; }
+.r916 .sentence{ text-align:left; font-size:24px; }
+/* 인용 장식 따옴표 */
+.quote-mark{
+  position:absolute; font-size:74px; line-height:1; color:var(--brand-soft);
+  z-index:0; font-family:Georgia,serif; user-select:none;
+}
+.r11 .quote-mark{ top:-18px; left:0; }
+.r916 .quote-mark{ top:-26px; left:-4px; }
+/* 감상 인라인 마크 */
+.thought-mark{ margin-right:6px; }
+
+/* ③ 출처 */
+.source{ display:flex; align-items:center; gap:12px; margin-top:4px; }
+.cover{
+  width:40px; height:56px; border-radius:6px; flex:none;
+  box-shadow:var(--shadow-1); object-fit:cover;
+  background:var(--brand-tint);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:var(--brand-3);
+}
+.r916 .cover{ width:36px; height:50px; }
+.source .meta{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.source .title{ font-size:15px; color:var(--ink); }
+.source .author{ font-size:13px; color:var(--ink-2); }
+.r916 .source .title{ font-size:14px; }
+.r916 .source .author{ font-size:12px; }
+
+/* ④ 워터마크 */
+.divider{ height:1px; background:var(--line); margin:14px 0 12px; }
+.r916 .watermark-block{ margin-top:auto; padding-bottom:18px; } /* 스토리 세이프영역 */
+.watermark{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.r916 .watermark{ flex-direction:column; align-items:flex-start; gap:2px; }
+.wm-brand{ display:flex; align-items:center; gap:6px; font-size:14px; color:var(--ink); }
+.wm-brand .logo{ font-size:16px; }
+.wm-handle{
+  font-family:'Moneygraphy Pixel',monospace; font-size:12px; letter-spacing:.5px;
+  color:var(--ink-3);
+}
+
+/* === 텍스트 폴백 === */
+.fallback{
+  max-width:1100px; margin:0 auto;
+  display:flex; flex-wrap:wrap; gap:28px;
+}
+.fallback-box{
+  flex:1; min-width:300px;
+  background:var(--card); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:22px 24px;
+}
+.fallback-box h3{ font-size:13px; color:var(--ink-3); font-family:'Moneygraphy Pixel',monospace; letter-spacing:.5px; margin-bottom:12px; }
+.fallback-box pre{
+  font-family:'Moneygraphy Rounded','Noto Sans KR',monospace;
+  white-space:pre-wrap; line-height:1.7; font-size:15px; color:var(--ink);
+}
+.fallback-box .lnk{ color:var(--brand-3); }
+.note{ max-width:1100px; margin:30px auto 0; color:var(--ink-3); font-size:13px; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>🐦 ReadingGo — 한 문장 외부 공유 카드 시안</h1>
+  <p>
+    이슈 <code>#651</code> · spec <code>../specs/share.md</code> · DESIGN 목업(앱 미연결).<br>
+    실제 내보내기 픽셀: 1:1 = <code>1080×1080</code>, 9:16 = <code>1080×1920</code>. 아래는 화면용 축소 미리보기.
+  </p>
+</div>
+
+<!-- ============ 1:1 (피드) ============ -->
+<div class="section-title">1:1 — 피드 / 카톡 (1080×1080)</div>
+<div class="row">
+
+  <!-- 인용 1:1 -->
+  <div class="specimen">
+    <div class="label">QUOTE · 인용</div>
+    <div class="card r11">
+      <span class="kind-chip quote">❝ 인용</span>
+      <div class="sentence-wrap">
+        <span class="quote-mark">&ldquo;</span>
+        <div class="sentence">오래 보아야<br>사랑스럽다.<br>너도 그렇다.</div>
+      </div>
+      <div class="source">
+        <div class="cover">풀</div>
+        <div class="meta">
+          <span class="title">풀꽃</span>
+          <span class="author">나태주</span>
+        </div>
+      </div>
+      <div class="watermark-block">
+        <div class="divider"></div>
+        <div class="watermark">
+          <span class="wm-brand"><span class="logo">🐦</span>ReadingGo</span>
+          <span class="wm-handle">@readinggo.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 감상 1:1 -->
+  <div class="specimen">
+    <div class="label">THOUGHT · 감상 💭</div>
+    <div class="card r11">
+      <span class="kind-chip thought">💭 감상</span>
+      <div class="sentence-wrap">
+        <div class="sentence"><span class="thought-mark">💭</span>오래 본다는 건 결국 시간을 들이는 일.</div>
+      </div>
+      <div class="source">
+        <div class="cover">풀</div>
+        <div class="meta">
+          <span class="title">풀꽃</span>
+          <span class="author">나태주를 읽고</span>
+        </div>
+      </div>
+      <div class="watermark-block">
+        <div class="divider"></div>
+        <div class="watermark">
+          <span class="wm-brand"><span class="logo">🐦</span>ReadingGo</span>
+          <span class="wm-handle">@readinggo.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 빈 표지 폴백 1:1 -->
+  <div class="specimen">
+    <div class="label">QUOTE · 표지 없음(이니셜)</div>
+    <div class="card r11">
+      <span class="kind-chip quote">❝ 인용</span>
+      <div class="sentence-wrap">
+        <span class="quote-mark">&ldquo;</span>
+        <div class="sentence" style="font-size:23px;">우리는 같은 강물에<br>두 번 들어갈 수 없다.</div>
+      </div>
+      <div class="source">
+        <div class="cover">단</div>
+        <div class="meta">
+          <span class="title">단편들</span>
+          <span class="author">헤라클레이토스</span>
+        </div>
+      </div>
+      <div class="watermark-block">
+        <div class="divider"></div>
+        <div class="watermark">
+          <span class="wm-brand"><span class="logo">🐦</span>ReadingGo</span>
+          <span class="wm-handle">@readinggo.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 9:16 (스토리) ============ -->
+<div class="section-title">9:16 — 인스타/카톡 스토리 (1080×1920)</div>
+<div class="row">
+
+  <!-- 인용 9:16 -->
+  <div class="specimen">
+    <div class="label">QUOTE · 인용</div>
+    <div class="card r916">
+      <span class="kind-chip quote">❝ 인용</span>
+      <div class="sentence-wrap">
+        <span class="quote-mark">&ldquo;</span>
+        <div class="sentence">오래 보아야<br>사랑스럽다.<br>너도 그렇다.</div>
+      </div>
+      <div class="source">
+        <div class="cover">풀</div>
+        <div class="meta">
+          <span class="title">풀꽃</span>
+          <span class="author">나태주</span>
+        </div>
+      </div>
+      <div class="watermark-block">
+        <div class="divider"></div>
+        <div class="watermark">
+          <span class="wm-brand"><span class="logo">🐦</span>ReadingGo</span>
+          <span class="wm-handle">@readinggo.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 감상 9:16 -->
+  <div class="specimen">
+    <div class="label">THOUGHT · 감상 💭</div>
+    <div class="card r916">
+      <span class="kind-chip thought">💭 감상</span>
+      <div class="sentence-wrap">
+        <div class="sentence"><span class="thought-mark">💭</span>오래 본다는 건 결국 시간을 들이는 일.</div>
+      </div>
+      <div class="source">
+        <div class="cover">풀</div>
+        <div class="meta">
+          <span class="title">풀꽃</span>
+          <span class="author">나태주를 읽고</span>
+        </div>
+      </div>
+      <div class="watermark-block">
+        <div class="divider"></div>
+        <div class="watermark">
+          <span class="wm-brand"><span class="logo">🐦</span>ReadingGo</span>
+          <span class="wm-handle">@readinggo.app</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ 텍스트 폴백 ============ -->
+<div class="section-title">텍스트-only 폴백 (이미지 미지원 · 접근성 · 클립보드)</div>
+<div class="fallback">
+  <div class="fallback-box">
+    <h3>QUOTE · 인용</h3>
+    <pre>"오래 보아야 사랑스럽다. 너도 그렇다."
+— 나태주, 《풀꽃》
+
+📖 ReadingGo에서 내 한 문장 남기기
+<span class="lnk">https://readinggo.hyuniverse.workers.dev</span></pre>
+  </div>
+  <div class="fallback-box">
+    <h3>THOUGHT · 감상 💭</h3>
+    <pre>💭 오래 본다는 건 결국 시간을 들이는 일.
+(나태주 《풀꽃》을 읽고)
+
+📖 ReadingGo에서 내 한 문장 남기기
+<span class="lnk">https://readinggo.hyuniverse.workers.dev</span></pre>
+  </div>
+</div>
+
+<p class="note">
+  비고 — 따옴표 글리프는 인용 카드에만 옅게 장식(--brand-soft). 감상은 보라(--violet) 계열로 결을 달리해 인용과 구분(spec §5).
+  워터마크의 핸들/링크 값은 시안 placeholder(@readinggo.app)이며 정식 도메인 확정 시 상수화(spec §9 구현 메모).
+  이미지 생성 기술(canvas vs DOM-to-image)은 본 시안의 범위가 아니며 라이브러리 도입은 Stack Lock 확인 후속.
+</p>
+
+</body>
+</html>
