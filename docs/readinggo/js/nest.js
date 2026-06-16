@@ -11,32 +11,55 @@ function _xpProg(xp) {
   try { return (typeof nestXpProgress === 'function') ? nestXpProgress(xp) : (window.nestXpProgress ? window.nestXpProgress(xp) : 0); }
   catch (e) { return 0; }
 }
+// 단계 구간 진척 안전 래퍼 (#682) — nestStageProgress 미준비/예외 시 폴백.
+function _stageProg(xp) {
+  try {
+    const fn = (typeof nestStageProgress === 'function') ? nestStageProgress : (window.nestStageProgress || null);
+    if (fn) return fn(xp);
+  } catch (e) {}
+  return { stage: { lv: 1, minXp: 0 }, next: null, intoXp: 0, spanXp: 0, pct: 0, isMax: false };
+}
 
 // 한 문장 종류 휴리스틱(estimateSentenceKind, #420) 제거 — '내 생각'(thought) 폐기 (#596). 호출부 없던 죽은 코드.
 
 /* ── CheckinModal ─────────────────────────────────────── */
 function CheckinModal({ book, onClose, onSubmit }) {
   const [page, setPage] = _useState(book.cur);
+  // 직접입력 문자열 상태 (#686) — page(숫자)와 분리. 빈 문자열·편집 중 부분값 허용,
+  // 매 키 입력마다 0으로 강제/클램프하지 않아 백스페이스·커서 편집이 정상 동작.
+  const [pageStr, setPageStr] = _useState(String(book.cur));
   const [sentence, setSentence] = _useState('');
 
   const _maxPage = book.total > 0 ? book.total : 99999; // 쪽수 미상이면 상한 없음 (#204)
+  const _clamp = (v) => Math.max(0, Math.min(_maxPage, v));
   const adjustPage = (delta) => {
-    setPage(p => Math.max(0, Math.min(_maxPage, p + delta)));
+    setPage(p => { const n = _clamp(p + delta); setPageStr(String(n)); return n; });
   };
+  // 입력 중: 숫자만 허용하되 빈 문자열 보존(삭제 가능). page 는 파싱 가능할 때만 따라간다.
   const handleInput = (e) => {
-    let v = parseInt(e.target.value, 10);
-    if (isNaN(v)) v = 0;
-    setPage(Math.max(0, Math.min(_maxPage, v)));
+    const raw = e.target.value;
+    if (raw === '') { setPageStr(''); return; }      // 빈 값 허용 — 0으로 강제하지 않음
+    if (!/^\d+$/.test(raw)) return;                  // 숫자 외 입력 무시(커서 보존)
+    setPageStr(raw);
+    setPage(_clamp(parseInt(raw, 10)));
+  };
+  // 포커스 아웃 시 클램프 확정 — 빈 값/범위 밖이면 page 기준으로 표시값 정규화.
+  const handleInputBlur = () => {
+    const v = pageStr === '' ? page : _clamp(parseInt(pageStr, 10) || 0);
+    setPage(v);
+    setPageStr(String(v));
   };
   const handleSentence = (e) => {
     if (e.target.value.length <= 1000) setSentence(e.target.value);
   };
   const handleSubmit = () => {
-    if (page === book.cur && sentence.trim().length === 0) {
+    // 제출 시 입력값 확정 클램프 (#686) — 빈 값/부분 입력은 page 기준 정규화.
+    const finalPage = pageStr === '' ? page : _clamp(parseInt(pageStr, 10) || 0);
+    if (finalPage === book.cur && sentence.trim().length === 0) {
       showToast('한 쪽도 OK! +1만 눌러봐요 🐦');
       return;
     }
-    onSubmit({ page, sentence: sentence.trim() });
+    onSubmit({ page: finalPage, sentence: sentence.trim() });
   };
 
   return (
@@ -65,7 +88,7 @@ function CheckinModal({ book, onClose, onSubmit }) {
           </div>
           <div className="page-direct">
             직접 입력{' '}
-            <input type="number" min="0" max="9999" value={page} onChange={handleInput} />
+            <input type="text" inputMode="numeric" pattern="[0-9]*" value={pageStr} onChange={handleInput} onBlur={handleInputBlur} />
             <span className="page-totalmark">{book.total > 0 ? '전체 ' + book.total + 'p' : '쪽수 미상'}</span>
           </div>
         </div>
@@ -103,11 +126,17 @@ function Ceremony({ data, onClose, onComplete }) {
   const [barPct, setBarPct] = _useState(null);
   if (!data) return null;
   const { xpGain, xpParts, sentence, bookQuoteCount, nestUp, castleGained, castleCount, prevLv, newLv, prevXp, newXp, pagesAdded, isNewDay, wasReset, isComplete } = data;
+  // 이번 체크인에 실제로 한 문장을 등록했는가 (#685) — 페이지만 저장 시 false.
+  const savedSentence = !!(sentence && String(sentence).trim());
   let leadText;
-  if (!isNewDay && !wasReset) {
+  if (savedSentence) {
+    // 한 문장 등록: "1개 문장 등록 +N XP" (#685)
+    leadText = `1개 문장 등록 +${xpGain} XP`;
+  } else if (!isNewDay && !wasReset) {
     leadText = `+${pagesAdded}쪽 추가 기록 · 오늘은 이미 짹 완료 🐦`;
   } else {
-    leadText = `+${pagesAdded}쪽 읽었어요`;
+    // 페이지만 저장: "책읽기 완료 +N XP" — 거짓 '문장 등록' 표기 금지 (#685)
+    leadText = `책읽기 완료 +${xpGain} XP`;
   }
   // 진화 축하 화면(step 1) 트리거: 단계 상승(nestUp) 또는 성 획득(castleGained).
   // 성 획득 시엔 둥지가 Lv4(다정한 집) → Lv5(참새의 성 🏰) 으로 완성되는 연출.
@@ -115,9 +144,12 @@ function Ceremony({ data, onClose, onComplete }) {
   const prevStage = evoUp ? (castleGained ? NEST_STAGES[3] : NEST_STAGES[prevLv - 1]) : null;
   const nowStage  = evoUp ? (castleGained ? NEST_STAGES[4] : NEST_STAGES[newLv  - 1]) : null;
 
-  const startPct = _xpProg(prevXp != null ? prevXp : newXp);
-  const endPct   = _xpProg(newXp != null ? newXp : prevXp);
-  const curStage = getNestStageByXp(newXp != null ? newXp : prevXp);
+  // 진척 바는 "현재 단계 구간" 기준 (#685 — #682 헬퍼 재사용). 현재 단계 시작 XP=0, 다음 단계 임계값=분모.
+  const startSP = _stageProg(prevXp != null ? prevXp : newXp);
+  const endSP   = _stageProg(newXp != null ? newXp : prevXp);
+  const startPct = startSP.pct;
+  const endPct   = endSP.pct;
+  const curStage = endSP.stage;
 
   _useEffect(() => {
     setBarPct(startPct);
@@ -212,7 +244,13 @@ function Ceremony({ data, onClose, onComplete }) {
             <span className="nest-progress-fill" style={{ width: (barPct != null ? barPct : startPct) + '%' }} />
           </div>
           <div className="nest-progress-sub">
-            {castleGained ? '🏰 1,600 XP 달성 — 성을 완성했어요!' : (endPct >= 100 ? '곧 1,600 XP — 성이 완성돼요!' : `성까지 ${100 - endPct}% 남았어요`)}
+            {castleGained
+              ? '🏰 1,600 XP 달성 — 성을 완성했어요!'
+              : (endSP.isMax
+                  ? '🏰 곧 1,600 XP — 성이 완성돼요!'
+                  : (endPct >= 100
+                      ? `${endSP.next ? endSP.next.short + ' ' + endSP.next.name : ''} 단계에 도달했어요!`
+                      : `${endSP.next ? endSP.next.short + ' ' + endSP.next.name : '다음 단계'}까지 ${Math.max(0, endSP.spanXp - endSP.intoXp).toLocaleString()} XP`))}
           </div>
         </div>
 
@@ -307,11 +345,11 @@ const NEST_CRACK_SVG = (
 function NestTheatre({ xp, health = 100 }) {
   // 둥지 = 누적 활동(XP). 책 진척률 아님 (#313). pct = 현재 레벨 내 진행도.
   const [showGuide, setShowGuide] = _useState(false); // 둥지 단계 안내 팝업 (#511)
-  const pct = _xpProg(xp);                 // 현재 주기 진행 % (cycleXp / 1600)
-  const stage = getNestStageByXp(xp);      // 둥지 단계 = 현재 주기 XP (#520)
-  const { next } = nestInfo(stage.lv);
-  // 둥지 라벨 — 상단바 레벨/스트릭은 헤더로 일원화(#425/#428). 둥지는 단계 + 현재 주기 XP 만.
-  const cycleXp = nestCycleXp(xp);
+  // 진척은 "현재 단계 구간" 기준 (#682) — 현재 단계 시작 XP=0, 다음 단계 임계값=분모.
+  const sp = _stageProg(xp);
+  const stage = sp.stage;                  // 둥지 단계 = 현재 주기 XP (#520)
+  const next = sp.next;
+  const pct = sp.pct;                      // 현재 단계 구간 진행 % (intoXp / spanXp)
   // 둥지 일러스트는 진척률(stage.lv)로 그린다. health 는 §6.2 시각 상태(흔들림/균열)용.
   const hp = Math.max(0, Math.min(100, Math.round(health)));
   const hstate = nestVisualState(hp);
@@ -366,7 +404,11 @@ function NestTheatre({ xp, health = 100 }) {
               <span className="next-arrow">→ {next.short} {next.name}</span>
             )}
           </div>
-          <div className="nest-health-num"><b>{cycleXp.toLocaleString()}</b> / {NEST_CYCLE_XP.toLocaleString()} XP</div>
+          <div className="nest-health-num">
+            {sp.isMax
+              ? <b>최고 단계</b>
+              : <span><b>{sp.intoXp.toLocaleString()}</b> / {sp.spanXp.toLocaleString()} XP</span>}
+          </div>
         </div>
         <div className="nest-health-bar">
           <div className="nest-health-fill" />
