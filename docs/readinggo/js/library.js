@@ -921,9 +921,9 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:16, paddingLeft:4}}>
             {/* 3단 토글 (#649): 활성 축은 방향에 따라 라벨/화살표를 바꿔 표시. 비활성은 1차 방향 라벨. */}
             {[
-              ['recent', { 1: '최근순 ↓', '-1': '오래된순 ↑' }],
-              ['rating', { 1: '별점 높은순 ↓', '-1': '별점 낮은순 ↑' }],
-              ['title', { 1: '제목순 ㄱ→ㅎ', '-1': '제목순 ㅎ→ㄱ' }],
+              ['recent', { 1: '최근', '-1': '오래된' }],
+              ['rating', { 1: '별점 ↑', '-1': '별점 ↓' }],
+              ['title', { 1: '제목 ↑', '-1': '제목 ↓' }],
             ].map(([id, labels]) => {
               const active = completedSort.key === id;
               const label = active ? labels[completedSort.dir] : labels[1];
