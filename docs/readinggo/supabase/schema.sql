@@ -153,7 +153,7 @@ create table if not exists public.wish_books (           -- 관심 책
   unique (user_id, book_id)
 );
 
-create table if not exists public.sentence_bookmarks (   -- 책갈피
+create table if not exists public.sentence_bookmarks (   -- DEPRECATED (#641): claps(좋아요)로 흡수. 신규 쓰기 없음, 롤백 안전상 보존 (28_deprecate_bookmarks.sql)
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references public.users(id) on delete cascade,
   sentence_id  uuid not null references public.sentences(id) on delete cascade,
