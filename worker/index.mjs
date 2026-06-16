@@ -57,7 +57,7 @@ export default {
 /* ── LLM 독서 파트너 — 참새 질문 생성 (#287) ──────────────
    provider-agnostic: base_url/model/key 전부 env. OpenAI 호환 chat completions.
    키 없거나 실패 시 목 질문으로 graceful fallback (데모/피치 무중단). */
-const COMPANION_SYSTEM = '당신은 사용자와 친한 독서모임 진행자입니다. 사용자가 방금 남긴 한 문장을 보고, 그 사람이 자기 생각을 더 깊이 펼치도록 대화하듯 이끄는 질문을 한국어로 하나 던지세요. 입력의 역할을 혼동하지 마세요(#359): "책에서 옮겨 적은 한 문장(인용)"은 작품 속 문장이고, "내 메모(감상)"는 사용자 자신의 생각입니다. 인용을 사용자의 감상으로 단정하지 마세요. 만약 한 문장이 책 속 인용으로 보기 어렵거나(예: "즐거웠다"처럼 짧은 감상형) 작품 속 맥락을 알 수 없다면, 함부로 해석하지 말고 — 그 문장이 책의 어떤 장면·맥락에서 나온 것인지, 혹은 본인의 생각을 적은 것인지를 먼저 물어보세요. 사용자가 다른 작품이나 작가를 언급하거나 두 작품을 비교하면(예: "○○와 닮았다"), 그 비교·연결 자체(왜 그렇게 느꼈는지, 어떤 점이 닮았는지)를 두고 물으세요. 다른 작품의 줄거리·인물을 현재 책의 인물·사건에 억지로 끼워 맞추거나 두 작품을 뒤섞지 마세요. 그 책과 작가에 대해 아는 바(작품 맥락·작가의 삶·시대)가 있으면 자연스럽게 한 조각 곁들여 질문을 풍부하게 하되, 핵심은 그 사람의 경험·감정·기억과 잇는 것입니다. 따뜻하고 호기심 어린 톤. 예/아니오로 닫히지 않는 열린 질문 하나만. 2~3문장 이내로 짧고 간결하게 — 작품 분석을 길게 늘어놓지 말 것. 마크다운 서식(별표 **, #, 목록 기호 등)을 절대 쓰지 말고 일반 문장으로만 쓰세요. 칭찬·요약·해설 나열은 금지하고 질문으로 끝맺으세요.';
+const COMPANION_SYSTEM = '당신은 사용자와 그 책을 *함께 읽은* 독서모임 진행자입니다. 그 책을 같이 읽은 동료처럼, 작품·작가를 이미 알고 있는 사람으로서 사용자가 방금 남긴 한 문장을 보고, 그 사람이 자기 생각을 더 깊이 펼치도록 대화하듯 이끄는 질문을 한국어로 하나 던지세요. 입력의 역할을 혼동하지 마세요(#359): "책에서 옮겨 적은 한 문장(인용)"은 작품 속 문장이고, "내 메모(감상)"는 사용자 자신의 생각입니다. 인용을 사용자의 감상으로 단정하지 마세요. 만약 한 문장이 책 속 인용으로 보기 어렵거나(예: "즐거웠다"처럼 짧은 감상형) 작품 속 맥락을 알 수 없다면, 함부로 해석하지 말고 — 그 문장이 책의 어떤 장면·맥락에서 나온 것인지, 혹은 본인의 생각을 적은 것인지를 먼저 물어보세요. 사용자가 다른 작품이나 작가를 언급하거나 두 작품을 비교하면(예: "○○와 닮았다"), 그 비교·연결 자체(왜 그렇게 느꼈는지, 어떤 점이 닮았는지)를 두고 물으세요. 다른 작품의 줄거리·인물을 현재 책의 인물·사건에 억지로 끼워 맞추거나 두 작품을 뒤섞지 마세요. 그 책과 작가에 대해 아는 바(작품 맥락·작가의 삶·시대)가 있으면 자연스럽게 한 조각 곁들여 질문을 풍부하게 하되, 핵심은 그 사람의 경험·감정·기억과 잇는 것입니다. 따뜻하고 호기심 어린 톤. 예/아니오로 닫히지 않는 열린 질문 하나만. 2~3문장 이내로 짧고 간결하게 — 작품 분석을 길게 늘어놓지 말 것. 마크다운 서식(별표 **, #, 목록 기호 등)을 절대 쓰지 말고 일반 문장으로만 쓰세요. 칭찬·요약·해설 나열은 금지하고 질문으로 끝맺으세요.';
 
 // 마크다운 서식 제거 (#406) — UI가 md 렌더 안 해 별표(**)가 날것으로 보이는 문제 방지.
 // 굵게/기울임/제목/목록/코드 기호만 제거(텍스트 보존).
@@ -100,6 +100,59 @@ async function callLLM({ messages, env, maxTokens, temperature }) {
   return ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').trim();
 }
 
+/* ── 책 문학 브리프 — "같이 읽은 진행자" (#656) ───────────
+   알라딘 소개(뒷표지 마케팅 카피)를 그라운딩으로 넣어, LLM이 주제·작가·시대·톤을
+   담은 짧은 브리프로 압축한다. 마케팅 카피 자체를 질문에 주입하지 않는다.
+   환각 방지: 그라운딩이 비거나 확신이 없으면 빈 문자열만(추측 금지). */
+const BRIEF_SYSTEM = '당신은 독서모임 진행자를 위해 책 한 권의 핵심을 정리하는 사람입니다. 주어진 책 정보(제목·저자, 그리고 출판사 소개가 있으면 그것)를 바탕으로, 진행자가 그 책을 "같이 읽은 사람"처럼 대화하는 데 도움이 될 짧은 브리프를 한국어로 쓰세요. 담을 것: 책의 핵심 주제·정서, 작가(누구인지·결), 시대·배경, 전체적인 톤. 출판사 소개의 광고성 문구·과장은 걷어내고 사실·맥락만 압축하세요. 확실히 모르는 책이고 소개도 빈약하면 추측해서 지어내지 말고 빈 문자열만 출력하세요. 2~3문장, 마크다운·머리말 없이 일반 문장으로만.';
+
+// 책별 브리프 캐시 (#656) — 같은 책의 후속 호출에서 재생성·재조회하지 않음(비용·지연↓).
+// 모듈 레벨 in-memory Map (best-effort): Worker 인스턴스가 살아있는 동안만 유지되고
+// 콜드스타트·인스턴스 분산 시 비워질 수 있다. 데모엔 충분 — 영속 캐시가 필요하면
+// 후속에 Cloudflare KV(키=책 키)로 격상 검토(Stack Lock: 지금은 새 바인딩 도입 안 함).
+const BOOK_BRIEF_CACHE = new Map();
+const BRIEF_CACHE_MAX = 200;   // 무한 증식 방지 — 넘으면 가장 오래된 항목부터 비움
+
+// 책 키 정규화 (#656) — 제목(+저자) 기준. 공백 접기·소문자.
+function bookBriefKey(title, author) {
+  const t = String(title || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const a = String(author || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return a ? `${t}::${a}` : t;
+}
+
+// 책 문학 브리프 생성+캐시 (#656) — 모든 턴에서 호출하되 캐시 히트면 LLM 재호출 없음.
+// 알라딘 소개를 그라운딩으로 LLM 압축. 키/조회/생성 실패 시 빈 문자열(무중단).
+async function getBookBrief(title, author, env) {
+  if (!title) return '';
+  const key = bookBriefKey(title, author);
+  if (BOOK_BRIEF_CACHE.has(key)) return BOOK_BRIEF_CACHE.get(key);
+  let brief = '';
+  try {
+    // 1) 알라딘 소개(뒷표지 카피)를 그라운딩으로 조회 — best-effort.
+    let grounding = '';
+    try { grounding = await fetchBookBrief(title, env); } catch (e) { /* 무시 */ }
+    // 2) LLM 문학 브리프로 압축(주제·작가·시대·톤). 키 있을 때만.
+    if (env.UPSTAGE_API_KEY && env.LLM_BASE_URL && env.LLM_MODEL) {
+      const messages = [
+        { role: 'system', content: BRIEF_SYSTEM },
+        { role: 'user', content: `제목: ${title}${author ? ` / 저자: ${author}` : ''}`
+          + (grounding ? `\n출판사 소개(그라운딩 — 광고 문구는 걷어내고 사실만 참고):\n${grounding}` : '\n(출판사 소개 없음)') },
+      ];
+      const raw = await callLLM({ messages, env, maxTokens: 180, temperature: 0.4 });
+      const d = stripMd(raw).trim();
+      // 약한 환각 가드 — 너무 짧거나 "모름" 류면 버림(추측 주입 방지).
+      if (d && d.length >= 20 && !/^(모르|알 수 없|정보가 없|해당 책)/.test(d)) brief = d.slice(0, 600);
+    }
+  } catch (e) { /* 생성 실패 → 빈 브리프(무중단) */ }
+  // 캐시 적재(빈 문자열도 캐시 — 같은 책 반복 미스 방지). 상한 초과 시 오래된 것부터 제거.
+  if (BOOK_BRIEF_CACHE.size >= BRIEF_CACHE_MAX) {
+    const oldest = BOOK_BRIEF_CACHE.keys().next().value;
+    if (oldest !== undefined) BOOK_BRIEF_CACHE.delete(oldest);
+  }
+  BOOK_BRIEF_CACHE.set(key, brief);
+  return brief;
+}
+
 // 질문 방향성 프리셋 → 결 지시문 (#375). key 는 config.js RG_COMPANION_PRESETS 와 1:1 일치.
 // balanced 는 키 없음(기본 톤 유지). 자유서술 아님 — 정해진 결만.
 const PRESET_TONE = {
@@ -134,12 +187,13 @@ async function companionProxy(request, env) {
   if (!env.UPSTAGE_API_KEY || !env.LLM_BASE_URL || !env.LLM_MODEL) {
     return json({ question: companionMock(sentence), demo: true }, 200);
   }
-  // 책 맥락 보강 (#373) — 첫 질문 시 작품 소개를 서버에서 1회 조회(키는 서버 보관, best-effort).
+  // 책 문학 브리프 (#656) — "같이 읽은 진행자"용 작품 맥락. 모든 턴에 주입(첫 턴 한정 제거 —
+  // 2턴부터 책 잊던 문제 해소). 책별 캐시라 첫 생성 후 후속 턴은 LLM 재호출 없음. best-effort.
   let brief = '';
-  if (exchanges.length === 0 && bookTitle) { try { brief = await fetchBookBrief(bookTitle, env); } catch (e) { /* 무시 */ } }
+  if (bookTitle) { try { brief = await getBookBrief(bookTitle, author, env); } catch (e) { /* 무시 */ } }
   const messages = [{ role: 'system', content: COMPANION_SYSTEM }];
   messages.push({ role: 'user', content: `책: ${bookTitle || '(제목 미상)'}${author ? ` — ${author}` : ''}`
-    + (brief ? `\n작품 소개(참고용 — 이 맥락을 질문에 녹이세요): ${brief}` : '')
+    + (brief ? `\n이 책에 대해 당신(진행자)이 같이 읽으며 아는 것(주제·작가·시대·톤 — 단정 말고 자연스럽게 한 조각만 녹이세요): ${brief}` : '')
     + `\n${kind === 'thought' ? `읽다가 든 내 생각(감상): "${sentence}" — 이것은 책의 인용이 아니라 독자 본인의 생각입니다. 작품 맥락을 단정하지 말고 이 생각 자체를 더 깊이 여는 질문을 하세요.` : `책에서 옮겨 적은 한 문장(인용): "${sentence}"`}${comment ? `\n내 메모(감상): ${comment}` : ''}` });
   for (const e of exchanges) {
     if (e && e.q) messages.push({ role: 'assistant', content: String(e.q).slice(0, 500) });
