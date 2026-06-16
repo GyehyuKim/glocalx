@@ -59,13 +59,16 @@
       return c.auth.signOut({ scope: 'others' });
     },
 
-    // 현재 로그인 유저(또는 null)
+    // 현재 로그인 유저(또는 null) — getSession()(로컬 스토리지, 무네트워크) 사용. (#646)
+    // getUser()는 매 호출 토큰 서버 검증(네트워크)이라, 모바일 네트워크 불안정 시 부팅 때
+    // null/에러로 떨어져 로그인 유저가 조용히 게스트(localStorage)로 고착 → PC에서 남긴
+    // my_note(대화)가 안 보이던 버그. persistSession:true 로 저장된 세션을 읽어 안정 복원.
     async currentUser() {
       const c = client();
       if (!c) return null;
-      const { data, error } = await c.auth.getUser();
+      const { data, error } = await c.auth.getSession();
       if (error) return null;
-      return data ? data.user : null;
+      return (data && data.session && data.session.user) || null;
     },
 
     // 내 공개 프로필(public.users 행). 트리거가 가입 시 생성.
