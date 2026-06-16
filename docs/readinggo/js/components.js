@@ -170,6 +170,12 @@ function SentenceCard({ item, bookId, noBlind }) {
         <span className={'chip' + (liked ? ' active' : '')} style={mineStyle} onClick={toggleLike}>
           좋아요 {likeCount}
         </span>
+        {/* #650 A: 외부 공유 — 이미지 카드 + Web Share/텍스트 폴백 (share-card.js) */}
+        {window.shareSentence ? (
+          <span className="chip" onClick={() => window.shareSentence({ id: item.id, text: item.q, bookId: bookId, bookTitle: cardTitle, author: item.author, page: item.page, kind: item.kind })}>
+            ↗️ 공유
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -633,17 +639,24 @@ function SentenceActions({ sentence, mine, fav: favInit, onRemoved }) {
   const del = (e) => { stop(e); if (!(DataStore.sentences && DataStore.sentences.remove)) return; if (!window.confirm('이 한 문장을 삭제할까요? 되돌릴 수 없어요.')) return; Promise.resolve(DataStore.sentences.remove(id)).then(() => { if (onRemoved) onRemoved(id); window.dispatchEvent(new CustomEvent('rg:sentence-removed', { detail: { id } })); showToast('🗑 한 문장을 삭제했어요'); }).catch(() => showToast('삭제 실패 — 잠시 후 다시')); };
   const toggleLike = (e) => { stop(e); if (!(DataStore.claps && DataStore.claps.toggle)) return; Promise.resolve(DataStore.claps.toggle(id)).then((on) => { setLiked(on); setLikeN(n => Math.max(0, n + (on ? 1 : -1))); }).catch(() => {}); };
   const likeBtn = <button onClick={toggleLike} title="좋아요" style={liked ? chipOn : chip}>❤️ {likeN}</button>;
+  // #650 A: 외부 공유 — 이미지 카드(html-to-image) + Web Share/텍스트 폴백. share-card.js.
+  const share = (e) => { stop(e); if (window.shareSentence) window.shareSentence({ id, text: sentence.text, bookId: sentence.bookId, bookTitle: sentence.bookTitle, author: sentence.author, page: sentence.page, note: sentence.note, kind: sentence.kind }); };
+  const shareBtn = window.shareSentence ? <button onClick={share} title="외부 공유 (이미지 카드)" style={chip}>↗️ 공유</button> : null;
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }} onClick={stop}>
       {mine ? (
         <>
           <button onClick={cycleVis} title="공개 범위 변경 (전체→친구→비공개)" style={chip}><span>{_SA_VIS_ICON[vis]}</span><span>{_SA_VIS_LABEL[vis]}</span></button>
           {likeBtn}
+          {shareBtn}
           <button onClick={edit} title="수정·대화" style={chip}>✏️</button>
           <button onClick={del} title="삭제" style={chip}>🗑</button>
         </>
       ) : (
-        likeBtn
+        <>
+          {likeBtn}
+          {shareBtn}
+        </>
       )}
     </div>
   );
