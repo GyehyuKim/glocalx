@@ -479,8 +479,8 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
           {/* Markdown Export (§5.8.4) — 내 한 문장이 1개 이상 있을 때만 노출 */}
           {bookQuotes.length > 0 && (
             <button onClick={exportMarkdown}
-              style={{display:'block', width:'100%', textAlign:'center', padding:'12px 14px', background:'var(--paper-2)', border:'1.5px solid var(--line)', borderRadius:'8px', color:'var(--ink-2)', fontSize:13, fontWeight:800, cursor:'pointer', marginBottom:14, boxSizing:'border-box'}}>
-              ⬇️ 내 한 문장 Markdown 내보내기
+              style={{display:'flex', alignItems:'center', justifyContent:'center', gap:6, width:'100%', padding:'12px 14px', background:'var(--paper-2)', border:'1.5px solid var(--line)', borderRadius:'8px', color:'var(--ink-2)', fontSize:13, fontWeight:800, cursor:'pointer', marginBottom:14, boxSizing:'border-box'}}>
+              {window.rgIcon('download',15)} 내 한 문장 Markdown 내보내기
             </button>
           )}
 
@@ -762,7 +762,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
     { id: 'reading', label: '읽고 있는 책', books: readingBooks },
     { id: 'completed', label: '읽은 책', books: completedBooks },
     // 중단 탭(#593): 읽다 그만둔 책. 책이 있을 때만 노출(빈 탭 노이즈 방지).
-    ...(abortedBooks.length > 0 ? [{ id: 'aborted', label: '⏸️ 중단', books: abortedBooks }] : []),
+    ...(abortedBooks.length > 0 ? [{ id: 'aborted', label: '중단', books: abortedBooks }] : []),
   ];
 
   const currentTab = tabsData.find(t => t.id === activeSubtab);
@@ -961,7 +961,7 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
               const progText = isCompleted
                 ? (typeof b.rating === 'number' ? `⭐ ${b.rating.toFixed(1)}` : '완독')
                 : b.status === 'aborted'
-                  ? (b.cur > 0 ? `⏸️ ${b.cur}/${b.total}p` : '⏸️ 중단')
+                  ? (<span style={{display:'inline-flex', alignItems:'center', gap:3}}>{window.rgIcon('pause',10)}{b.cur > 0 ? `${b.cur}/${b.total}p` : '중단'}</span>)
                   : (b.cur > 0 ? `${b.cur}/${b.total}p` : '미완독');
               return (
                 <div
@@ -1057,8 +1057,8 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
 
         {/* 데이터 내보내기 (#568 — 설정에서 서재로 이동, 내 책·한 문장 맥락과 직결) */}
         <button onClick={exportData}
-          style={{marginTop:20, width:'100%', padding:'12px', borderRadius:10, border:'1.5px solid var(--line)', background:'transparent', color:'var(--ink-2)', fontWeight:800, fontSize:14, cursor:'pointer'}}>
-          📦 내 데이터 내보내기 (JSON)
+          style={{marginTop:20, width:'100%', padding:'12px', borderRadius:10, border:'1.5px solid var(--line)', background:'transparent', color:'var(--ink-2)', fontWeight:800, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
+          {window.rgIcon('download',15)} 내 데이터 내보내기 (JSON)
         </button>
       </div>
 
