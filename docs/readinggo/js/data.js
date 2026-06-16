@@ -52,9 +52,26 @@ function getNestStageByXp(totalXp){
   const c = nestCycleXp(totalXp);
   return NEST_STAGES.find(s => s.maxXp == null || c <= s.maxXp) || NEST_STAGES[0];
 }
-// 현재 1,600 XP 주기 진행도 % (둥지 진척 바·트윅·세리머니). cycleXp / 1600.
+// 현재 1,600 XP 주기 진행도 % (둥지 일러스트 트윅·세리머니). cycleXp / 1600.
 function nestXpProgress(totalXp){
   return Math.max(0, Math.min(100, Math.round(nestCycleXp(totalXp) / NEST_CYCLE_XP * 100)));
+}
+// 현재 "단계 구간" 진척 (#682) — 현재 단계 시작 XP를 0, 다음 단계 임계값을 분모로.
+// 예) 빈 둥지(100~399) 구간에서 cycleXp=342 → into=242, span=300, next.minXp=400.
+// 반환: { stage, next, intoXp(현재 단계 진입 XP), spanXp(분모), pct, isMax }.
+// isMax=true 면 최고 단계(다음 임계값 없음) — 분모 없음, "최고 단계"로 표기.
+function nestStageProgress(totalXp){
+  const c = nestCycleXp(totalXp);
+  const stage = getNestStageByXp(totalXp);
+  const { next } = nestInfo(stage.lv);
+  if (!next) {
+    // 최고 단계(참새의 성) — 주기 완료 직전. 다음 임계값 없음.
+    return { stage, next: null, intoXp: c - stage.minXp, spanXp: 0, pct: 100, isMax: true };
+  }
+  const intoXp = Math.max(0, c - stage.minXp);
+  const spanXp = Math.max(1, next.minXp - stage.minXp);
+  const pct = Math.max(0, Math.min(100, Math.round(intoXp / spanXp * 100)));
+  return { stage, next, intoXp, spanXp, pct, isMax: false };
 }
 
 /* ── 진화 마이크로카피 4종 (nest.md §5.2) ─────────
@@ -465,6 +482,7 @@ window.INITIAL_PROGRESS=INITIAL_PROGRESS;
 window.NEST_STAGES=NEST_STAGES; window.NEST_CYCLE_XP=NEST_CYCLE_XP;
 window.getNestStageByXp=getNestStageByXp; window.nestXpProgress=nestXpProgress;
 window.nestCycleXp=nestCycleXp; window.nestCastleCount=nestCastleCount;
+window.nestStageProgress=nestStageProgress;
 window.NEST_STAGE_TRANSITIONS=NEST_STAGE_TRANSITIONS; window.getEvolutionCopy=getEvolutionCopy;
 window.XP_RULES=XP_RULES; window.calcLevel=calcLevel; window.xpForLevel=xpForLevel; window.computeCheckinXp=computeCheckinXp;
 window.reactionXpFor=reactionXpFor; window.grantXp=grantXp;
