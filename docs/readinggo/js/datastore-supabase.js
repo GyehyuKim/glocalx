@@ -20,8 +20,10 @@
   let _uid = null;
   async function uid() {
     if (_uid) return _uid;
-    const { data } = await sb().auth.getUser();
-    _uid = (data && data.user) ? data.user.id : null;
+    // getSession()(로컬, 무네트워크) — getUser()는 네트워크 검증이라 모바일에서 쿼리 user-id가
+    // null로 떨어져 RLS 빈 결과/게스트 고착의 원인이 됨 (#646). onAuthChange 가 _uid 동기 유지.
+    const { data } = await sb().auth.getSession();
+    _uid = (data && data.session && data.session.user) ? data.session.user.id : null;
     return _uid;
   }
   if (window.RG_SB && window.RG_SB.onAuthChange) {
@@ -866,7 +868,7 @@
         // admin이 회신할 수 있도록 작성 시점의 auth 이메일을 함께 박아둔다.
         let authEmail = email || null;
         if (!authEmail) {
-          try { const { data } = await sb().auth.getUser(); authEmail = (data && data.user && data.user.email) || null; } catch (e) {}
+          try { const { data } = await sb().auth.getSession(); authEmail = (data && data.session && data.session.user && data.session.user.email) || null; } catch (e) {} // #646: getSession(로컬)
         }
         const ver = (typeof window !== 'undefined' && window.RG_VERSION) || null; // 어느 버전 문의인지 추적
         return unwrap(await sb().from('inquiries').insert({ user_id: id, message: message || '', email: authEmail, app_version: ver }).select().single());

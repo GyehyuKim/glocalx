@@ -46,7 +46,7 @@
 
 ```
 // 인증 / 프로필 / 설정
-auth.currentUser()                         → User | null
+auth.currentUser()                         → User | null     // #646: 클라 인증 판정은 getSession()(로컬 스토리지, 무네트워크). getUser()(매 호출 서버 토큰검증)는 모바일 네트워크 불안정 시 null로 떨어져 로그인 유저가 조용히 게스트(localStorage) 고착 → my_note(대화) 등 데이터 안 보임. uid()도 동일.
 auth.signInWithGoogle()                    → User           // Phase 0: 가짜 세션
 profile.get(userId?)                       → User
 profile.update({display_name, avatar_url, bio})
