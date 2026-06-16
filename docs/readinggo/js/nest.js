@@ -821,6 +821,20 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
     handleCheckin({ page, sentence: t, kind: 'quote' });
     setQuickText(''); setQuickSentPage('');
   };
+  // 쪽수 stepper (#717) — 빈 값이면 현재 쪽 기준 ±delta, [0, total] 클램프.
+  // type="number" 네이티브 스피너가 빈 값(=0)에서 증감해 0으로 점프하던 버그 대체.
+  const _stepPage = (setter, delta) => {
+    const cur = nestState.book.cur || 0, total = nestState.book.total || 0;
+    setter(prev => {
+      const base = prev === '' ? cur : (parseInt(prev, 10) || cur);
+      let n = base + delta;
+      if (n < 0) n = 0;
+      if (total) n = Math.min(total, n);
+      return String(n);
+    });
+  };
+  const _stepBtn = { width: 30, height: 30, flexShrink: 0, borderRadius: 8, border: '1.5px solid var(--line)', background: 'var(--paper)', color: 'var(--ink-2)', fontSize: 20, fontWeight: 800, lineHeight: 1, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
+  const _stepBtnSm = { width: 24, height: 24, flexShrink: 0, borderRadius: 6, border: '1px solid var(--line)', background: 'var(--card)', color: 'var(--ink-2)', fontSize: 15, fontWeight: 800, lineHeight: 1, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
 
   // 데모 '하루 거르기' 핸들러 폐기 (#481) — onSimSkip prop은 하위호환 위해 시그니처에 유지(미사용).
 
@@ -933,9 +947,13 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
       <div style={{ marginTop: 10, background: 'var(--card)', border: '1.5px solid var(--line)', borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)', marginBottom: 10 }}>오늘은 어디까지 읽으셨나요?</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input type="number" inputMode="numeric" value={quickPage} placeholder={String(nestState.book.cur||0)}
-            onChange={e => setQuickPage(e.target.value)}
-            style={{ width: 72, textAlign: 'center', fontSize: 26, fontWeight: 900, color: 'var(--ink)', background: 'transparent', border: 'none', borderBottom: '2px solid var(--brand)', outline: 'none', padding: '0 4px 2px', fontFamily: 'inherit' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button onClick={() => _stepPage(setQuickPage, -1)} aria-label="쪽수 1 줄이기" style={_stepBtn}>−</button>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" value={quickPage} placeholder={String(nestState.book.cur||0)}
+              onChange={e => setQuickPage(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{ width: 60, textAlign: 'center', fontSize: 26, fontWeight: 900, color: 'var(--ink)', background: 'transparent', border: 'none', borderBottom: '2px solid var(--brand)', outline: 'none', padding: '0 4px 2px', fontFamily: 'inherit' }} />
+            <button onClick={() => _stepPage(setQuickPage, 1)} aria-label="쪽수 1 늘리기" style={_stepBtn}>+</button>
+          </span>
           {nestState.book.total > 0
             ? <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>/ {nestState.book.total}p</span>
             : <span style={{ fontSize: 13, color: 'var(--ink-3)', fontWeight: 700 }}>p</span>}
@@ -966,9 +984,13 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)' }}>p</span>
-          <input type="number" inputMode="numeric" min="0" max="99999" value={quickSentPage}
-            placeholder={String(nestState.book.cur || 0)} onChange={(e) => setQuickSentPage(e.target.value)}
-            style={{ width: 60, textAlign: 'center', padding: '4px 6px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--paper)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <button onClick={() => _stepPage(setQuickSentPage, -1)} aria-label="쪽수 1 줄이기" style={_stepBtnSm}>−</button>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" value={quickSentPage}
+              placeholder={String(nestState.book.cur || 0)} onChange={(e) => setQuickSentPage(e.target.value.replace(/[^0-9]/g, ''))}
+              style={{ width: 44, textAlign: 'center', padding: '4px 6px', border: '1px solid var(--line)', borderRadius: 6, fontSize: 12, fontWeight: 700, background: 'var(--paper)' }} />
+            <button onClick={() => _stepPage(setQuickSentPage, 1)} aria-label="쪽수 1 늘리기" style={_stepBtnSm}>+</button>
+          </span>
           {nestState.book.total > 0 && <span style={{ fontSize: 12, color: 'var(--ink-3)', fontWeight: 700 }}>/ {nestState.book.total}</span>}
           <button onClick={() => { setSentFlip(true); setTimeout(() => { submitSentence(); setSentFlip(false); }, 280); }}
             style={{ marginLeft: 'auto', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 999, padding: '7px 20px', fontSize: 14, fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.2px' }}>
