@@ -265,6 +265,21 @@
 | 저장 = 책갈피 | 내·타인 문장의 **비공개 개인 보관**(공개 개수·XP 없음, `sentence_bookmarks`). 짹과 별개 동작 | [feed.md §5.7](../feed.md) · [profile.md §5.8.5](../profile.md) |
 | 절차 | spec-only PR(이 결정) 먼저 → 별도 코드 PR로 CTA·호출 연결만 해제 | — |
 
+### 8.11 결정 (2026-06-16, #641 리액션·저장 단일화 — 짹+책갈피 → 좋아요. 충돌 시 §8.10 위에 **우선**)
+
+> §8.10 `좋아요 = 짹`·`저장 = 책갈피` 두 행과 §8.3에 누적된 #616(좋아요→짹 표면 카피 통일)을 **갱신/역행**한다.
+> 근거: 식별자(`favIds`/`bookmarks`)가 갈린 채 라벨만 표면별로 붙어(nest=❤️좋아요 / social·components=🔖책갈피 / library=📌책갈피) 혼재. 일반 사용자에게 "♡ 좋아요 = 공개 반응"이 가장 직관적.
+
+| 항목 | 결정 | SSOT |
+|---|---|---|
+| 리액션·저장 단일화 | **짹 + 책갈피(🔖) → 단일 "좋아요"(❤️, `claps`)**. 별도 책갈피 버튼·`sentence_bookmarks` 폐기(deprecate, 데이터 보존). 저장 use-case = "좋아요한 문장 모아보기"(`claps.list`, profile §5.8.8) | [feed.md §5.7](../feed.md) · [profile.md §5.8.5/§5.8.8](../profile.md) |
+| self-clap 허용 | 자기 문장 좋아요 허용(저장 통일). 단 **self-clap XP 비부여**(받은·주는 XP 모두 제외 — 어뷰즈 방지). §8.10 "본인 짹 비활성" 역행 | [feed.md §5.7](../feed.md) |
+| 표면 카피 = '좋아요' (#616 역행) | UI 라벨 `짹`·`짹 N` → `좋아요`·`좋아요 N`. **단 '짹'의 캐릭터(참새/Jacky)·문장등록 동사("오늘의 짹"·"짹 등록")는 보존**(1단어 3의미 분리) | [feed.md §5.7.3](../feed.md) |
+| 책찜 아이콘 통일 | 책찜(읽고싶은책) 아이콘 ❤️/📚 → **🔖 통일**(좋아요 ❤️와 시각 구분) | [design.md §12](../design.md) |
+| 영구 가드 | align_v7 — FEATURE_FILES 에 `책갈피` 단어 **absent** invariant(재유입 시 테스트 실패) + 리액션 짹은 문맥 한정 검사(Jacky 짹 오검출 방지) | [align_v7.py](../../../../tests/spec-align/align_v7.py) |
+| 보존 | decisions 과거 줄(§8.10·#616·v5/v6)·`claps` DB 식별자(흡수처)·Jacky·문장등록 짹·`sentence_bookmarks` 테이블/데이터 | Phase C |
+| 절차 | spec(이 PR) + 코드 + 마이그레이션(`28_deprecate_bookmarks.sql`) 동반 PR | — |
+
 ---
 
 ### v5/v6 결정 이력 (참고 — 충돌 시 §8.0 우선)
