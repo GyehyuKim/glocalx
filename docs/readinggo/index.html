@@ -1386,6 +1386,8 @@ input,textarea{font-family:inherit;}
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <!-- Fuse.js (Fuzzy search) -->
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<!-- html-to-image (한 문장 외부 공유 카드 #650 A) — 승인된 Stack Lock 예외. UMD 전역 `htmlToImage`. -->
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
 <!-- Supabase (Phase 1) — 백엔드 계층. config/client/adapter는 순수 JS(JSX 아님)라 일반 script. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
@@ -1393,7 +1395,7 @@ input,textarea{font-family:inherit;}
 <script src="js/datastore-supabase.js"></script>
 
 <script>
-const _RG_V = '64';  // ⚠️ 배포마다 bump — 캐시 스큐(일부 js만 stale → "X is not defined" 간헐 크래시) 방지
+const _RG_V = '65';  // ⚠️ 배포마다 bump — 캐시 스큐(일부 js만 stale → "X is not defined" 간헐 크래시) 방지
 
 async function loadBabel(src) {
   const res = await fetch(src + '?v=' + _RG_V);
@@ -1411,6 +1413,7 @@ async function loadBabel(src) {
     await loadBabel('js/data.js');
     await loadBabel('js/datastore.js');
     await loadBabel('js/components.js');
+    await loadBabel('js/share-card.js');  // #650 A: 한 문장 외부 공유 (window.shareSentence)
     await loadBabel('js/search.js');
     await loadBabel('js/nest.js');
     await loadBabel('js/social.js');
