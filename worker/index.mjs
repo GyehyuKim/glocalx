@@ -501,13 +501,25 @@ async function seedWrite(env, bookKey, seeds) {
     });
   } catch (e) { /* best-effort */ }
 }
+// 검색용 제목 정규화 (#805) — 부제·시리즈 권차·개정판 표기 제거로 베스트셀러 커버리지 회복.
+// DB 제목 전체("사피엔스 - 유인원에서…")가 네이버 AND 매칭에서 0건을 유발 → 앞 핵심 제목만 남긴다.
+// book_key(영속 키)는 정규화하지 않음 — 검색 쿼리 빌드에만 사용.
+function seedSearchTitle(title) {
+  let t = String(title || '').trim();
+  // ' - '/':'/'('/'[' 등 부제·메타 구분자 이후 컷(핵심 제목 = 앞부분).
+  t = t.split(/\s+[-–—]\s+|[:(\[【「《]/)[0];
+  return t.replace(/\s{2,}/g, ' ').trim();
+}
 // 네이버+LLM 으로 신규 시드 추출(최대 want개). 영속 저장은 호출부에서.
 async function seedFetchFresh(title, author, want, env) {
   if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET) return [];
   // 다중 쿼리 폴백 — '제목 저자 서평'(정밀) → 점차 넓힘. 첫 비공백에서 멈춤(불필요 호출↓).
   // '서평'만으론 0건 잦음(AND 매칭) → 리뷰·독후감·제목 단독까지 넓혀 커버리지↑.
+  // #805: 부제 제거 핵심 제목(st) 우선, 정규화로 달라졌으면 원본 제목도 폴백에 포함.
   const a = author ? ' ' + author : '';
-  const queries = [title + a + ' 서평', title + ' 서평', title + a + ' 리뷰', title + ' 독후감', title + ' 책'];
+  const st = seedSearchTitle(title);
+  const baseTitles = (st && st !== title) ? [st, title] : [title];
+  const queries = baseTitles.flatMap((t) => [t + a + ' 서평', t + ' 서평', t + a + ' 리뷰', t + ' 독후감', t + ' 책']);
   let items = [];
   for (const q of queries) {
     items = await naverBlogSearch(q, env);
