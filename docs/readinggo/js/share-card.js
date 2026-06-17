@@ -135,7 +135,8 @@ function _buildCardNode(n, coverDataUrl) {
     // 인용 장식 따옴표(옅게)
     const qm = document.createElement('span');
     Object.assign(qm.style, {
-      position: 'absolute', top: '-54px', left: '0', fontSize: '210px', lineHeight: '1',
+      // #650: 좌상단 '❝ 인용' 칩과 겹치지 않게 크기 축소(210→150) + 칩 아래로 내림(top -54→0).
+      position: 'absolute', top: '0px', left: '0', fontSize: '150px', lineHeight: '1',
       color: _SC.brandSoft, zIndex: '0', fontFamily: 'Georgia,serif', userSelect: 'none',
     });
     qm.textContent = '“';
@@ -287,7 +288,8 @@ async function shareSentence(s) {
     const file = new File([blob], 'readinggo-sentence.png', { type: 'image/png' });
     if (navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], text });
+        // #650: url 동반 — 이미지와 함께 서비스 링크 전달(플랫폼이 files+url 동시 지원 시).
+        await navigator.share({ files: [file], text, url: RG_SHARE_LINK_FULL });
         return;
       } catch (e) {
         if (e && e.name === 'AbortError') return;  // 사용자가 취소 — 폴백 안 함
