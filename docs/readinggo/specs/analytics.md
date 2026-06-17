@@ -115,28 +115,31 @@ WHERE consented = true;
 
 ---
 
-## 5. 사용자 동의 설계 (✅ 구현 #294)
+## 5. 사용자 동의 설계 (2단 모델, #752)
 
-> 단일 동의(데모): companion **첫 사용 시 1회** 묻고 설정에서 토글. 거부 시 companion은 **로컬 목 질문만**(외부 전송·수집 없음) — 기능은 유지(이탈 방지·리텐션). 거부권 필수(PIPA). AI 처리/익명 수집 분리는 후속.
+> **2단 동의 (PIPA·오픈베타)**: 비필수(세션 리플레이·식별·LLM)를 필수에 끼우면 위반이라 분리한다.
+>
+> - **필수 (동의불요·고지)**: 서비스 운영(인증·내 기록 저장·보안·오류) + **익명 행동 분석**(PostHog 이벤트·퍼널·페이지뷰, 식별자 없음 — `person_profiles: identified_only`라 비로그인 익명). first-party 분석 쿠키 고지.
+> - **선택 (opt-in, `RG_consent='yes'`)**: **세션 리플레이** + 로그인 유저 **식별 분석**(`posthog.identify`+email) + **LLM 대화 수집**(`companion_sessions`). 거부해도 서비스 동일(익명 분석·로컬 기능 유지).
+>
+> 근거: 익명 통계는 필수/고지로 방어 가능, 민감한 리플레이·식별은 명시 동의자만 → 수집 최대화 + 법적 안전. 거부권 필수(PIPA).
 
 ### 5.1 동의 시점
 
-**구현(#331)**: 진입 시 **비차단 하단 동의 배너** — 필수(서비스 운영) + 선택(AI·분석), 버튼 [전체 동의] [필수만] [상세 설정]. opt-in 허들↓. 설정 토글로 변경. (companion 첫 사용 prompt는 폴백)
+**구현(#331)**: 진입 시 **비차단 하단 동의 배너** — 필수(서비스 운영·익명 분석 **고지**) + 선택(세션 리플레이·식별·LLM **opt-in**), 버튼 [전체 동의] [필수만] [상세 설정]. "필수만" = 선택 거부(`RG_consent='no'`) → 익명 분석은 유지, 리플레이·식별·LLM만 제외. 설정 토글로 변경.
 
 ### 5.2 동의 문구
 
 > **ReadingGo가 더 좋아질 수 있도록**
 >
-> 계휴 님의 독서 대화(한 문장·코멘트·질문·답변)를 익명으로 수집해,
-> 어떤 책의 어떤 문장이 사람들에게 공명하는지 분석합니다.
-> 개인 식별 정보는 포함되지 않으며, 외부에 판매하지 않습니다.
+> **필수(고지)**: 서비스 운영과 **익명 사용 통계**(어떤 화면을 쓰는지, 식별 정보 없음)를 위해 쿠키를 사용해요.
+> **선택**: 동의하면 ① **세션 리플레이**(화면 사용 녹화 — 마찰 개선용), ② 로그인 계정과 연결한 분석, ③ 독서 대화(한 문장·질문·답변)의 익명 수집으로 더 나은 질문을 만들어요. 개인 식별 정보는 분석에 포함·판매하지 않아요.
 >
-> ✅ 동의합니다 (더 나은 ReadingGo를 함께 만들게요)
-> ☐ 이번엔 괜찮아요
+> ✅ 전체 동의 (선택까지)  ·  ☐ 필수만 (익명 통계만)
 
-- 동의는 언제든 설정에서 변경 가능
-- 미동의 유저는 로컬 기능은 그대로 사용, 서버 아카이브만 제외
-- `consented` 플래그를 `companion_sessions`에 함께 저장
+- 동의는 언제든 설정에서 변경 가능. 철회 시 리플레이·식별 즉시 중단.
+- "필수만"이어도 익명 행동 분석은 유지(서비스 통계), 리플레이·식별·LLM 수집만 제외.
+- `consented` 플래그를 `companion_sessions`에 함께 저장. 쿠키는 first-party 분석용(PostHog).
 
 ### 5.3 동의 상태 저장
 
@@ -148,6 +151,14 @@ window.RG_consent.get() / .set('yes'|'no')   // components.js
 ALTER TABLE profiles ADD COLUMN data_consent boolean;
 ALTER TABLE profiles ADD COLUMN data_consent_at timestamptz;
 ```
+
+### 5.4 PostHog 게이팅·리플레이·쿠키 (#752)
+
+- **init(index.html)**: `disable_session_recording: true`(리플레이 **기본 off**) + `session_recording: { maskAllInputs: true }`. 익명 이벤트·퍼널은 상시(고지). `person_profiles: 'identified_only'` 유지(비로그인 익명).
+- **선택 동의 'yes'** → `posthog.startSessionRecording()` + (로그인 시) `posthog.identify(...)`.
+- **'no'/철회** → `posthog.stopSessionRecording()`, `identify` 안 함(또는 `reset`), LLM backfill 스킵(현행 `app.js`).
+- **리플레이 PII 마스킹**: 입력값 `maskAllInputs`, 민감 표시 요소(이메일 등)에 `.ph-no-capture` 클래스. admin 대시보드(타 유저 이메일·문장 노출)는 운영자 리플레이에서도 마스킹 권장.
+- **쿠키**: first-party 분석 쿠키(distinct_id). 배너 고지로 충족(별도 동의 차단 쿠키 없음).
 
 ---
 
