@@ -51,6 +51,13 @@ export default {
       if (origin && origin !== url.origin) return json({ error: 'forbidden origin' }, 403);
       return ocrProxy(request, env);
     }
+    // 통합 서가 ① 스샷 서가 복원 (#772) — 구매내역/서재 캡쳐 → 비전 OCR → 책 목록 구조화 추출.
+    // OCR 스택 재사용(Upstage + solar-pro3). 키는 서버에서만(클라 노출 금지). 동일출처만.
+    if (p === '/api/shelf-import') {
+      const origin = request.headers.get('Origin');
+      if (origin && origin !== url.origin) return json({ error: 'forbidden origin' }, 403);
+      return shelfImportProxy(request, env);
+    }
     // 관련 도서 추천 — 이 책과 함께 읽을 책 (#496). LLM은 제목·저자만 제시하고,
     // 환각 필터(실존 도서 매칭)는 클라에서 books DB로 수행. 키는 서버에서만(클라 노출 금지). 동일출처만.
     if (p === '/api/related') {
@@ -341,6 +348,71 @@ async function ocrProxy(request, env) {
     } catch (e) { /* raw 폴백 */ }
   }
   return json({ text, raw }, 200);
+}
+
+// 통합 서가 ① (#772) — 구매내역/서재 캡쳐 OCR 텍스트에서 책 목록만 구조화 추출.
+const SHELF_EXTRACT_SYSTEM = '너는 책 구매내역·서재 캡쳐의 OCR 텍스트에서 책 목록만 뽑는 추출기다. 각 책의 제목(title)과 저자(author)만 JSON 배열로 출력한다. 형식: [{"title":"제목","author":"저자"}]. 규칙: (1) UI 텍스트(가격·할인·배송·날짜·버튼·카테고리·별점·페이지수·"장바구니" 등)는 모두 제외. (2) 저자가 불분명하면 author는 빈 문자열. (3) 같은 책은 한 번만. (4) 확실한 책만, 애매하면 제외. (5) 설명·코드펜스 없이 JSON 배열만 출력.';
+
+// OCR→LLM 출력(JSON 배열) 견고 파싱 — 코드펜스·잡텍스트 제거, 제목 기준 중복 제거, 상한 60.
+function parseShelfBooks(s) {
+  if (!s) return [];
+  let t = String(s).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const a = t.indexOf('['), b = t.lastIndexOf(']');
+  if (a >= 0 && b > a) t = t.slice(a, b + 1);
+  let arr;
+  try { arr = JSON.parse(t); } catch { return []; }
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set(), out = [];
+  for (const it of arr) {
+    if (!it || typeof it !== 'object') continue;
+    const title = String(it.title || '').trim();
+    if (!title) continue;
+    const author = String(it.author || '').trim();
+    const key = title.replace(/\s+/g, '').toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ title, author });
+    if (out.length >= 60) break;
+  }
+  return out;
+}
+
+async function shelfImportProxy(request, env) {
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  if (!env.UPSTAGE_API_KEY) return json({ error: 'OCR 미설정', demo: true }, 503);
+  let form;
+  try { form = await request.formData(); } catch { return json({ error: 'invalid form' }, 400); }
+  const file = form.get('document');
+  if (!file || typeof file === 'string') return json({ error: 'document(이미지) 필요' }, 422);
+  if (file.size && file.size > OCR_MAX_BYTES) return json({ error: '이미지가 너무 큽니다(최대 8MB)' }, 413);
+  // 1) Upstage Document OCR — raw 텍스트.
+  let raw = '';
+  try {
+    const up = new FormData();
+    up.append('document', file, (file.name || 'shelf.jpg'));
+    up.append('model', 'ocr');
+    const r = await fetch(OCR_URL, { method: 'POST', headers: { Authorization: `Bearer ${env.UPSTAGE_API_KEY}` }, body: up });
+    if (!r.ok) return json({ error: 'OCR HTTP ' + r.status }, 502);
+    const d = await r.json();
+    raw = String((d && d.text) || '').trim();
+  } catch (e) {
+    return json({ error: 'OCR 호출 실패: ' + String((e && e.message) || e) }, 502);
+  }
+  if (!raw) return json({ books: [], raw: '', empty: true }, 200);
+  // 2) solar-pro3 구조화 추출 — 책 목록 JSON. LLM 미설정/실패 시 partial(클라가 raw로 수동 폴백).
+  if (!env.LLM_BASE_URL || !env.LLM_MODEL) return json({ books: [], raw, partial: true }, 200);
+  try {
+    const out = await callLLM({
+      messages: [
+        { role: 'system', content: SHELF_EXTRACT_SYSTEM },
+        { role: 'user', content: '다음 캡쳐 OCR에서 책 목록을 JSON으로:\n' + raw.slice(0, 4000) },
+      ], env, maxTokens: 1200, temperature: 0.1,
+    });
+    const books = parseShelfBooks(out);
+    return json({ books, raw, partial: books.length === 0 }, 200);
+  } catch (e) {
+    return json({ books: [], raw, partial: true, error: 'LLM 실패' }, 200);
+  }
 }
 
 // 책 맥락 한 조각 (#373) — 참새 질문에 작품 소개를 녹이기 위한 서버측 조회.

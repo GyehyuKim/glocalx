@@ -34,6 +34,7 @@ FEATURE_FILES = [
     "icons.js", "admin-dashboard.js", "sentence-card.js", "book-info-modal.js", "book-detail-modal.js",
     "companion.js", "ocr-crop-overlay.js", "ceremony.js", "nest-theatre.js", "follow-list-modal.js",
     "user-profile-modal.js", "sentence-collection-modal.js", "tinder-cards.js",
+    "shelf-import.js",
 ]
 # Adapter layer: exempt from the "no direct localStorage" rule (S1).
 ADAPTER_FILES = ["data.js", "datastore.js"]
@@ -138,6 +139,10 @@ INVARIANTS = [
         ["search.js"], r"ALADIN_PROXY"),
     ("B", "present", "타인 프로필 보기 (UserProfileModal)",
         ["user-profile-modal.js"], r"UserProfileModal"),
+    ("B", "present", "스샷 서가 복원 — ShelfImportModal → /api/shelf-import (#772)",
+        ["shelf-import.js"], r"/api/shelf-import"),
+    ("B", "present", "서가 복원 일괄 등록 — myBooks.addBatch (#772)",
+        ["datastore.js"], r"addBatch"),
     ("B", "present", "DataStore→Supabase 스왑 (쓰기 경로 활성)",
         ["app.js"], r"window\.DataStore = window\.SupabaseDataStore"),
     ("B", "present", "sentences book_id 임베드 (무작위회상·사후감상 실모드)",
