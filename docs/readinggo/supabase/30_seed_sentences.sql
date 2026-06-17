@@ -21,7 +21,7 @@ create table if not exists public.seed_sentences (
 create index if not exists idx_seed_sentences_book on public.seed_sentences(book_key);
 -- 같은 책 + 같은 출처는 1회만(재크롤 중복 방지). source_url null 은 유니크 대상 아님 → coalesce 키.
 create unique index if not exists uniq_seed_sentences_book_src
-  on public.seed_sentences(book_key, coalesce(source_url, ''));
+  on public.seed_sentences(book_key, (coalesce(source_url, '')));
 
 -- RLS on, 정책 없음 → anon/authenticated 차단. service_role(워커)만 bypass.
 -- 권리자 삭제 요청 시 SQL/콘솔로 직접 삭제(운영 경로).

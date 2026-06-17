@@ -107,6 +107,7 @@
 - 출력: `{ seeds: [{ text, sourceName, sourceUrl }] }` (저장분 + 신규, 최대 10−have).
 - 키(네이버·service role)는 **서버 secret**, 클라 노출 금지. 실패/0건 → 빈 배열(무중단).
 - 비용: 책당 1회 충전 후 영속 → 반복 호출은 DB read만(LLM·네이버 재호출 없음).
+- **전 책 백필(계휴 결정)**: 책 수가 적고 lazy 첫 호출이 느리므로, `docs/readinggo/supabase/seed_backfill.mjs`로 **카탈로그 전 책을 1회 선충전**(books 순회 → `/api/seed have=0` → seed_sentences 채움, 제한 동시성). idempotent(이미 10개면 재호출 비용 0) → 신규 책 추가 시 재실행. 실행은 배포 후(prod URL 대상).
 
 ### 5.5 표시
 
