@@ -314,6 +314,64 @@ async function shareSentence(s) {
   toast(copied ? '📋 공유 텍스트를 복사했어요' : '공유를 지원하지 않는 환경이에요');
 }
 
+/* ── 서비스 외부 공유 (에픽 #650 B, spec: specs/referral.md) ──────────────────
+   서비스(앱) 자체를 앱 밖으로 권유하는 공유. #650-A(한 문장 카드)와 달리 *전환*이 목적.
+   Phase 0/보상 미확정: referral 코드·귀속·랜딩·보상은 제외(referral.md §4.1 graceful
+   degrade) — 대표 한 문장(있으면) + 서비스 소개 + 서비스 링크만. navigator.share 우선,
+   미지원 시 클립보드 폴백. 프레임워크 추가 없음(A와 동일 스택, Stack Lock 준수). */
+const RG_SERVICE_TAGLINE = '하루 한 문장으로 쌓는 독서 습관, ReadingGo.';
+
+// 링크 제외 본문 (대표 한 문장 + 태그라인). navigator.share 는 url 을 따로 받으므로 본문엔 링크 미포함.
+function buildServiceShareBody(opts) {
+  opts = opts || {};
+  const parts = [];
+  if (opts.sentence) {
+    const n = _normalizeSentence(opts.sentence);
+    if (n.text) {
+      if (n.kind === 'thought') {
+        const src = [n.author, n.title ? '《' + n.title + '》' : ''].filter(Boolean).join(' ');
+        parts.push('💭 ' + n.text + (src ? '\n(' + src + '을 읽고)' : ''));
+      } else {
+        const src = [n.author, n.title ? '《' + n.title + '》' : ''].filter(Boolean).join(', ');
+        parts.push('"' + n.text + '"' + (src ? '\n— ' + src : ''));
+      }
+    }
+  }
+  parts.push(RG_SERVICE_TAGLINE);  // 대표 한 문장 없으면(빈 인용 금지) 소개만 (referral.md §2)
+  return parts.join('\n\n');
+}
+
+// 클립보드 폴백용 — 본문 + 링크.
+function buildServiceShareText(opts) {
+  return buildServiceShareBody(opts) + '\n\n' + RG_SHARE_LINK_FULL;
+}
+
+/* 서비스 공유 진입점. opts: { source('library'|...), sentence(대표 한 문장|null) }.
+   navigator.share({text,url}) 우선 → 클립보드 복사 폴백. */
+async function shareService(opts) {
+  opts = opts || {};
+  const toast = (typeof showToast === 'function') ? showToast : (function () {});
+  const track = (ev, p) => { if (window.rgTrack) { try { window.rgTrack(ev, p); } catch (e) {} } };
+  track('service_share_open', { source: opts.source || '' });
+
+  // 1) Web Share API — 본문(링크 제외) + url 분리(링크 프리뷰 향상).
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: buildServiceShareBody(opts), url: RG_SHARE_LINK_FULL });
+      track('service_share_sent', { source: opts.source || '', method: 'web_share' });
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;  // 사용자 취소 — 폴백 안 함
+    }
+  }
+  // 2) 폴백: 본문+링크 클립보드 복사.
+  const copied = await _copyText(buildServiceShareText(opts));
+  if (copied) track('service_share_sent', { source: opts.source || '', method: 'clipboard' });
+  toast(copied ? '📋 초대 메시지를 복사했어요 — 친구에게 붙여넣어 보세요' : '공유를 지원하지 않는 환경이에요');
+}
+
 window.shareSentence = shareSentence;
 window.buildShareText = buildShareText;
 window.renderSentenceCardBlob = renderSentenceCardBlob;
+window.shareService = shareService;
+window.buildServiceShareText = buildServiceShareText;
