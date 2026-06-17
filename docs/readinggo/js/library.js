@@ -30,7 +30,15 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
   const progressPct = book.total ? Math.round((prog.cur / book.total) * 100) : 0;
   // 삭제(#325 후속): 낙관적 제거 — bookQuotes 는 prop 파생이라 삭제분을 로컬에서 즉시 거름.
   const [removedIds, setRemovedIds] = _useState({});
-  const bookQuotes = (allQuotes || []).filter(q => q.bookId === book.id && !removedIds[q.id]);
+  const bookQuotes = (allQuotes || []).filter(q => q.bookId === book.id && !removedIds[q.id])
+    // 페이지 내림차순(#737) — 미상(null)은 맨 아래, 동일 페이지는 최신순. 둥지(nest.js)와 정책 일치.
+    .slice()
+    .sort((a, b) => {
+      const pa = (typeof a.page === 'number') ? a.page : -Infinity;
+      const pb = (typeof b.page === 'number') ? b.page : -Infinity;
+      if (pb !== pa) return pb - pa;
+      return String(b.createdAt || b.when || '').localeCompare(String(a.createdAt || a.when || ''));
+    });
   // 한 문장 추가 (#584) — 책 상세에서 직접(완독 책 포함). app.js 가 rg:sentence-added 로 myQuotes 갱신 → 목록 자동 반영.
   const [addOpen, setAddOpen] = _useState(false);
   const [addText, setAddText] = _useState('');
