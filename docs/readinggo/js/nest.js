@@ -755,6 +755,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
     prevTwigsRef.current = twigsForProgress(_xpProg(prevXp));
     setNestState(ns);
     onCheckin(ns, newLv, xpGain, sentence, kind);
+    if (window.rgTrack) window.rgTrack('reading_session_end', { book_id: ns.book.id, pages_logged: pagesAdded, is_complete: isComplete }); // 인게이지먼트/리텐션 (#736)
 
     // 성 획득(1,600 주기 완료)은 단계 toast보다 우선 — 경계 통과 시 둥지 단계는 Lv4→Lv1로
     // 리셋되어 nestUp=false 이므로, 성 획득은 별도로 안내한다 (#520/#521).
@@ -868,8 +869,13 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
     .filter((q) => q.bookId === nestState.book.id)   // 현재 선택한 책만
     .slice()
     .sort((a, b) => {
+      // 페이지 내림차순(#737) — 미상(null)은 맨 아래, 동일 페이지는 최신순.
+      // 파생값이라 수정으로 page 변경 시 자동 재정렬(순서 꼬임 방지).
+      const pa = (typeof a.page === 'number') ? a.page : -Infinity;
+      const pb = (typeof b.page === 'number') ? b.page : -Infinity;
+      if (pb !== pa) return pb - pa;
       const rank = (q) => (q.when === '방금' ? 'ZZZZ-99' : String(q.createdAt || q.when || ''));
-      return rank(b).localeCompare(rank(a));  // 최신순
+      return rank(b).localeCompare(rank(a));  // 동일 페이지는 최신순
     });
   // 좋아요(❤️ = claps) 상태 — claps.list 로 favIds 로드 (#499→#641: 자기 문장 좋아요=저장 단일화)
   const [favIds, setFavIds] = _useState(() => new Set());
