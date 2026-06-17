@@ -671,14 +671,17 @@ function App() {
                 <span>Lv.{calcLevel(appState.xp)}</span>
               </span>
               {/* 스포일러 토글은 설정(프로필 ⚙️)으로 이전 (#3) */}
+              {/* #790: 돋보기 아이콘만으론 '책 추가' 동선 발견성이 낮음 → '도서 찾기' 라벨 + 틴트 배경칩으로 강조. */}
               <button
                 onClick={() => setIsSearchOpen(true)}
-                style={{ background:'transparent', border:'none', cursor:'pointer', padding:'6px 8px', marginLeft:4, color:'var(--ink-2)', display:'inline-flex', alignItems:'center' }}
+                style={{ background:'var(--brand-tint)', border:'1px solid var(--brand-soft)', cursor:'pointer', padding:'5px 10px', marginLeft:4, color:'var(--brand-3)', display:'inline-flex', alignItems:'center', gap:4, borderRadius:999, fontSize:12, fontWeight:800, whiteSpace:'nowrap' }}
                 title="도서 검색"
+                aria-label="도서 찾기"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
+                도서 찾기
               </button>
             </div>
           </div>
