@@ -286,6 +286,9 @@ function App() {
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionFilter, setCollectionFilter] = useState(null); // 저장(❤️) 진입 시 'fav' (#510)
   useEffect(() => { window.RG_openCollection = (opts) => { setCollectionFilter(opts && opts.filter); setCollectionOpen(true); }; return () => { window.RG_openCollection = null; }; }, []);
+  // 스샷 서가 복원(#772) — 빈 서재 CTA로 열림.
+  const [shelfImportOpen, setShelfImportOpen] = useState(false);
+  useEffect(() => { window.RG_openShelfImport = () => setShelfImportOpen(true); return () => { window.RG_openShelfImport = null; }; }, []);
   const [appState, setAppState] = useState(() => ({ ...INITIAL_STATE }));
 
   // XP 적립 이벤트 버스 — 방문·반응 XP(grantXp → 'rg:xp')를 상단바 appState.xp 에 반영.
@@ -815,6 +818,11 @@ function App() {
         {/* 한 문장 모아보기 (#171) */}
         {collectionOpen && ReactDOM.createPortal(
           <SentenceCollectionModal initialFilter={collectionFilter} onClose={() => setCollectionOpen(false)} />,
+          document.body
+        )}
+        {/* 스샷 서가 복원 (#772) */}
+        {shelfImportOpen && ReactDOM.createPortal(
+          <ShelfImportModal onClose={() => setShelfImportOpen(false)} />,
           document.body
         )}
 

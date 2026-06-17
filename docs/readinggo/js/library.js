@@ -398,6 +398,11 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
               {activeSubtab === 'completed' && (onlyHighRating ? '4점 이상 완독한 책이 없어요' : '완독한 책이 없어요')}
               {activeSubtab === 'aborted' && '중단한 책이 없어요'}
             </div>
+            {/* 빈 서가 박멸 (#772) — 스샷으로 서가 복원 진입 */}
+            <button onClick={() => window.RG_openShelfImport && window.RG_openShelfImport()}
+              style={{marginTop:14, padding:'10px 16px', borderRadius:10, border:'1.5px solid var(--brand)', background:'var(--brand-tint)', color:'var(--brand-3)', fontWeight:800, fontSize:13, cursor:'pointer'}}>
+              📸 스샷으로 서가 복원
+            </button>
           </div>
         )}
 

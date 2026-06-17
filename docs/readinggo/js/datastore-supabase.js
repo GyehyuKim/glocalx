@@ -142,13 +142,29 @@
           .eq('user_id', id).order('started_at', { ascending: false }));
         return (rows || []).map(_applyBookOverrides);
       },
-      async add({ book, current_page }) {
+      async add({ book, current_page, status }) {
         const id = await uid();
         const bk = book && book.id ? book : await A.books.upsert(book);
-        const row = unwrap(await sb().from('user_books').insert({
-          user_id: id, book_id: bk.id, status: 'reading', current_page: current_page || 0,
-        }).select('*, book:books(*)').single());
+        // #772 서가 복원: status='completed'면 완독으로(completed_at·진척 100%). 기본 'reading'.
+        const st = (status === 'completed') ? 'completed' : 'reading';
+        const tp = (bk && bk.total_pages) || (book && book.total_pages) || 0;
+        const ins = {
+          user_id: id, book_id: bk.id, status: st,
+          current_page: st === 'completed' ? (tp || current_page || 0) : (current_page || 0),
+        };
+        if (st === 'completed') ins.completed_at = new Date().toISOString();
+        const row = unwrap(await sb().from('user_books').insert(ins).select('*, book:books(*)').single());
         return _applyBookOverrides(row);
+      },
+      // 스샷 서가 복원 (#772) — 책 목록 일괄 등록. items: [{book, status}]. 개별 실패는 스킵(무중단).
+      async addBatch(items) {
+        const list = Array.isArray(items) ? items : [];
+        const out = [];
+        for (const it of list) {
+          if (!it || !it.book) continue;
+          try { out.push(await this.add({ book: it.book, status: it.status })); } catch (e) { /* 개별 실패 스킵 */ }
+        }
+        return out;
       },
       // 책 메타 수정 (출판사·페이지수, #410/#431) — user_books override 컬럼에 저장.
       // books(공유 카탈로그)는 수정하지 않음 — 다른 유저에게 전파되면 안 됨.

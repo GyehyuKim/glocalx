@@ -240,29 +240,43 @@ const DataStore = {
     list() {
       return localStorageAdapter.mutate(s => (s.user_books || []).map(_applyBookOverrides));
     },
-    add({ book, current_page }) {
+    add({ book, current_page, status }) {
       book = book || {};
+      // #772 서가 복원: status='completed'면 완독으로 등록(completed_at·진척 100%). 기본 'reading'.
+      const st = (status === 'completed' || status === 'reading') ? status : 'reading';
       return localStorageAdapter.mutate(s => {
         s.user_books = s.user_books || [];
         // 동일 책(isbn13 또는 title) 있으면 재사용 — 중복 등록 방지.
         let ub = s.user_books.find(u => u.book && ((book.isbn13 && u.book.isbn13 === book.isbn13) || (book.title && u.book.title === book.title)));
         if (!ub) {
+          const tp = book.total_pages || 0;
           ub = {
             id: _dsId('ub'),
             book_id: book.id || _dsId('bk'),
             book: {
               id: book.id || '', title: book.title || '', author: book.author || '',
-              publisher: book.publisher || '', total_pages: book.total_pages || 0,
+              publisher: book.publisher || '', total_pages: tp,
               cover_url: book.cover_url || '', isbn13: book.isbn13 || '',
             },
-            status: 'reading', current_page: current_page || 0,
+            status: st,
+            current_page: st === 'completed' ? (tp || current_page || 0) : (current_page || 0),
             rating: null, review_text: null,
-            started_at: _today(), completed_at: null, sessions: [], sentences: [],
+            started_at: _today(), completed_at: st === 'completed' ? _today() : null, sessions: [], sentences: [],
           };
           s.user_books.push(ub);
         }
         return ub;
       });
+    },
+    // 스샷 서가 복원 (#772) — 책 목록 일괄 등록. items: [{book, status}]. add 재사용(중복 자동 스킵).
+    addBatch(items) {
+      const list = Array.isArray(items) ? items : [];
+      const out = [];
+      for (const it of list) {
+        if (!it || !it.book) continue;
+        try { out.push(this.add({ book: it.book, status: it.status })); } catch (e) { /* 개별 실패 스킵 */ }
+      }
+      return out;
     },
     // 책 정보 수정 (출판사·페이지수, #410/#431) — user_book override 컬럼에 저장
     // (공유 books 카탈로그가 아닌 사용자별 user_books override). Supabase 어댑터와 표면 일치.
