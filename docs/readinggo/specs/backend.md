@@ -48,6 +48,8 @@
 // 인증 / 프로필 / 설정
 auth.currentUser()                         → User | null     // #646: 클라 인증 판정은 getSession()(로컬 스토리지, 무네트워크). getUser()(매 호출 서버 토큰검증)는 모바일 네트워크 불안정 시 null로 떨어져 로그인 유저가 조용히 게스트(localStorage) 고착 → my_note(대화) 등 데이터 안 보임. uid()도 동일.
 auth.signInWithGoogle()                    → User           // Phase 0: 가짜 세션. #721: signInWithOAuth 에 queryParams `prompt=select_account` 강제 — 미지정 시 브라우저 잔류 Google 세션을 자동 선택해 로그아웃 후 다른 계정 재로그인 불가(signOut 은 Supabase 세션만 정리, accounts.google.com 쿠키 잔류). 매번 계정 선택 화면 노출.
+//   ↳ #822 쓰기 실패·세션 만료 계약: 위 getSession() 로컬 판정 때문에 access_token 만료/무효(서버 401)여도 "로그인됨"으로 표시될 수 있다. 그 상태의 쓰기(myBooks.add·sessions.addToday·sentences.add·activeBook.set 등)는 user_books 행이 안 생기고 read도 빈 결과 → 서재 비고 체크인 'user_book 미해소'. **쓰기 실패는 silent 금지**: `surfaceWriteError()`(app.js)가 ① getUser()(네트워크 토큰검증) → ② refreshSession() 시도 → ③ 그래도 무효면 '세션 만료' 토스트 + 재로그인 화면(RG_login). 세션 유효한 일시 오류는 재시도 안내만.
+//   ↳ #822 체크인 귀속 계약: 등록·활성화로 화면 책을 세팅하는 경로(handleSearchSelectBook·handleActivateUserBook, 그리고 buildStateFromSupabase)는 `appState.book.ubId`(=user_books.id)를 함께 채운다. 체크인은 1순위로 ns.book.ubId 로 user_book 을 해소(없으면 book_id 폴백) → 잘못된 귀속/저장 누락 방지.
 profile.get(userId?)                       → User
 profile.update({display_name, avatar_url, bio})
 settings.get() / settings.update({reminder_hour, ...})
