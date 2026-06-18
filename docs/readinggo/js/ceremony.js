@@ -91,7 +91,7 @@ function Ceremony({ data, onClose, onComplete }) {
   return (
     <div className="ceremony show">
       <div className="inner">
-        <h2>오늘도 짹! 🐦</h2>
+        <h2>오늘도 짹! <window.SparrowInline size={20} /></h2>
         <div className="lead">{leadText}</div>
         <div className="reward-grid">
           <div className="reward-card brand">

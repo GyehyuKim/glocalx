@@ -210,7 +210,7 @@ function AdminDashboardModal({ onClose }) {
                     <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>"{s.text}"</div>
                     <div style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700, marginTop: 2 }}>{s.bookTitle}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--brand-3)', fontWeight: 800, flexShrink: 0 }}>🐦 {s.claps}</div>
+                  <div style={{ fontSize: 12, color: 'var(--brand-3)', fontWeight: 800, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3 }}><window.SparrowInline size={12} /> {s.claps}</div>
                 </div>
               ))}
             </div>
