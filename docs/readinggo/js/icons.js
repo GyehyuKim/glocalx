@@ -92,6 +92,26 @@ function nestArt(lv, size) {
 window.NEST_ART = NEST_ART;
 window.nestArt = nestArt;
 
+/* ── SparrowMark (#785): ReadingGo 참새 브랜드 마크 — 부트·로딩·에러 화면 공용 인라인 SVG.
+   favicon(assets/sparrow.svg)과 동일 실루엣(배경 칩만 제외). 이모지 🐦 대체(모든 DPI 선명).
+   size=픽셀(기본 40). 빌드 도구 없음 → 인라인 SVG(Stack Lock). ── */
+function SparrowMark({ size = 40, style }) {
+  const s = size || 40;
+  return (
+    <svg width={s} height={s} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ReadingGo 참새" style={{ display: 'block', flexShrink: 0, ...(style || {}) }}>
+      <path d="M50 30 L62 25 L60 36 L50 37 Z" fill="#1F8E4D" />
+      <ellipse cx="34" cy="37" rx="17" ry="15" fill="#3FD17F" />
+      <circle cx="24" cy="26" r="12" fill="#3FD17F" />
+      <path d="M21 41 Q31 51 45 45 Q40 51 30 51 Q22 49 19 43 Z" fill="#DFF6EA" />
+      <path d="M31 31 Q42 30 49 39 Q40 43 32 40 Q27 35 31 31 Z" fill="#2EB867" />
+      <path d="M11 25 L23 21 L23 30 Z" fill="#FF8A3D" />
+      <circle cx="21" cy="24" r="2.5" fill="#2A2D33" />
+      <circle cx="21.9" cy="23.1" r="0.85" fill="#FFFFFF" />
+    </svg>
+  );
+}
+window.SparrowMark = SparrowMark;
+
 /* ── SectionLabel (#696): 책 상세 섹션 헤더. 이모지 prefix(📚/🔖/✍️) 폐기 → currentColor 모노라인
    SVG 아이콘 배지 + 라벨. library.js BookDetailModal 과 공유(window 노출). 본문이 텍스트인 섹션은
    RG_SECTION_CARD 로 감싸 surface 위계를 준다. 빌드 도구 없음 → 인라인 SVG(Stack Lock). ── */
