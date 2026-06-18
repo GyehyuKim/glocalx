@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
 <title>ReadingGo — 하루 한 문장, 책장이 자란다</title>
+<!-- 참새 앱 아이콘 (#785) — SVG 벡터 파비콘(모든 DPI 선명) -->
+<link rel="icon" type="image/svg+xml" href="assets/sparrow.svg" />
+<link rel="apple-touch-icon" href="assets/sparrow.svg" />
 <script>
     /* 모바일 실측 뷰포트 높이(#739) — iOS Safari 등에서 100dvh 가 주소창 표시/전환 중
        실제 보이는 높이(visual viewport)와 어긋나 .app/.stage 가 화면을 넘고 하단 탭/콘텐츠가
@@ -1396,7 +1399,7 @@ input,textarea{font-family:inherit;}
 
 <div id="root">
   <div class="rg-boot">
-    <span class="rg-boot-icon">🐦</span>
+    <span class="rg-boot-icon"><svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ReadingGo 참새"><path d="M50 30 L62 25 L60 36 L50 37 Z" fill="#1F8E4D"/><ellipse cx="34" cy="37" rx="17" ry="15" fill="#3FD17F"/><circle cx="24" cy="26" r="12" fill="#3FD17F"/><path d="M21 41 Q31 51 45 45 Q40 51 30 51 Q22 49 19 43 Z" fill="#DFF6EA"/><path d="M31 31 Q42 30 49 39 Q40 43 32 40 Q27 35 31 31 Z" fill="#2EB867"/><path d="M11 25 L23 21 L23 30 Z" fill="#FF8A3D"/><circle cx="21" cy="24" r="2.5" fill="#2A2D33"/><circle cx="21.9" cy="23.1" r="0.85" fill="#FFFFFF"/></svg></span>
     <span>ReadingGo 로딩 중...</span>
   </div>
 </div>
@@ -1420,7 +1423,7 @@ input,textarea{font-family:inherit;}
 <script src="js/datastore-supabase.js"></script>
 
 <script>
-const _RG_V = '96';  // ⚠️ 배포마다 bump — 캐시 스큐(일부 js만 stale → "X is not defined" 간헐 크래시) 방지
+const _RG_V = '97';  // ⚠️ 배포마다 bump — 캐시 스큐(일부 js만 stale → "X is not defined" 간헐 크래시) 방지
 
 async function loadBabel(src) {
   const res = await fetch(src + '?v=' + _RG_V);
@@ -1473,7 +1476,7 @@ async function loadBabel(src) {
     console.error('[ReadingGo] 로드 실패:', err);
     document.getElementById('root').innerHTML =
       '<div class="rg-boot" style="gap:8px">' +
-        '<span style="font-size:36px">🐦</span>' +
+        '<svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ReadingGo 참새"><path d="M50 30 L62 25 L60 36 L50 37 Z" fill="#1F8E4D"/><ellipse cx="34" cy="37" rx="17" ry="15" fill="#3FD17F"/><circle cx="24" cy="26" r="12" fill="#3FD17F"/><path d="M21 41 Q31 51 45 45 Q40 51 30 51 Q22 49 19 43 Z" fill="#DFF6EA"/><path d="M31 31 Q42 30 49 39 Q40 43 32 40 Q27 35 31 31 Z" fill="#2EB867"/><path d="M11 25 L23 21 L23 30 Z" fill="#FF8A3D"/><circle cx="21" cy="24" r="2.5" fill="#2A2D33"/><circle cx="21.9" cy="23.1" r="0.85" fill="#FFFFFF"/></svg>' +
         '<p style="margin:0;font-weight:900;color:#2A2D33">앱을 불러오지 못했어요</p>' +
         '<p style="margin:0;font-size:12px;color:#9097A0">' + err.message + '</p>' +
         '<button onclick="location.reload()" style="margin-top:8px;padding:10px 20px;border:none;border-radius:12px;background:#3FD17F;color:#fff;font-weight:900;font-size:14px">다시 시도</button>' +
