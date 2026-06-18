@@ -92,6 +92,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
   const [quickOcrBusy, setQuickOcrBusy] = _useState(false);
   const [quickOcrFile, setQuickOcrFile] = _useState(null);
   const _quickOcrInputRef = _useRef(null);
+  const _quickAlbumInputRef = _useRef(null);  // #792 앨범(갤러리) 불러오기 — capture 없는 input
   const [checkedToday, setCheckedToday] = _useState(false); // 오늘 짹 완료 — 읽기모드/체크인 후 중복 CTA 숨김 (#203)
   const [readingBooks, setReadingBooks] = _useState([]);  // 캐러셀용 읽는 중 책 (#185)
   const [bookEditOpen, setBookEditOpen] = _useState(false); // 책 정보 수정 모달 (#410)
@@ -458,6 +459,12 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
             style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, flexShrink: 0, borderRadius: 10, border: 'none', background: 'var(--brand-tint)', color: 'var(--brand-3)', cursor: quickOcrBusy ? 'default' : 'pointer', opacity: quickOcrBusy ? 0.5 : 1, padding: 0 }}>
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </button>
+          {/* #792 앨범에서 불러오기 — capture 없는 input → OS 갤러리. 동일 OcrCropOverlay 파이프라인 재사용 */}
+          <button onClick={() => { if (!quickOcrBusy && _quickAlbumInputRef.current) _quickAlbumInputRef.current.click(); }}
+            disabled={quickOcrBusy} title="앨범에서 불러오기" aria-label="앨범에서 불러오기"
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, flexShrink: 0, borderRadius: 10, border: 'none', background: 'var(--brand-tint)', color: 'var(--brand-3)', cursor: quickOcrBusy ? 'default' : 'pointer', opacity: quickOcrBusy ? 0.5 : 1, padding: 0 }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </button>
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-3)' }}>p</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <button onClick={() => _stepPage(setQuickSentPage, -1)} aria-label="쪽수 1 줄이기" style={_stepBtnSm}>−</button>
@@ -473,6 +480,8 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
           </button>
         </div>
         <input ref={_quickOcrInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+          onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) setQuickOcrFile(f); e.target.value = ''; }} />
+        <input ref={_quickAlbumInputRef} type="file" accept="image/*" style={{ display: 'none' }}
           onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) setQuickOcrFile(f); e.target.value = ''; }} />
       </div>
 
