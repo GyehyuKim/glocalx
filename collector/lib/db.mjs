@@ -46,7 +46,23 @@ export async function seedLatestAt(bookKey) {
   } catch { return null; }
 }
 
-// 신규 시드 insert. 중복 url 은 유니크 인덱스가 무시(Prefer: resolution=ignore-duplicates).
+// 텍스트 안정 해시(djb2, 36진수) — source_url 프래그먼트용.
+function textHash(s) {
+  let h = 5381;
+  const t = String(s || '');
+  for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+// 행별 source_url — 유니크 인덱스(book_key, coalesce(source_url,'')) 가 같은 상품 URL 6발췌를
+// 자기충돌(409)시키므로, 텍스트 해시 프래그먼트로 행마다 구분(링크는 동일 페이지로 열림).
+// 동일 텍스트→동일 프래그먼트라 재크롤 시 ignore-duplicates 가 중복을 정확히 제거.
+function rowSourceUrl(url, text) {
+  if (!url) return null;
+  const sep = url.includes('#') ? '~' : '#';
+  return `${url}${sep}s${textHash(text)}`;
+}
+
+// 신규 시드 insert. 행별 프래그먼트로 자기충돌 회피 + 재크롤 중복은 ignore-duplicates 가 무시.
 export async function seedWrite(bookKey, seeds) {
   if (!dbConfigured() || !seeds.length) return 0;
   try {
@@ -54,7 +70,7 @@ export async function seedWrite(bookKey, seeds) {
       method: 'POST',
       headers: sbHeaders({ 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates' }),
       body: JSON.stringify(seeds.map((s) => ({
-        book_key: bookKey, text: s.text, source_name: s.sourceName || null, source_url: s.sourceUrl || null,
+        book_key: bookKey, text: s.text, source_name: s.sourceName || null, source_url: rowSourceUrl(s.sourceUrl, s.text),
       }))),
     });
     return r.ok ? seeds.length : 0;
