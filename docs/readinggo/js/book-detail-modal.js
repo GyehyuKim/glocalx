@@ -351,7 +351,7 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
           {/* 참새의 완독 회고 (§5.8.6, #259) — 내 한 문장들을 참새(solar-pro3)가 엮어 회고 한 단락 */}
           {bookshelfEntry && (
             <div style={{background:'var(--brand-tint)', border:'1px solid var(--brand)', borderRadius:'8px', padding:'12px 14px', marginBottom:14}}>
-              <div style={{fontSize:13, fontWeight:800, color:'var(--brand-3)', marginBottom:6}}>🐦 참새의 완독 회고</div>
+              <div style={{fontSize:13, fontWeight:800, color:'var(--brand-3)', marginBottom:6}}><window.SparrowInline size={14} /> 참새의 완독 회고</div>
               {recap ? (
                 <>
                   <div style={{fontSize:13, color:'var(--ink)', lineHeight:1.65, whiteSpace:'pre-wrap'}}>{recap}</div>
@@ -369,7 +369,7 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
                   <div style={{fontSize:12, color:'var(--ink-2)', lineHeight:1.5, marginBottom:8}}>이 책에서 남긴 {bookQuotes.length}개의 한 문장을 참새가 엮어 회고를 들려드려요.</div>
                   <button onClick={loadRecap} disabled={recapLoading}
                     style={{padding:'9px 16px', background:'var(--brand)', border:'none', borderRadius:8, color:'#fff', fontSize:13, fontWeight:800, cursor:recapLoading?'default':'pointer', opacity:recapLoading?0.6:1}}>
-                    {recapLoading ? '참새가 곱씹는 중…' : '🐦 회고 받기'}
+                    {recapLoading ? '참새가 곱씹는 중…' : <><window.SparrowInline size={13} /> 회고 받기</>}
                   </button>
                 </>
               )}
@@ -548,13 +548,13 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
                               </div>
                               <button onClick={openChat}
                                 style={{marginTop:4, background:'none', border:'none', color:'var(--brand-3)', fontSize:11, fontWeight:800, cursor:'pointer', padding:'2px 0'}}>
-                                🐦 재키와 대화 이어가기{turns ? ' (' + turns + ')' : ''}
+                                <window.SparrowInline size={13} /> 재키와 대화 이어가기{turns ? ' (' + turns + ')' : ''}
                               </button>
                             </div>
                           ) : (
                             <button onClick={openChat}
                               style={{marginTop:6, padding:'5px 12px', borderRadius:8, border:'1px dashed var(--line)', background:'transparent', fontSize:11, fontWeight:800, color:'var(--brand-3)', cursor:'pointer'}}>
-                              🐦 재키와 대화하기
+                              <window.SparrowInline size={13} /> 재키와 대화하기
                             </button>
                           );
                         })()}

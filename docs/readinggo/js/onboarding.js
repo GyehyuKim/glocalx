@@ -7,8 +7,8 @@ const ScreenA = ({ onStart }) => (
     background: 'linear-gradient(160deg,#F0FDF4 0%,#fff 60%)' }}>
     {/* 상단 로고 */}
     <div style={{ padding: '48px 0 0', textAlign: 'center' }}>
-      <div className="sparrow-bounce" style={{ display: 'inline-block', fontSize: 96, lineHeight: 1 }}>
-        🐦
+      <div className="sparrow-bounce" style={{ display: 'inline-block', lineHeight: 1 }}>
+        <window.SparrowMark size={96} />
       </div>
       <h1 style={{ fontWeight: 900, fontSize: 28, color: '#1F1F1F', margin: '16px 0 8px',
         letterSpacing: '-0.5px', lineHeight: 1.2 }}>
@@ -23,7 +23,7 @@ const ScreenA = ({ onStart }) => (
         "하루 한 페이지,<br/>한 문장에서 시작해요."
       </p>
       <p style={{ fontSize: 15, color: '#AFAFAF', fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
-        1페이지만 읽어도 오늘은 성공이에요 🐦
+        1페이지만 읽어도 오늘은 성공이에요 <window.SparrowInline size={15} />
       </p>
     </div>
 
@@ -219,7 +219,7 @@ const ScreenC2 = ({ book, isManual, onBack, onConfirm }) => {
 
         {/* 오늘의 한 문장 */}
         <div style={{ height: 1, background: '#E5E5E5', margin: '8px 0 16px' }}/>
-        <p style={{ fontWeight: 900, fontSize: 15, color: '#1F1F1F', margin: '0 0 4px' }}>오늘의 한 문장 🐦</p>
+        <p style={{ fontWeight: 900, fontSize: 15, color: '#1F1F1F', margin: '0 0 4px' }}>오늘의 한 문장 <window.SparrowInline size={15} /></p>
         <p style={{ fontSize: 12, color: '#AFAFAF', fontWeight: 600, marginBottom: 14 }}>
           오늘 읽은 내용 중 마음에 남는 한 문장
         </p>
@@ -266,8 +266,8 @@ const ScreenJacky = ({ onContinue }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
     justifyContent: 'center', height: '100%', background: '#fff', padding: '0 24px',
     position: 'relative', overflow: 'hidden' }}>
-    <div className="sparrow-bounce" style={{ marginBottom: 18, fontSize: 80, lineHeight: 1 }}>
-      🐦
+    <div className="sparrow-bounce" style={{ marginBottom: 18, lineHeight: 1 }}>
+      <window.SparrowMark size={80} />
     </div>
     <h2 className="pop-in" style={{ fontWeight: 900, fontSize: 24, color: '#1F1F1F', margin: '0 0 12px', textAlign: 'center' }}>
       참새 ‘재키’를 소개할게요
@@ -305,8 +305,8 @@ const ScreenD3 = ({ sessionNum, xpGained, onContinue, isLoggedIn }) => {
       ))}
 
       {/* 참새 bounce */}
-      <div className="sparrow-bounce" style={{ marginBottom: 12, fontSize: 88, lineHeight: 1 }}>
-        🐦
+      <div className="sparrow-bounce" style={{ marginBottom: 12, lineHeight: 1 }}>
+        <window.SparrowMark size={88} />
       </div>
 
       <h2 className="pop-in" style={{ fontWeight: 900, fontSize: 26, color: '#1F1F1F', margin: '0 0 6px', textAlign: 'center' }}>

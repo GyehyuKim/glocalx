@@ -362,7 +362,7 @@ function NestView({ state, onCheckin, onSimSkip, onGoLibrary, onOpenSearch, onAr
         <div className="card book-card-wrap">
           {/* '내 서재' 버튼 제거 (#410) — 하단 탭바로 충분. 책 없으면 ⚙️도 없음. */}
           <div style={{ padding: '38px 22px', textAlign: 'center' }}>
-            <div style={{ fontSize: 46, marginBottom: 12 }}>🐦</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}><window.SparrowMark size={56} /></div>
             <div style={{ fontWeight: 900, fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>아직 읽는 책이 없어요</div>
             <div style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 20 }}>책을 등록하면 둥지가 자라기 시작해요.<br />하루 한 쪽, 한 문장부터.</div>
             <button className="checkin-cta" onClick={onOpenSearch} style={{ display: 'inline-flex', width: 'auto', padding: '14px 28px' }}>

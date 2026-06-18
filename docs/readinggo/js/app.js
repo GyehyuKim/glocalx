@@ -149,7 +149,7 @@ function BootSplash({ text }) {
   return (
     <div className="stage"><div className="app">
       <div className="rg-boot" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-        {window.SparrowMark ? <window.SparrowMark size={40} /> : <span style={{ fontSize: 40 }}>🐦</span>}
+        <window.SparrowMark size={40} />
         <span style={{ fontWeight: 800, color: 'var(--ink-2)' }}>{text || '로딩 중...'}</span>
       </div>
     </div></div>
@@ -169,7 +169,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>{window.SparrowMark ? <window.SparrowMark size={44} /> : <span style={{ fontSize: 44 }}>🐦</span>}</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><window.SparrowMark size={44} /></div>
           <div style={{ fontWeight: 900, fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>이 화면을 여는 데 문제가 생겼어요</div>
           <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6, marginBottom: 20 }}>잠깐 길을 잃었네요. 다시 시도하거나 둥지로 돌아가요.</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -207,7 +207,7 @@ function LoginScreen({ onLogin, onBack }) {
         </button>
       )}
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '0 32px', textAlign: 'center' }}>
-        {window.SparrowMark ? <window.SparrowMark size={54} /> : <span style={{ fontSize: 54 }}>🐦</span>}
+        <window.SparrowMark size={54} />
         <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--ink)' }}>Reading<span style={{ color: 'var(--brand)' }}>Go</span></div>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', lineHeight: 1.5 }}>지금까지 남긴 기록을<br />계정에 안전하게 간직해요.</div>
         <button onClick={onLogin} style={{ marginTop: 8, padding: '14px 22px', borderRadius: 14, border: '1.5px solid var(--line)', background: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -659,7 +659,7 @@ function App() {
             <div className="brand-mark" role="button" tabIndex={0} title="둥지로 (홈)"
               onClick={() => switchTab('nest')}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') switchTab('nest'); }}>
-              <span className="sparrow" aria-hidden="true">🐦</span>
+              <span className="sparrow" aria-hidden="true"><window.SparrowMark size={24} /></span>
               <span>Reading<span className="go">Go</span></span>
             </div>
             <div className="topbar-stats">
@@ -691,7 +691,7 @@ function App() {
         {isGuest && !guestBannerOff && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
             background: 'var(--brand-tint)', borderBottom: '1px solid var(--brand-soft)', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-3)' }}>
-            <span style={{ fontSize: 15 }}>🐦</span>
+            <window.SparrowMark size={18} />
             <span style={{ flex: 1, lineHeight: 1.35 }}>게스트로 둘러보는 중 — 로그인하면 내 기록이 저장돼요</span>
             <button onClick={() => setShowLogin(true)}
               style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 999, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>

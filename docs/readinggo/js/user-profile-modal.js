@@ -127,7 +127,7 @@ function UserProfileModal({ handle, onClose }) {
       ) : (
         <div style={{ padding: '12px 20px 40px' }}>
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)' }}>🐦 {data.user.display_name || data.user.handle}</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><window.SparrowMark size={26} /> {data.user.display_name || data.user.handle}</div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 8, fontSize: 12, color: 'var(--ink-2)', fontWeight: 800 }}>
               <span>✅ 완독 {data.completed.length}</span>
               <span>📖 읽는 중 {data.reading.length}</span>

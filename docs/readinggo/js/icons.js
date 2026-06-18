@@ -112,6 +112,13 @@ function SparrowMark({ size = 40, style }) {
 }
 window.SparrowMark = SparrowMark;
 
+/* ── SparrowInline (#823): 텍스트 흐름 안에 들어가는 작은 참새 마크. 라벨·버튼 prefix·문구 끝의
+   이모지 🐦 대체. baseline 정렬(verticalAlign)만 SparrowMark 위에 얹은 래퍼. ── */
+function SparrowInline({ size = 14 }) {
+  return <SparrowMark size={size} style={{ display: 'inline-block', verticalAlign: '-0.15em' }} />;
+}
+window.SparrowInline = SparrowInline;
+
 /* ── SectionLabel (#696): 책 상세 섹션 헤더. 이모지 prefix(📚/🔖/✍️) 폐기 → currentColor 모노라인
    SVG 아이콘 배지 + 라벨. library.js BookDetailModal 과 공유(window 노출). 본문이 텍스트인 섹션은
    RG_SECTION_CARD 로 감싸 surface 위계를 준다. 빌드 도구 없음 → 인라인 SVG(Stack Lock). ── */

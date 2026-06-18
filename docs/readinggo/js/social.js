@@ -90,7 +90,7 @@ function SocialView({ state }) {
           page: s.page,
           q: s.text,
           nick: u.handle ? ('@' + u.handle) : '@익명',
-          avatar: (u.display_name && u.display_name[0]) || '🐦',
+          avatar: (u.display_name && u.display_name[0]) || <window.SparrowMark size={18} />,
           claps: 0,
           time: rgRelTime(s.created_at),
           bookTitle: bk.title || '',
@@ -181,7 +181,7 @@ function SocialView({ state }) {
             style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--line)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
           {fres.map(u => (
             <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', borderBottom: '1px solid var(--line-2)' }}>
-              <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{(u.display_name && u.display_name[0]) || '🐦'}</span>
+              <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{(u.display_name && u.display_name[0]) || <window.SparrowMark size={18} />}</span>
               <button onClick={() => window.RG_openProfile && window.RG_openProfile(u.handle)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: 'var(--brand-3)', cursor: 'pointer' }}>@{u.handle}</button>
               <button onClick={() => doFollow(u)} disabled={!!followed[u.id]}
                 style={{ padding: '5px 14px', borderRadius: 999, border: 'none', background: followed[u.id] ? 'var(--line-2)' : 'var(--brand)', color: followed[u.id] ? 'var(--ink-3)' : '#fff', fontSize: 12, fontWeight: 800, cursor: followed[u.id] ? 'default' : 'pointer' }}>
