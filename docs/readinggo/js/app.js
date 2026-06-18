@@ -145,6 +145,35 @@ async function backfillCompanionSessions() {
   } catch (e) { console.warn('[ReadingGo] companion_sessions backfill 실패:', e); }
 }
 
+// #822: 쓰기 실패를 사용자에게 노출(silent 제거) + 세션 만료가 원인이면 복구.
+// 증상: 로그인 상태(getSession 로컬판정)인데 토큰이 만료/무효 → 쓰기 401 → user_books 행 미생성 →
+// 서재 빈 채 + 체크인 'user_book 미해소'. 그동안 console.warn 으로만 삼켜져 사용자 무피드백이었다.
+// 처리: ① getUser(네트워크 검증) → 살아있으면 일시 오류 안내, ② 죽었으면 refreshSession 시도,
+//       ③ 그래도 실패면 세션 만료 안내 + 재로그인 화면. 게스트/localStorage 모드는 일반 안내만.
+async function surfaceWriteError(e, msg) {
+  console.warn('[ReadingGo] 쓰기 실패:', e);
+  const supa = !!(window.RG_SB && window.RG_SB.isConfigured && window.RG_SB.isConfigured());
+  if (!(supa && window.DataStore === window.SupabaseDataStore)) {
+    if (window.showToast) window.showToast(msg || '저장에 실패했어요 — 잠시 후 다시 시도해주세요');
+    return;
+  }
+  let sessionOk = false;
+  try {
+    const c = window.RG_SB.client && window.RG_SB.client();
+    if (c) {
+      const { data: g, error: ge } = await c.auth.getUser();   // 네트워크 토큰 검증(에러 처리 경로라 허용)
+      if (!ge && g && g.user) sessionOk = true;
+      else { const { data: r } = await c.auth.refreshSession(); sessionOk = !!(r && r.session); }
+    }
+  } catch (_) { sessionOk = false; }
+  if (sessionOk) {
+    if (window.showToast) window.showToast(msg || '저장에 실패했어요 — 다시 시도해주세요');
+  } else {
+    if (window.showToast) window.showToast('세션이 만료됐어요 — 다시 로그인하면 저장돼요');
+    if (window.RG_login) window.RG_login();   // 로그인 화면(app.js RG_login 등록)
+  }
+}
+
 function BootSplash({ text }) {
   return (
     <div className="stage"><div className="app">
@@ -463,7 +492,7 @@ function App() {
           const found = (myb || []).find(u => (u.book_id === ns.book.id) || (u.book && u.book.id === ns.book.id));
           ubId = found && found.id;
         }
-        if (!ubId) { console.warn('[ReadingGo] 체크인: 화면 책의 user_book 미해소 — 잘못된 귀속 방지 위해 저장 건너뜀'); return; }
+        if (!ubId) { console.warn('[ReadingGo] 체크인: 화면 책의 user_book 미해소 — 잘못된 귀속 방지 위해 저장 건너뜀'); surfaceWriteError(new Error('user_book 미해소'), '기록을 저장하지 못했어요 — 다시 시도해주세요'); return; }
         await Promise.resolve(DataStore.sessions.addToday({ userBookId: ubId, page: ns.book.cur }));
         if (sentence) await Promise.resolve(DataStore.sentences.add({ userBookId: ubId, page: ns.book.cur, text: sentence, kind: kind || 'quote' }));
         if (xpGain) await Promise.resolve(DataStore.xp.add(xpGain, 'checkin'));
@@ -482,7 +511,7 @@ function App() {
             ? mineDb.map(x => ({ id: x.id, text: x.text, bookId: (x.user_book && x.user_book.book_id) || x.book_id || '', bookTitle: (x.user_book && x.user_book.book && x.user_book.book.title) || '', page: x.page, when: '', createdAt: x.created_at || '', note: x.my_note || '', kind: x.kind || 'quote', isPrivate: !!x.is_private, notePrivate: !!x.note_private }))
             : s.myQuotes,
         }));
-      } catch (e) { console.warn('[ReadingGo] 체크인 영속 실패:', e); }
+      } catch (e) { surfaceWriteError(e, '기록을 저장하지 못했어요 — 다시 시도해주세요'); }
     })();
   }, []);
 
@@ -597,13 +626,14 @@ function App() {
         setAppState(s => ({
           ...s,
           book: {
-            id: ub.book_id, title: book.title, author: book.author || '', pub: book.publisher || '',
+            id: ub.book_id, ubId: ub.id, title: book.title, author: book.author || '', pub: book.publisher || '',
             cur: ub.current_page || 0, total: totalPages, days: 1,
             cover: book.cover_url, fb: ['#9AA7B2', '#C7D0D8'], toc: [],
           },
         }));
+        window.dispatchEvent(new CustomEvent('rg:wish-changed')); // #822: 서재 '읽고 있는 책' 즉시 갱신
         showToast(`📖 ${book.title} 등록 완료`);
-      } catch (e) { console.warn('[ReadingGo] 검색 책 등록 실패:', e); }
+      } catch (e) { surfaceWriteError(e, '책을 저장하지 못했어요 — 다시 시도해주세요'); }
     })();
   }, [switchTab]);
 
@@ -625,11 +655,11 @@ function App() {
     setAppState(s => ({
       ...s,
       book: {
-        id: item.id, title: item.title, author: item.author || '', pub: item.pub || '',
+        id: item.id, ubId: item.ubId, title: item.title, author: item.author || '', pub: item.pub || '',
         cur: item.cur || 0, total: item.total || 0, days: 1,
         cover: item.cover, fb: item.fb || ['#9AA7B2', '#C7D0D8'], toc: [],
       },
-      // 둥지는 책과 무관 — 유지 (#313)
+      // 둥지는 책과 무관 — 유지 (#313). ubId(#822): 체크인 저장 귀속 직결.
     }));
     showToast(`📖 ${item.title} — 활성 책으로 변경`);
     switchTab('nest');
