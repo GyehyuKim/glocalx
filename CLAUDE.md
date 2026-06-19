@@ -159,3 +159,7 @@ PR 생성 또는 머지 요청 전 반드시 아래 순서를 따른다.
 - Demo URL: `https://readinggo.hyuniverse.workers.dev`
 - Demo entrypoint: `docs/readinggo/index.html` (`wrangler.toml` `[assets]` 로 서빙)
 - 재배포: `npx wrangler deploy`
+
+## Design System
+
+시각·UI 작업 전 반드시 [`docs/readinggo/DESIGN.md`](./docs/readinggo/DESIGN.md)를 먼저 읽는다. 폰트·컬러·간격·**버튼 위계(1차 솔리드/2차 tonal/3차 텍스트)**·미감 방향이 거기 정의돼 있으며, 사용자 승인 없이 벗어나지 않는다. QA 시 DESIGN.md와 어긋나는 코드를 플래그한다. (근거: `/design-consultation`, #838)
