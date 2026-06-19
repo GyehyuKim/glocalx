@@ -29,6 +29,8 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
   const [addText, setAddText] = _useState('');
   const [addPage, setAddPage] = _useState('');
   const [addBusy, setAddBusy] = _useState(false);
+  const [quotePasteOpen, setQuotePasteOpen] = _useState(false);  // #848 여러 문장 일괄 담기 모달
+  const [batchBusy, setBatchBusy] = _useState(false);
   const saveNewQuote = async () => {
     const t = (addText || '').trim();
     if (!t) { showToast('한 문장을 입력해주세요'); return; }
@@ -50,6 +52,32 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
       if (window.rgTrack) window.rgTrack('sentence_added', { book_id: book.id, kind: 'quote' });
     } catch (e) { showToast('저장 실패 — 잠시 후 다시'); }
     finally { setAddBusy(false); }
+  };
+  // #848 여러 문장 일괄 담기 — saveNewQuote 패턴 재사용. sentences.add 반복 + xp.add(+20) 1회.
+  // 각 문장 rg:sentence-added 로 app myQuotes·목록 자동 반영. page 미상=null, 200자/중복은 컴포넌트에서 거름.
+  const saveBatchQuotes = async (quotes) => {
+    const list = (quotes || []).map(t => (t || '').trim()).filter(t => t && t.length <= 200);
+    if (!list.length) return { saved: 0 };
+    if (!book.ubId) { showToast('이 책에는 추가할 수 없어요'); return { error: true, saved: 0 }; }
+    let saved = 0;
+    for (const text of list) {
+      try {
+        const row = await Promise.resolve(DataStore.sentences.add({ userBookId: book.ubId, page: null, text, kind: 'quote' }));
+        if (row && row.id) {
+          saved++;
+          window.dispatchEvent(new CustomEvent('rg:sentence-added', { detail: { quote: {
+            id: row.id, text: row.text || text, bookId: book.id, bookTitle: book.title, author: book.author,
+            page: (typeof row.page === 'number' ? row.page : 0), when: '방금',
+            createdAt: row.created_at || '', note: row.my_note || '', kind: 'quote', visibility: row.visibility || 'public',
+          } } }));
+        }
+      } catch (e) { /* 개별 실패 스킵 */ }
+    }
+    if (saved > 0) {
+      try { await Promise.resolve(DataStore.xp.add(20, 'batch')); } catch (e) {}
+      if (window.rgTrack) window.rgTrack('text_import_saved', { book_id: book.id, saved });
+    }
+    return { saved };
   };
   // #610: 자체 삭제/좋아요/공개범위 핸들러 폐기 → 공용 SentenceActions 가 담당(아래 한 문장 카드).
   const bookshelfEntry = (book.status === 'completed') ? { rating: book.rating, comment: book.comment } : null;
@@ -481,8 +509,16 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
           {book.ubId && (
             <div style={{marginBottom:14}}>
               {!addOpen ? (
-                <button onClick={() => setAddOpen(true)}
-                  style={{display:'block', width:'100%', padding:'12px', borderRadius:8, border:'1.5px dashed var(--brand)', background:'var(--brand-tint)', color:'var(--brand-3)', fontWeight:800, fontSize:14, cursor:'pointer'}}>✍️ 한 문장 추가</button>
+                <>
+                  <button onClick={() => setAddOpen(true)}
+                    style={{display:'block', width:'100%', padding:'12px', borderRadius:8, border:'1.5px dashed var(--brand)', background:'var(--brand-tint)', color:'var(--brand-3)', fontWeight:800, fontSize:14, cursor:'pointer'}}>✍️ 한 문장 추가</button>
+                  {/* #848 여러 문장 한 번에 담기 — 눈에 띄는 카드 + 사용법 안내 */}
+                  <button onClick={() => setQuotePasteOpen(true)}
+                    style={{display:'block', width:'100%', marginTop:8, padding:'12px 14px', borderRadius:8, border:'1.5px solid var(--brand-soft)', background:'var(--brand-soft)', color:'var(--brand-3)', textAlign:'left', cursor:'pointer'}}>
+                    <div style={{fontWeight:800, fontSize:14}}>📋 여러 문장 한 번에 담기</div>
+                    <div style={{fontWeight:600, fontSize:12, color:'var(--ink-3)', marginTop:3, lineHeight:1.45}}>밑줄·메모·공유한 글을 <b>한 줄에 하나씩</b> 붙여넣으면 한꺼번에 담겨요</div>
+                  </button>
+                </>
               ) : (
                 <div style={{background:'var(--card)', border:'1.5px solid var(--line)', borderRadius:8, padding:12}}>
                   <textarea value={addText} onChange={e => { if (e.target.value.length <= 1000) setAddText(e.target.value); }}
@@ -585,6 +621,22 @@ function BookDetailModal({ book, allQuotes, onClose, onActivate }) {
           </button>
         )}
       </div>
+
+      {/* #848 여러 문장 일괄 담기 모달 */}
+      {quotePasteOpen && (
+        <BatchQuoteImport busy={batchBusy}
+          onCancel={() => setQuotePasteOpen(false)}
+          onSave={async (quotes) => {
+            if (!quotes || !quotes.length) { setQuotePasteOpen(false); return; }
+            setBatchBusy(true);
+            try {
+              const r = await saveBatchQuotes(quotes);
+              if (r && r.error) { showToast('담기 실패 — 잠시 후 다시 시도해요'); }
+              else { showToast('✨ ' + (r.saved || quotes.length) + '개 담았어요'); setQuotePasteOpen(false); }
+            } catch (e) { showToast('담기 실패 — 잠시 후 다시 시도해요'); }
+            finally { setBatchBusy(false); }
+          }} />
+      )}
     </div>
   );
 }

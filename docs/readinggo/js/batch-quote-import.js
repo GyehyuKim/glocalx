@@ -2,7 +2,7 @@
    ReadingGo — batch-quote-import.js  (#848 PR1)
    BatchQuoteImport: 비정형 문장 텍스트 일괄 입력 (spec nest.md §5.8).
    텍스트 뭉치 → 줄 단순 분리(1차) → 검토(편집/삭제/스킵) → onSave(quotes[]).
-   자립적(자체 훅, cross-file 의존 없음). nest.js **이전** 로드(NestView가 <BatchQuoteImport> 소비).
+   자립적(자체 훅, cross-file 의존 없음). book-detail-modal.js **이전** 로드(BookDetailModal이 <BatchQuoteImport> 소비).
    LLM 파싱(2차, §5.8)·OCR 배치(#844)는 후속 PR. 저장(일괄+XP 합산)은 app onBatchSave.
    ========================================================= */
 
@@ -38,7 +38,7 @@ function BatchQuoteImport({ onCancel, onSave, busy }) {
       <div style={{ padding: 'calc(env(safe-area-inset-top) + 14px) 16px 10px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--ink)' }}>여러 문장 한 번에 담기</div>
         <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginTop: 3 }}>
-          {step === 'input' ? '메모·발췌를 붙여넣으면 줄 단위로 나눠 담아요' : `${valid.length}개 담을 준비 완료 — 확인하고 다듬어요`}
+          {step === 'input' ? '밑줄·메모·공유한 글을 붙여넣으세요 · 한 줄 = 한 문장 · 다음에서 확인·편집' : `${valid.length}개 담을 준비 완료 — 확인하고 다듬어요`}
         </div>
       </div>
 
