@@ -79,7 +79,7 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
           {(window.RG_SB && window.RG_SB.isConfigured && window.RG_SB.isConfigured() && window.DataStore !== window.SupabaseDataStore) ? (
             <button onClick={() => { onClose && onClose(); if (window.RG_login) window.RG_login(); }}
               style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-              🐦 로그인하고 내 기록 저장하기
+              <window.SparrowInline /> 로그인하고 내 기록 저장하기
             </button>
           ) : (
             <>
