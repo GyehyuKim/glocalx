@@ -11,8 +11,8 @@ import { dbConfigured } from './lib/db.mjs';
 import { env } from './lib/env.mjs';
 
 const POLL_INTERVAL_MS = parseInt(env('POLL_INTERVAL_MS', '5000'), 10);   // 큐 폴링 간격
-const BOOK_DELAY_MS = parseInt(env('COLLECTOR_DELAY_MS', '2500'), 10);    // 책 사이 딜레이(spec §7)
-const BATCH = parseInt(env('POLL_BATCH', '3'), 10);                       // 한 폴에 처리할 책 수
+const BATCH_DELAY_MS = parseInt(env('COLLECTOR_DELAY_MS', '1000'), 10);   // 배치 사이 딜레이
+const BATCH = parseInt(env('POLL_BATCH', '4'), 10);                       // 동시 크롤 수(병렬)
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 if (!dbConfigured()) { console.error('✘ SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 필요(collector/.env)'); process.exit(2); }
@@ -57,17 +57,14 @@ async function processOne(job) {
 
 async function loop() {
   managed = await createBrowser();
-  log(`poller 시작 — interval ${POLL_INTERVAL_MS}ms, batch ${BATCH}, book delay ${BOOK_DELAY_MS}ms`);
+  log(`poller 시작 — interval ${POLL_INTERVAL_MS}ms, 동시성 ${BATCH}, batch delay ${BATCH_DELAY_MS}ms`);
   while (!stopping) {
     let jobs = [];
-    try { jobs = await fetchPending(BATCH); } catch (e) { log('fetchPending 오류:', e.message); }
+    try { jobs = await fetchPending(BATCH); } catch (e) { log('fetchPending 오류:', e.message); await sleep(POLL_INTERVAL_MS); continue; }
     if (!jobs.length) { await sleep(POLL_INTERVAL_MS); continue; }
-    log(`pending ${jobs.length}건 처리`);
-    for (const job of jobs) {
-      if (stopping) break;
-      await processOne(job);
-      await sleep(BOOK_DELAY_MS);
-    }
+    log(`pending ${jobs.length}건 병렬 처리(동시성 ${BATCH})`);
+    await Promise.all(jobs.map((job) => processOne(job).catch((e) => log('processOne 오류:', e.message))));
+    if (!stopping) await sleep(BATCH_DELAY_MS);
   }
 }
 
