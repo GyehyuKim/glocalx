@@ -83,13 +83,16 @@ function parseExcerpts(bodyText) {
   return out;
 }
 
-// 상품페이지 스크롤로 lazy 콘텐츠 트리거.
+// 상품페이지 스크롤로 lazy 콘텐츠 트리거 — "책 속으로"가 보이면 조기 종료(속도).
 async function scrollToLoad(page) {
   for (let y = 0; y < 10; y++) {
-    await page.evaluate((n) => window.scrollTo(0, n * 1000), y);
-    await page.waitForTimeout(250);
+    const found = await page.evaluate((n) => {
+      window.scrollTo(0, n * 1400);
+      return (document.body.innerText || '').includes('책 속으로');
+    }, y);
+    if (found) { await page.waitForTimeout(120); return; } // 렌더 안정 짧게 후 종료
+    await page.waitForTimeout(130);
   }
-  await page.waitForTimeout(500);
 }
 
 async function extractFromProduct(page) {
@@ -154,7 +157,6 @@ export async function crawlYes24(managed, { title, author, isbn }, opts = {}) {
 
     for (const productUrl of candidates) {
       await page.goto(productUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      try { await page.waitForLoadState('networkidle', { timeout: 6000 }); } catch {}
       const { excerpts, isbnOnPage } = await extractFromProduct(page);
       const isbnMatch = wantIsbn && isbnOnPage && onlyDigitsX(isbnOnPage) === wantIsbn;
 

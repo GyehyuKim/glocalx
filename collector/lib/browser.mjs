@@ -22,6 +22,12 @@ export async function createBrowser() {
     Object.defineProperty(navigator, 'languages', { get: () => ['ko-KR', 'ko', 'en'] });
     Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
   });
+  // 속도: 이미지·폰트·미디어·스타일시트 차단(텍스트만 필요 — innerText). 페이지 로드 단축 + yes24 트래픽 감소.
+  await context.route('**/*', (route) => {
+    const t = route.request().resourceType();
+    if (t === 'image' || t === 'media' || t === 'font' || t === 'stylesheet') return route.abort();
+    return route.continue();
+  });
   return new ManagedBrowser(browser, context);
 }
 
