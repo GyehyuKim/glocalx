@@ -4,7 +4,9 @@
 #   기존 `--dir=docs/readinggo` 도 publish 와 동일해 호환.
 
 [build]
-  publish = "docs/readinggo"
+  # #871 Vite 전환 — Vite 빌드 후 dist 퍼블리시.
+  command = "cd docs/readinggo && npm ci && npm run build"
+  publish = "docs/readinggo/dist"
   functions = "netlify/functions"
 
 # 함수 URL: https://<site>/.netlify/functions/aladin

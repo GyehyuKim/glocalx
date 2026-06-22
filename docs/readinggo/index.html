@@ -1403,86 +1403,8 @@ input,textarea{font-family:inherit;}
 </div>
 
 <!-- React 18 CDN -->
-<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-<!-- Babel standalone (JSX 변환) — ⚠️ 버전 고정 필수. 미고정 시 @8 자동 업데이트로 preset-react
-     기본 runtime이 'automatic'이 되어 변환 출력에 `import {jsx} from "react/jsx-runtime"`가 주입됨
-     → loadBabel이 classic 스크립트로 eval → "Cannot use import statement" 전사이트 크래시 (#687).
-     자체 호스팅(vendor/) — unpkg CDN SPOF·버전 드리프트 제거 (#691). 동봉 파일은 @7.29.7 고정본. -->
-<script src="vendor/babel.min.js?v=7.29.7"></script>
-<!-- Fuse.js (Fuzzy search) -->
-<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-<!-- html-to-image (한 문장 외부 공유 카드 #650 A) — 승인된 Stack Lock 예외. UMD 전역 `htmlToImage`. -->
-<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
-<!-- Supabase (Phase 1) — 백엔드 계층. config/client/adapter는 순수 JS(JSX 아님)라 일반 script. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/supabase-client.js"></script>
-<script src="js/datastore-supabase.js"></script>
-
-<script>
-const _RG_V = '100';  // ⚠️ 배포마다 bump — 캐시 스큐(일부 js만 stale → "X is not defined" 간헐 크래시) 방지
-
-async function loadBabel(src) {
-  const res = await fetch(src + '?v=' + _RG_V);
-  if (!res.ok) throw new Error(src + ' 로드 실패 (HTTP ' + res.status + ')');
-  const code = await res.text();
-  const { code: js } = Babel.transform(code, {
-    presets: [['react', { runtime: 'classic' }]],  // classic 명시 — automatic이면 import 주입돼 eval 실패 (#687)
-    filename: src,
-  });
-  (0, eval)(js);
-}
-
-(async () => {
-  try {
-    await loadBabel('js/data.js');
-    await loadBabel('js/datastore.js');
-    await loadBabel('js/icons.js');       // #761 모듈화 — 공용 아이콘 셋(components 이전 로드)
-    await loadBabel('js/components.js');
-    await loadBabel('js/sentence-card.js');  // #761 모듈화 — SentenceCard·SentenceActions(components 이후, window.decodeEntities 의존)
-    await loadBabel('js/book-info-modal.js');  // #761 모듈화 — BookInfoModal(icons·sentence-card·decodeEntities 이후)
-    await loadBabel('js/user-profile-modal.js');  // #761 모듈화 2차 — UserProfileModal(components 이후, app 소비)
-    await loadBabel('js/sentence-collection-modal.js');  // #761 모듈화 2차 — SentenceCollectionModal(sentence-card 이후, app 소비)
-    await loadBabel('js/share-card.js');  // #650 A: 한 문장 외부 공유 (window.shareSentence)
-    await loadBabel('js/search.js');
-    await loadBabel('js/ocr-crop-overlay.js');  // #761 모듈화 — OcrCropOverlay(nest 이전 — NestView가 <OcrCropOverlay> 소비)
-    await loadBabel('js/batch-quote-import.js');  // #848 — BatchQuoteImport(book-detail 이전 — BookDetailModal이 <BatchQuoteImport> 소비)
-    await loadBabel('js/ceremony.js');  // #761 모듈화 — Ceremony(nest 이전 — NestView가 <Ceremony> 소비)
-    await loadBabel('js/nest.js');
-    await loadBabel('js/companion.js');  // #761 모듈화 — CompanionModal+헬퍼(nest 이후, app 이전 — app이 <CompanionModal> 소비)
-    await loadBabel('js/social.js');
-    await loadBabel('js/admin-dashboard.js');  // #761 모듈화 — AdminDashboardModal(library 이전 로드)
-    await loadBabel('js/book-detail-modal.js');  // #761 모듈화 — BookDetailModal(library 이전 로드, window.BookDetailModal 소비)
-    await loadBabel('js/nest-theatre.js');  // #761 모듈화 — NestTheatre(library 이전 — LibraryView가 <NestTheatre> 소비)
-    await loadBabel('js/follow-list-modal.js');  // #761 모듈화 — FollowListModal(library 이전 — LibraryView가 <FollowListModal> 소비)
-    await loadBabel('js/library.js');
-    // Phase 1: 로그인 + Supabase 설정 시 DataStore 를 Supabase 로 교체.
-    // 미로그인이면 localStorageAdapter 폴백 유지 → Phase 0 데모 동작 그대로(안전).
-    try {
-      if (window.RG_SB && window.RG_SB.isConfigured && window.RG_SB.isConfigured()) {
-        const _u = await window.RG_SB.currentUser();
-        if (_u && window.SupabaseDataStore) {
-          window.DataStore = window.SupabaseDataStore;
-          console.log('[ReadingGo] Supabase DataStore 활성 (로그인됨)');
-        }
-      }
-    } catch (e) { console.warn('[ReadingGo] Supabase 스왑 스킵:', e.message); }
-    await loadBabel('js/settings-modal.js');  // #761 모듈화 — SettingsModal(app 이전 로드)
-    await loadBabel('js/shelf-import.js');  // #772 통합 서가 ① — ShelfImportModal(components·data·datastore 이후, app 이전 소비)
-    await loadBabel('js/app.js');
-  } catch (err) {
-    console.error('[ReadingGo] 로드 실패:', err);
-    document.getElementById('root').innerHTML =
-      '<div class="rg-boot" style="gap:8px">' +
-        '<svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ReadingGo 참새"><path d="M50 30 L62 25 L60 36 L50 37 Z" fill="#1F8E4D"/><ellipse cx="34" cy="37" rx="17" ry="15" fill="#3FD17F"/><circle cx="24" cy="26" r="12" fill="#3FD17F"/><path d="M21 41 Q31 51 45 45 Q40 51 30 51 Q22 49 19 43 Z" fill="#DFF6EA"/><path d="M31 31 Q42 30 49 39 Q40 43 32 40 Q27 35 31 31 Z" fill="#2EB867"/><path d="M11 25 L23 21 L23 30 Z" fill="#FF8A3D"/><circle cx="21" cy="24" r="2.5" fill="#2A2D33"/><circle cx="21.9" cy="23.1" r="0.85" fill="#FFFFFF"/></svg>' +
-        '<p style="margin:0;font-weight:900;color:#2A2D33">앱을 불러오지 못했어요</p>' +
-        '<p style="margin:0;font-size:12px;color:#9097A0">' + err.message + '</p>' +
-        '<button onclick="location.reload()" style="margin-top:8px;padding:10px 20px;border:none;border-radius:12px;background:#3FD17F;color:#fff;font-weight:900;font-size:14px">다시 시도</button>' +
-      '</div>';
-  }
-})();
-</script>
+<!-- Vite 진입 (#871) — 빌드타임 번들. main.js 가 모듈을 순서대로 import. -->
+<script type="module" src="./main.js"></script>
 
 </body>
 </html>

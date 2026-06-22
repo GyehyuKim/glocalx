@@ -65,3 +65,4 @@ _local/
 # Cloudflare Worker local secrets — never commit
 .dev.vars
 .wrangler/
+docs/readinggo/dist/
