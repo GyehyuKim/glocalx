@@ -8,6 +8,11 @@ name = "readinggo"
 main = "worker/index.mjs"
 compatibility_date = "2026-06-01"
 
+# PR preview Worker (#899 배포안전 P1) — `wrangler versions upload` 시 버전별 preview URL 생성.
+# 비프로모션(Active Deployment 미승격) → 프로덕션 트래픽 미영향. preview-smoke.yml 이 이 URL 에서
+# render-smoke 를 돌려 #880류 런타임/edge 회귀를 머지 전 차단(H3·H5).
+preview_urls = true
+
 # #871 Vite 전환 — 배포 전 Vite 빌드 실행(Cloudflare Workers Build / 로컬 wrangler deploy 공통).
 # ⚠️ Workers Build 가 대시보드 빌드 명령을 별도로 가지면 그쪽도 동일하게 설정 필요.
 [build]

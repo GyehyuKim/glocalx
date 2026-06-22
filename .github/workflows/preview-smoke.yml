@@ -1,0 +1,100 @@
+# PR preview Worker + edge render-smoke (#899 배포안전 P1, 에픽 #897)
+#
+# PR 마다 실제 Cloudflare preview Worker(`wrangler versions upload` — 새 버전만 올리고
+# Active Deployment 로 승격하지 않음 → 프로덕션 트래픽 미영향)를 만들고, 그 **edge URL**에서
+# render-smoke(전 탭 클릭·에러화면/치명 콘솔에러 단언)를 돌린다. #880류 런타임/edge 회귀를
+# 머지 전에 차단한다(진단 H3·H5 — CI localhost 가 아니라 실제 엣지에서 검증).
+#
+# preview URL 획득: Actions 가 직접 versions upload → 출력의 `Version Preview URL:` 을 파싱한다.
+# (wrangler-action 의 deployment-url 출력은 versions 명령에서 안 채워짐 — cloudflare/wrangler-action#343,#384.)
+#
+# 시크릿(계휴/대시보드 권한): repo Settings→Secrets and variables→Actions
+#   - CLOUDFLARE_API_TOKEN   (권한: Account=Workers Scripts:Edit. P2 자동 롤백 #900 에도 재사용)
+#   - CLOUDFLARE_ACCOUNT_ID
+# 미설정 시 graceful skip(아래 gate) — 토큰 등록 전까지 PR 을 막지 않는다(점진 도입, P0 migrations 패턴).
+# 토큰 등록 후 이 job 을 required status check 로 승격 → 머지 게이트화(#899).
+name: preview-smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+# 같은 PR 의 연속 푸시는 마지막 것만 검증(이전 런 취소, preview 버전 난립 방지).
+concurrency:
+  group: preview-smoke-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write   # preview URL 을 PR 코멘트로 게시
+
+jobs:
+  preview-smoke:
+    name: preview-smoke (edge render)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 시크릿 미설정이면 이후 스텝 전부 skip(성공 종료). required 로 걸기 전까지 PR 무영향.
+      - name: Gate on Cloudflare secrets
+        id: gate
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CF_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN 미설정 — preview-smoke skip. repo Settings→Secrets 에 CLOUDFLARE_API_TOKEN·CLOUDFLARE_ACCOUNT_ID 등록 시 활성화되고, 이후 required check 로 승격하면 머지 게이트가 됩니다 (#899)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.enabled == 'true'
+        with:
+          node-version: 20
+
+      - name: Upload preview version → extract Preview URL
+        id: preview
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          # wrangler.toml [build](npm ci && vite build)가 업로드 전 자동 실행 → dist 를 버전으로 업로드.
+          # versions upload 는 Active 승격 없음(프로덕션 미영향). preview_urls=true 라 버전별 URL 생성.
+          OUT=$(npx --yes wrangler@4 versions upload 2>&1 | tee /dev/stderr)
+          URL=$(printf '%s\n' "$OUT" | awk '/Version Preview URL:/ {gsub(/.*Version Preview URL: /, ""); print; exit}')
+          if [ -z "$URL" ]; then
+            echo "::error::Version Preview URL 추출 실패 — wrangler 출력 형식/preview_urls 설정 확인 (wrangler.toml preview_urls=true)."
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "✅ preview Worker: $URL"
+
+      - name: Install Playwright chromium
+        if: steps.gate.outputs.enabled == 'true'
+        run: cd docs/readinggo && npm ci && npx playwright install --with-deps chromium
+
+      - name: Render smoke on preview edge
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          SMOKE_URL: ${{ steps.preview.outputs.url }}
+        # render-smoke.mjs 는 SMOKE_URL 의 전 탭을 헤드리스로 클릭해 에러화면/치명 콘솔에러를 단언.
+        # 끝에 슬래시 보장(중복 슬래시 방지 후 1개 부여).
+        run: cd docs/readinggo && SMOKE_URL="${SMOKE_URL%/}/" npm run smoke
+
+      # PR 에 preview URL 게시. 외부 action 대신 gh(공식 CLI·github.token) — 이 repo 관행(외부 action 미사용).
+      # --edit-last --create-if-none: 봇의 직전 코멘트를 수정(sticky), 없으면 새로 생성 → 푸시마다 누적 안 됨.
+      - name: Comment preview URL on PR
+        if: steps.gate.outputs.enabled == 'true' && steps.preview.outputs.url != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.preview.outputs.url }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --edit-last --create-if-none --body "🔬 **Preview Worker** — 배포안전 P1 (#899)
+
+          $URL
+
+          이 실제 edge URL 에서 \`render-smoke\`(전 탭 렌더·에러화면 0·치명 콘솔에러 0)를 검증합니다. \`wrangler versions upload\` 로 올린 비프로모션 버전이라 프로덕션 트래픽에는 영향 없습니다."
