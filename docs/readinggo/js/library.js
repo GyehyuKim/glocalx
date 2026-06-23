@@ -65,22 +65,109 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
     finally { setHdlBusy(false); }
   };
   // 데이터 내보내기 (#568 — SettingsModal에서 이동, 서재에서 직접)
+  // 내보낼 원천 수집 — JSON·Markdown 두 포맷이 공유 (#920).
+  const collectExport = async () => {
+    const [meRow, books, sents] = await Promise.all([
+      Promise.resolve((DataStore.profile && DataStore.profile.get) ? DataStore.profile.get() : null).catch(() => null),
+      Promise.resolve((DataStore.myBooks && DataStore.myBooks.list) ? DataStore.myBooks.list() : []).catch(() => []),
+      Promise.resolve((DataStore.sentences && DataStore.sentences.listMine) ? DataStore.sentences.listMine() : []).catch(() => []),
+    ]);
+    return { meRow, books: books || [], sents: sents || [] };
+  };
+  // 다운로드 트리거 (BOM 포함 — 한글 깨짐 방지). book-detail-modal.js exportMarkdown 과 동일 패턴.
+  const downloadBlob = (parts, type, filename) => {
+    const blob = new Blob(parts, { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const exportData = async () => {
     try {
       const me = window.RG_ME || {};
-      const [meRow, books, sents] = await Promise.all([
-        Promise.resolve((DataStore.profile && DataStore.profile.get) ? DataStore.profile.get() : null).catch(() => null),
-        Promise.resolve((DataStore.myBooks && DataStore.myBooks.list) ? DataStore.myBooks.list() : []).catch(() => []),
-        Promise.resolve((DataStore.sentences && DataStore.sentences.listMine) ? DataStore.sentences.listMine() : []).catch(() => []),
-      ]);
+      const { meRow, books, sents } = await collectExport();
       const payload = { app: 'ReadingGo', exported_at: new Date().toISOString(), profile: meRow, books, sentences: sents };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `readinggo-export-${(meRow && meRow.handle) || me.handle || 'me'}.json`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadBlob([JSON.stringify(payload, null, 2)], 'application/json',
+        `readinggo-export-${(meRow && meRow.handle) || me.handle || 'me'}.json`);
       showToast('데이터를 내보냈어요 (JSON)');
+    } catch (e) { showToast('내보내기 실패'); }
+  };
+  // Markdown 내보내기 (#920) — 책·완독·한 문장·감상을 사람이 읽기 좋은 .md 로 직렬화.
+  const exportMarkdown = async () => {
+    try {
+      const me = window.RG_ME || {};
+      const { meRow, books, sents } = await collectExport();
+      // 날짜 정규화 — book-detail-modal.js exportMarkdown 과 동일.
+      const fmtDate = (v) => {
+        if (!v) return '';
+        if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+        const t = (typeof v === 'number') ? v : Date.parse(v);
+        if (!t || isNaN(t)) return '';
+        const d = new Date(t);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+      // 책 id → 표시 메타. myBooks.list 행은 {id, book_id, book:{...}} (양 어댑터 정규화).
+      const bookMeta = {};
+      books.forEach(ub => {
+        const b = (ub && ub.book) || {};
+        const key = ub.book_id || b.id || ub.id;
+        if (key) bookMeta[key] = { title: b.title || '제목 없음', author: b.author || '' };
+      });
+      // 문장을 책별로 묶기 — book_id 또는 임베드(user_book.book_id)로 귀속.
+      const byBook = {};
+      (sents || []).forEach(s => {
+        const key = s.book_id || (s.user_book && s.user_book.book_id) || '_unknown';
+        (byBook[key] = byBook[key] || []).push(s);
+      });
+      const handle = (meRow && meRow.handle) || me.handle || 'me';
+      const lines = ['# ReadingGo 독서 기록', '', `**@${handle}**`, `내보낸 날짜: ${fmtDate(Date.now())}`, ''];
+      const completed = books.filter(b => b && b.status === 'completed');
+      const reading = books.filter(b => b && b.status !== 'completed');
+      lines.push(`읽은 책 ${completed.length}권 · 읽는 중 ${reading.length}권 · 한 문장 ${(sents || []).length}개`, '');
+
+      // 한 문장 블록 직렬화 (페이지 오름차순) — 본문/잔여 공통.
+      const emitQuotes = (qs) => {
+        qs.slice().sort((a, b2) => (a.page || 0) - (b2.page || 0)).forEach(q => {
+          const date = fmtDate(q.created_at || q.createdAt || q.when);
+          lines.push(`**p.${q.page ?? '?'}${date ? ` · ${date}` : ''}**`);
+          lines.push(`> ${q.text || ''}`);
+          const note = q.my_note || q.note || '';
+          if (note) lines.push('', note);
+          lines.push('');
+        });
+      };
+      // 책별 섹션 — 내 책 순서대로, 그 뒤 책 없는 문장(있으면).
+      const emitBook = (ub) => {
+        const b = (ub && ub.book) || {};
+        const key = ub.book_id || b.id || ub.id;
+        lines.push('', '---', '', `## ${b.title || '제목 없음'}`);
+        const metaBits = [b.author, (b.total_pages > 0 ? `${b.total_pages}쪽` : ''), (b.isbn13 ? `ISBN ${b.isbn13}` : '')].filter(Boolean);
+        if (metaBits.length) lines.push(metaBits.join(' · '));
+        if (ub.status === 'completed') {
+          const r = (typeof ub.rating === 'number') ? `⭐ ${ub.rating.toFixed(1)} / 5` : '';
+          const cd = fmtDate(ub.completed_at);
+          const head = [r, cd ? `완독 ${cd}` : ''].filter(Boolean).join(' · ');
+          if (head) lines.push('', head);
+          if (ub.review_text) lines.push(`> ${ub.review_text}`);
+        }
+        const qs = byBook[key] || [];
+        if (qs.length) { lines.push('', `### ✍️ 내 한 문장 (${qs.length})`, ''); emitQuotes(qs); }
+        delete byBook[key];
+      };
+      books.forEach(emitBook);
+      // 내 책 목록에 없는 책의 문장(좋아요·임포트 등 잔여) — 책 제목으로 묶어 보존.
+      Object.keys(byBook).forEach(key => {
+        const qs = byBook[key];
+        if (!qs || !qs.length) return;
+        const meta = bookMeta[key] || {};
+        const title = meta.title || (qs[0] && qs[0].user_book && qs[0].user_book.book && qs[0].user_book.book.title) || '기타';
+        lines.push('', '---', '', `## ${title}`, '', `### ✍️ 내 한 문장 (${qs.length})`, '');
+        emitQuotes(qs);
+      });
+      downloadBlob(['﻿', lines.join('\n')], 'text/markdown;charset=utf-8',
+        `readinggo-export-${handle}.md`);
+      showToast('데이터를 내보냈어요 (Markdown)');
     } catch (e) { showToast('내보내기 실패'); }
   };
   const isAdmin = !!(window.RG_ME && window.RG_ME.isAdmin);
@@ -522,11 +609,19 @@ function LibraryView({ state, onSetActiveBook, onActivateUserBook }) {
           {window.rgIcon('share',15)} 친구에게 ReadingGo 공유하기
         </button>
 
-        {/* 데이터 내보내기 (#568 — 설정에서 서재로 이동, 내 책·한 문장 맥락과 직결) */}
-        <button onClick={exportData}
-          style={{marginTop:10, width:'100%', padding:'12px', borderRadius:10, border:'1.5px solid var(--line)', background:'transparent', color:'var(--ink-2)', fontWeight:800, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
-          {window.rgIcon('download',15)} 내 데이터 내보내기 (JSON)
-        </button>
+        {/* 데이터 내보내기 (#568 설정→서재 이동 · #920 JSON+Markdown 두 포맷)
+            2차 tonal 버튼(DESIGN.md §버튼 위계 — ghost 금지). 한 줄에 나란히. */}
+        <div style={{marginTop:10, display:'flex', gap:8}}>
+          {[
+            { fn: exportData, label: 'JSON', title: '구조화 데이터(백업·재가져오기용)' },
+            { fn: exportMarkdown, label: 'Markdown', title: '사람이 읽기 좋은 독서 기록 문서' },
+          ].map(b => (
+            <button key={b.label} onClick={b.fn} title={`${b.title}로 내보내기`}
+              style={{flex:1, padding:'12px', borderRadius:10, border:'1.5px solid var(--brand-soft)', background:'var(--brand-soft)', color:'var(--brand-3)', fontWeight:800, fontSize:14, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6}}>
+              {window.rgIcon('download',15)} {b.label}로 내보내기
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 책 상세 모달 */}
