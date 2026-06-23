@@ -38,6 +38,8 @@
 | 네이티브 플러그인 — Phase 2 P1 | `@capacitor-mlkit/text-recognition` (OCR), `@capacitor-mlkit/barcode-scanning`, Push Notifications, Filesystem, Share |
 | 네이티브 플러그인 — Phase 3 | `@capacitor-community/speech-recognition` (STT) |
 
+> **Android-first 결정 (2026-06-24, 계휴)**: 스토어 출시 순서 = **Android 먼저**. 이유: Google Play **$25(1회)** vs Apple **$99(연)** — 진입 가벼움 · Play는 "제3자 로그인 넣으면 Apple 로그인 의무" 규칙이 없어 소셜 로그인(#937)이 단순 · 심사 빠름. iOS(#893 시뮬 빌드 완료)는 뒤로. 결제도 **Google $25 먼저**, Apple $99는 iOS 본격 추진 시점에. `android/` 셸은 `cap add android`로 추가 완료(2026-06-24) — **빌드는 JDK+Android SDK(또는 Android Studio) 있는 환경에서**(현 Mac 미설치 → Windows[계획] 또는 Mac 설치).
+
 ## 2. 스택 사유 (Capacitor 단일 선택)
 
 | | Capacitor | Expo (탈락) | Flutter (탈락) |
@@ -62,9 +64,9 @@
 | **결제 (병행)** | — | Google Play Console 가입 ($25 일회) | Play Console 활성 |
 | **S1** | 4~6h | **Vite 전환** — `index.html` + 6개 js 파일을 ES 모듈로 정리. `npm create vite@latest`. JSX 변환 빌드 타임으로 이전 | `npm run dev` 작동 |
 | **S2** | 2~3h | Vite 빌드 산출물(`dist/`) Netlify 배포 검증. 기존 배포와 동등 | Netlify 그대로 동작 |
-| **S3** | 4~6h | Capacitor init: `npm i @capacitor/core @capacitor/cli`, `npx cap init`, iOS/Android 플랫폼 추가 | `npx cap sync` 통과 |
-| **S4** | 3~4h | iOS 시뮬레이터 첫 빌드 (Mac). Safe Area · Keyboard · WebView 호환 검증 | iOS 시뮬에서 데모 동등 동작 |
-| **S5** | 3~4h | Android 에뮬레이터 첫 빌드 (Windows + Android Studio). 갤플립6 USB deploy | Android 시뮬·실기기 동작 |
+| **S3** ✅ | 4~6h | Capacitor init + 플랫폼 추가. **iOS(#893)·Android(`cap add android`, 2026-06-24) 모두 추가됨** | `npx cap sync` 통과 |
+| **S4** ✅ | 3~4h | iOS 시뮬레이터 첫 빌드 (#893 완료). Safe Area · Keyboard · WebView 호환 검증 | iOS 시뮬 동등 동작 |
+| **S5** ⏳ **다음** | 3~4h | Android 첫 빌드 — `android/` 셸 추가됨, **빌드 도구(JDK+Android SDK / Android Studio) 있는 환경에서** `./gradlew assembleDebug` 또는 Android Studio. 현 Mac 미설치 → Windows(계획) 또는 Mac에 Android Studio 설치 후 진행 | Android 에뮬·실기기 동작 |
 | **S6** | 2~3h | 아이콘·스플래시 (`@capacitor/assets` 자동 생성). 머니그라피 폰트 네이티브 번들 | 스토어 메타 일부 |
 
 **Phase 0 총 시간 ≈ 18~26h (3~4일 압축, 또는 1~2주 분산)**. 이후 Phase 1·2 작업은 같은 코드베이스 위에서 *점진* 추가.

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ReadingGo</string>
+    <string name="title_activity_main">ReadingGo</string>
+    <string name="package_name">com.readinggo.app</string>
+    <string name="custom_url_scheme">com.readinggo.app</string>
+</resources>
