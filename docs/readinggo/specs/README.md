@@ -16,6 +16,7 @@
 | **마을** (⚠️ 폐기, #440) | [`village.md`](./village.md) | §5.5 마을 — 탭 삭제(소셜로 일원화). 이력 보존용 |
 | **소셜 탭** | [`feed.md`](./feed.md) | [§5.7](./feed.md) |
 | **내서재(프로필)** | [`profile.md`](./profile.md) | [§5.8](./profile.md)-5.9 (v6: AI 도서 추천 포함) |
+| **바코드 스캔 등록** | [`barcode-scan.md`](./barcode-scan.md) | 신설 (#943) — 뒤표지 ISBN 스캔 → 정확 매칭. 무의존 `BarcodeDetector`(Phase 0) |
 | **시스템 로직** | [`systems.md`](./systems.md) | §6 스트릭·방패·XP·NPC·휴식코스 |
 | **백엔드** | [`backend.md`](./backend.md) | [§7](./backend.md) |
 | **운영: 문의 동기화** | [`inquiry-sync.md`](./inquiry-sync.md) | 신설 (#701) — inquiries → GitHub 이슈 |

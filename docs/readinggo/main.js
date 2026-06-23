@@ -19,6 +19,7 @@ import './js/user-profile-modal.js';
 import './js/sentence-collection-modal.js';
 import './js/share-card.js';
 import './js/search.js';
+import './js/barcode-scan.js';
 import './js/ocr-crop-overlay.js';
 import './js/batch-quote-import.js';
 import './js/ceremony.js';

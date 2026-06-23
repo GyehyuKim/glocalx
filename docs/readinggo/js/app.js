@@ -329,6 +329,9 @@ function App() {
   }, []);
   // 검색 모달 전역 오픈 (#403) — 서재 위시리스트 '+찜하기' 등에서 호출.
   useEffect(() => { window.RG_openSearch = () => setIsSearchOpen(true); return () => { window.RG_openSearch = null; }; }, []);
+  // 검색 프리필 오픈 (#943) — 바코드 스캔이 책을 못 찾았을 때 ISBN 을 검색창에 채워 수동 확인.
+  const [searchPrefill, setSearchPrefill] = useState('');
+  useEffect(() => { window.RG_openSearchWith = (q) => { setSearchPrefill(q || ''); setIsSearchOpen(true); }; return () => { window.RG_openSearchWith = null; }; }, []);
   // 한 문장 대화 모달 (#326) — 내 한 문장 탭으로 열림.
   const [companionSentence, setCompanionSentence] = useState(null);
   useEffect(() => { window.RG_openCompanion = (s) => setCompanionSentence(s); return () => { window.RG_openCompanion = null; }; }, []);
@@ -877,10 +880,11 @@ function App() {
         {/* 도서 검색 모달 */}
         <SearchModal
           isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
+          onClose={() => { setIsSearchOpen(false); setSearchPrefill(''); }}
           books={ALL_BOOKS}
           onSelectBook={handleSearchSelectBook}
           topRecommendations={popularBooks || ALL_BOOKS.slice(0, 8)}
+          initialQuery={searchPrefill}
         />
 
         {/* 타인 프로필 모달 (§5.8.2) — @핸들 탭으로 열림 */}
