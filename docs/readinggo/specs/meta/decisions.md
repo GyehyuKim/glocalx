@@ -316,6 +316,21 @@
 
 ---
 
+### 8.14 결정 (2026-06-24, 바코드 ISBN 스캔 — 웹 `BarcodeDetector` 무의존 채택. 충돌 시 §8.13 위에 **우선**)
+
+> 콜드스타트 OCR(본문 사진→책 추정) 제거(#944) 후속. "사진으로 책 식별"의 올바른 도구 = **뒤표지 바코드(EAN-13 = ISBN-13) 스캔**(#943). 정확 ISBN → `books` 정확 매칭(fuzzy 불필요, 오탐 0). 스캔 수단을 Stack Lock 관점에서 결정한다. 설계 정본: [`barcode-scan.md`](../barcode-scan.md).
+
+| 항목 | 결정 |
+|---|---|
+| 채택 (Phase 0 웹) | **웹 `BarcodeDetector` API — 새 의존성 0**(브라우저 네이티브). 지원 환경(안드로이드 Chrome 등)만 진입점 노출(capability gate), 미지원(iOS Safari)은 숨김(graceful). 검색 모달에서 진입 → ISBN→`BOOK_BY_ID`/알라딘 매칭 → 기존 등록 경로 재사용 |
+| Stack Lock | **불필요** — 무의존. 선례: OCR 웹해제(§Stack Lock, v8 2026-06-11 — *웹 기반*이면 보류 대상 아님). 바코드 (a)는 서버 왕복도 0이라 더 강한 무의존 |
+| 비채택 (현 시점) | (b) `@zxing/library` 등 JS 디코드 lib — iOS 웹까지 커버하나 **새 런타임 의존성(+수백 KB)**. iOS는 어차피 셸(c)로 가는 게 자연스러워 추가가치 좁음. **필요 판명 시 별도 Stack Lock PR** |
+| 유보 (Phase 2 셸) | (c) `@capacitor-mlkit/barcode-scanning` — iOS·미지원 환경 풀커버. 셸(#872) 전제 + 네이티브 의존성 → **iOS-PLAN Phase 2, 그때 Stack Lock 결정**. (a)와 capability gate 로 공존 |
+| v5.1 행 갱신 | 위 `v5.1 — 바코드 스캔 책 등록 채택`(`@capacitor-mlkit/barcode-scanning`, 네이티브 전제)을 **폐기 아닌 갱신** — Phase 0 웹은 (a)로 선행, 네이티브 (c)는 셸로 유지 |
+| 상태 | **결정 + 무의존 (a) 프로토타입 구현**(검색 모달 진입·뷰파인더·ISBN 매칭·책장 시트). (c) iOS 셸은 미구현 |
+
+---
+
 ### v5/v6 결정 이력 (참고 — 충돌 시 §8.0 우선)
 
 | 이슈 | 결정 |

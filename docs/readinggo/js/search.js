@@ -9,6 +9,7 @@ const SearchModal = ({
   books,
   onSelectBook,
   topRecommendations,
+  initialQuery,
 }) => {
   const [query, setQuery] = React.useState('');
   const [results, setResults] = React.useState([]);
@@ -18,6 +19,22 @@ const SearchModal = ({
   const [dbLoading, setDbLoading] = React.useState(false);     // 검색 진행중 구분 (#202)
   const [remoteLoading, setRemoteLoading] = React.useState(false);
   const [pendingBook, setPendingBook] = React.useState(null); // 책장 선택 대기 (#409)
+  const [scanOpen, setScanOpen] = React.useState(false); // 바코드 스캔 모달 (#943)
+  const [scanSupported, setScanSupported] = React.useState(false); // capability gate — 지원 환경만 진입점 노출
+
+  // 바코드 스캔 지원 여부 — BarcodeDetector + ean_13. 미지원(iOS Safari 등)은 진입점 숨김(깨진 버튼 0).
+  React.useEffect(() => {
+    let alive = true;
+    if (window.barcodeScanSupported) {
+      Promise.resolve(window.barcodeScanSupported()).then((ok) => { if (alive) setScanSupported(!!ok); });
+    }
+    return () => { alive = false; };
+  }, []);
+
+  // 프리필 — 바코드 스캔이 책을 못 찾고 검색을 ISBN 으로 열 때(#943). 열릴 때 1회 반영.
+  React.useEffect(() => {
+    if (isOpen && initialQuery) setQuery(initialQuery);
+  }, [isOpen, initialQuery]);
 
   // Fuse.js 인덱싱 (최초 1회)
   React.useEffect(() => {
@@ -205,6 +222,21 @@ const SearchModal = ({
               ✕
             </button>
           )}
+          {/* 바코드로 등록 (#943) — 지원 환경(BarcodeDetector+ean_13)에서만. 책 뒤표지 ISBN 스캔 → 정확 매칭. */}
+          {scanSupported && (
+            <button
+              onClick={() => setScanOpen(true)}
+              title="바코드로 등록"
+              aria-label="바코드로 등록"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, flexShrink: 0, borderRadius: 10, border: 'none',
+                background: 'var(--brand-tint)', color: 'var(--brand-3)', cursor: 'pointer', padding: 0,
+              }}
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/></svg>
+            </button>
+          )}
         </div>
 
         {/* 검색 결과 또는 추천 */}
@@ -310,6 +342,14 @@ const SearchModal = ({
               style={{ width: '100%', padding: '10px', marginTop: 4, borderRadius: 12, border: 'none', background: 'transparent', color: 'var(--ink-3)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>취소</button>
           </div>
         </div>
+      )}
+      {/* 바코드 스캔 (#943) — 검출 → ISBN 매칭 → onSelectBook(검색과 동일 등록 경로). 책 확정 시 검색 모달도 닫음. */}
+      {scanOpen && window.BarcodeScanModal && (
+        <window.BarcodeScanModal
+          isOpen={scanOpen}
+          onClose={() => setScanOpen(false)}
+          onSelectBook={(book, shelf) => { setScanOpen(false); setQuery(''); onClose(); onSelectBook(book, shelf); }}
+        />
       )}
     </div>
   );
