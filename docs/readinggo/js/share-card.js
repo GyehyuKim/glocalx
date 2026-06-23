@@ -196,6 +196,13 @@ function _buildCardNode(n, coverDataUrl) {
   wm.appendChild(brand); wm.appendChild(handle);
   root.appendChild(wm);
 
+  // #921: 실제 도달 가능한 사이트 링크를 카드에도 박는다 — 이미지만 받은 사람도 ReadingGo 로 유입(spec §2 워터마크=바이럴 진입점).
+  // 핸들(@readinggo.app)은 브랜드 표기, 이 줄은 지금 열리는 데모 URL. Pixel·--ink-3 으로 절제(DESIGN: 메타/라벨 = Pixel).
+  const link = document.createElement('div');
+  Object.assign(link.style, { fontFamily: _SC.fontPixel, fontSize: '26px', letterSpacing: '0.8px', color: _SC.ink3, marginTop: '14px', textAlign: 'center' });
+  link.textContent = RG_SHARE_LINK;
+  root.appendChild(link);
+
   return root;
 }
 
@@ -301,7 +308,8 @@ async function shareSentence(s) {
 
   // 2) 텍스트만이라도 공유 가능하면 (이미지 미지원 환경)
   if (!blob && navigator.share) {
-    try { await navigator.share({ text }); return; }
+    // #921: url 동반 — 텍스트 본문에도 링크가 있지만, url 분리로 플랫폼 링크 프리뷰/유입을 살린다(이미지 경로·shareService 와 동일).
+    try { await navigator.share({ text, url: RG_SHARE_LINK_FULL }); return; }
     catch (e) { if (e && e.name === 'AbortError') return; }
   }
 
@@ -309,7 +317,9 @@ async function shareSentence(s) {
   if (blob) {
     _downloadBlob(blob, 'readinggo-sentence.png');
     const copied = await _copyText(text);
-    toast(copied ? '🖼 이미지 저장 · 텍스트 복사됨' : '🖼 이미지를 저장했어요');
+    // #921: 텍스트 복사 실패 시에도 최소한 사이트 링크만이라도 복사 — 이미지만 받은 사람도 ReadingGo 로 유입.
+    const linkCopied = copied || await _copyText(RG_SHARE_LINK_FULL);
+    toast(copied ? '🖼 이미지 저장 · 텍스트 복사됨' : (linkCopied ? '🖼 이미지 저장 · 링크 복사됨' : '🖼 이미지를 저장했어요'));
     return;
   }
   // 4) 최후: 텍스트만 복사
