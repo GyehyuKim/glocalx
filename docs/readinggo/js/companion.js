@@ -73,6 +73,10 @@ function CompanionModal({ sentence, onClose }) {
   const [stext, setStext] = _useState(sentence.text || '');
   const [skind, setSkind] = _useState(sentence.kind === 'thought' ? 'thought' : 'quote'); // 인용↔내 의견 (#381)
   const _compTailRef = _useRef(null);                      // 대화 말단 anchor (#407 화면 점프 방지)
+  // 재키 질문 결 프리셋 (#375) — 대화 화면에서도 전환 (#935). 설정과 같은 RG_companionPreset(localStorage) 공유.
+  // 바꾸면 다음 질문(genCompanionQuestion/Followup)이 현재 프리셋을 읽어 반영. '작가의 시선'(author)도 여기서 즉시.
+  const [qPreset, setQPreset] = _useState(window.RG_companionPreset ? window.RG_companionPreset.get() : 'balanced');
+  const pickPreset = (k) => { setQPreset(k); if (window.RG_companionPreset) window.RG_companionPreset.set(k); rgTrack('companion_preset_set', { preset: k, where: 'chat' }); };
   const MAX = 5; // 멀티턴 무료 캡 (#655, 이전 3). 5턴 초과 무제한은 수익화 후속(워커 exchanges slice 상향).
   const consent = window.RG_consent ? window.RG_consent.get() : 'yes';
   const bt = sentence.bookTitle || '', au = sentence.author || '';
@@ -160,6 +164,21 @@ function CompanionModal({ sentence, onClose }) {
           <button onClick={onClose} aria-label="닫기" style={{ marginLeft: 'auto', width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-2)' }}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
           </button>
+        </div>
+
+        {/* ── 질문 결 프리셋 전환 (#935, #922 후속) — 설정에만 있던 결 선택을 대화 화면에도.
+             대화 맥락에서 '작가의 시선' 등으로 즉시 전환 → 다음 질문부터 반영(RG_companionPreset 공유).
+             칩: 선택=브랜드 솔리드 / 비선택=라인(설정 SettingsModal 칩과 동일 패턴 — DESIGN.md 위계 일관). 가로 스크롤. ── */}
+        <div role="group" aria-label="재키 질문 결 선택" style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid var(--line)', flexShrink: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {(window.RG_COMPANION_PRESETS || []).map((p) => {
+            const on = qPreset === p.key;
+            return (
+              <button key={p.key} onClick={() => pickPreset(p.key)} aria-pressed={on} title={p.label}
+                style={{ flexShrink: 0, padding: '5px 11px', borderRadius: 16, border: on ? 'none' : '1px solid var(--line)', background: on ? 'var(--brand)' : 'transparent', color: on ? '#fff' : 'var(--ink-2)', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                {rgIcon(p.icon, 13)} {p.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* ── 스크롤 영역 ── */}

@@ -23,6 +23,9 @@ window.RG_COMPANION_PRESETS = [
   { key: 'emotional', icon: 'heart', label: '감정 중심' },
   { key: 'critical', icon: 'critical', label: '비판적' },
   { key: 'context', icon: 'book', label: '작가·맥락' },
+  // '작가의 시선' (#935, #922 후속) — 작가 *시점* 추론. context(작가 *맥락* 연결)와 별개.
+  // 자율(가끔 자동)이던 작가 시점(#934)을 사용자 선택으로 전환. worker PRESET_TONE['author'] 와 1:1.
+  { key: 'author', icon: 'pen', label: '작가의 시선' },
 ];
 // 디바이스 선호(테마류) — 사용자 콘텐츠 아니라 localStorage 직접. 기본값=balanced(균형).
 window.RG_companionPreset = {
