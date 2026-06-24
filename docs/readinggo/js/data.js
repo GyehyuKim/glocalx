@@ -339,8 +339,8 @@ function _mapDbBook(b) {
 
 async function loadBooks() {
   if (_booksCache) return _booksCache;
-  // #490(A): Supabase `books` 가 canonical. 게스트도 publishable key + anon RLS read 로 같은 카탈로그.
-  // 책 식별은 isbn13 매칭(id 체계 b001↔uuid 무관). 실패/빈/미설정 → 정적 TSV 폴백(데모 무중단).
+  // #490: Supabase `books` 가 canonical. 게스트도 publishable key + anon RLS read 로 같은 카탈로그.
+  // 책 식별은 isbn13 매칭(id 체계 b001↔uuid 무관). 실패/빈/미설정 → 인라인 RG_BOOKS(12) 최소 폴백(데모 무중단).
   try {
     const sb = (window.RG_SB && window.RG_SB.client) ? window.RG_SB.client() : null;
     if (sb) {
@@ -354,39 +354,13 @@ async function loadBooks() {
       }
     }
   } catch (e) {
-    console.warn('[ReadingGo] Supabase books 로드 실패, TSV 폴백:', e && e.message);
+    console.warn('[ReadingGo] Supabase books 로드 실패, 인라인 폴백:', e && e.message);
   }
-  // 폴백: 정적 TSV (네트워크/부팅 실패·게스트 미설정 시 최소 보장)
-  try {
-    const res = await fetch('data/books.tsv?v=1');
-    if (!res.ok) throw new Error('books.tsv HTTP ' + res.status);
-    const text = await res.text();
-    const lines = text.trim().split('\n');
-    // 첫 줄 헤더 skip
-    _booksCache = lines.slice(1).map(line => {
-      const [book_id, isbn, title, author, publisher, total_pages, cover_url] = line.split('\t');
-      const id = book_id.trim();
-      const seed = _SEED_META[id];
-      return {
-        id,
-        isbn: (isbn||'').trim(),
-        title: (title||'').trim(),
-        author: (author||'').trim(),
-        pub: (publisher||'').trim(),
-        total: parseInt(total_pages, 10) || 0,
-        cover: (cover_url||'').trim(),
-        fb: seed ? seed.fb : _fbForId(id),
-        toc: seed ? seed.toc : [],
-      };
-    }).filter(b => b.id && b.title);
-    _indexBooks(_booksCache);  // id + isbn13 인덱스 (#490 A)
-    return _booksCache;
-  } catch (e) {
-    console.warn('[ReadingGo] books.tsv 로드 실패, 인라인 12권 사용:', e.message);
-    _booksCache = RG_BOOKS;
-    _indexBooks(_booksCache);
-    return _booksCache;
-  }
+  // 최소 폴백: 인라인 RG_BOOKS(12) — Supabase 미설정/장애 시 데모 무중단용.
+  // (구 정적 books.tsv 폴백은 #490 완료로 제거 — 과도기 잔재이자 stale(542≠canonical) 드리프트 원인. #972)
+  _booksCache = RG_BOOKS;
+  _indexBooks(_booksCache);
+  return _booksCache;
 }
 
 function fuzzySearch(books, query) {
@@ -399,7 +373,7 @@ function fuzzySearch(books, query) {
   );
 }
 
-// 검색용 ALL_BOOKS: books.tsv 형식으로 변환
+// 검색/폴백용 ALL_BOOKS: 인라인 RG_BOOKS(12)를 평탄 row 형식으로 변환
 const ALL_BOOKS = RG_BOOKS.map(b => ({
   book_id: b.id,
   isbn: b.isbn,

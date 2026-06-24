@@ -8,14 +8,14 @@
 
 | 계층 | 현재 | Phase 1 진입 시 |
 |---|---|---|
-| **Contracts** | `data/validate-books.py` — books.tsv 스키마 검증 | + 데이터 스키마 전반 |
+| **Contracts** | DataStore 계약(`contract/`) · 스펙-구현 정합(`spec-align/`). (구 `data/validate-books.py`는 정적 books.tsv 제거 #972로 폐기 — 카탈로그 canonical=Supabase) | + 데이터 스키마 전반 |
 | **Unit** | (해당 없음) | XP 계산·둥지 진화 로직 |
 | **E2E** | [Claude in Chrome 시나리오](./e2e/) — 자연어, 수동 실행 | Playwright 자동화 후보 |
 | **Evals** | (해당 없음) | 운영자 짹 LLM 응답 회귀 |
 
 ## 자동화 (GitHub Actions)
 
-`.github/workflows/test.yml` — PR마다 실행. Contracts 검증.
+`.github/workflows/test.yml` — PR마다 실행. spec-align·contract·boot/render-smoke·lint·issue-link·spec-coverage 등.
 
 ## 로컬 실행
 

@@ -40,12 +40,12 @@
 ## 데모 보기
 
 - **온라인**: <https://readinggo.hyuniverse.workers.dev>
-- **로컬**: 빌드 불필요(React 18 + Babel CDN). `books.tsv`를 `fetch`로 읽으므로 `file://` 직접 열기보다 **정적 서버** 권장:
+- **로컬**: Vite dev(`cd docs/readinggo && npm run dev`) 또는 정적 서버. `file://` 직접 열기는 비권장(모듈·네트워크 fetch):
   ```bash
   npx serve docs/readinggo
   ```
 - **재배포**: `npx wrangler deploy` (Cloudflare Workers — Netlify에서 이전 완료)
-- **도서 데이터**: [`docs/readinggo/data/books.tsv`](./docs/readinggo/data/books.tsv) (542권, 유일한 소스 — 코드에 책 정보 하드코딩 금지)
+- **도서 데이터**: canonical = Supabase `books` (#490). 구 정적 `books.tsv`는 제거됨(#972) — 폴백은 인라인 `RG_BOOKS`(12). 코드에 책 정보 하드코딩 금지
 
 ---
 
@@ -56,7 +56,7 @@ docs/
   readinggo/                 ← ReadingGo (현재 메인 프로젝트)
     index.html               진입점 (React 18 CDN, 빌드 없음)
     js/                       데모 코드 (data·datastore·nest·social·library·village·…)
-    data/books.tsv            도서 DB 542권
+    (도서 데이터)             Supabase books — canonical (#490, 정적 TSV 제거 #972)
     specs/                    ★ 스펙 (정본) — README.md가 인덱스
     ROADMAP.md                Phase 매트릭스 + 북모리 채택 결정
     COMPETITIVE-ANALYSIS.md   경쟁자 분석 (북모리·Bookly·Fable·리더스…)

@@ -43,7 +43,7 @@
 | 마을 | `docs/readinggo/specs/village.md` |
 | 소셜·내서재 | `docs/readinggo/specs/social.md`, `profile.md` |
 | 데모 코드 | `docs/readinggo/index.html` + `docs/readinggo/js/*` |
-| 도서 데이터 | **Phase 1 canonical = Supabase `books`** (#490). Phase 0 현재 구현은 `docs/readinggo/data/books.tsv` 정적 로드. 어느 단계든 책 정보 하드코딩 금지 — TSV·인라인 `RG_BOOKS`는 시드/폴백으로만 |
+| 도서 데이터 | **canonical = Supabase `books`** (#490). `loadBooks()` Supabase 1순위·게스트 anon RLS read. 구 정적 `books.tsv`는 제거됨(#972) — 폴백은 인라인 `RG_BOOKS`(12) 최소치. 어느 단계든 책 정보 하드코딩 금지 |
 | 결정 이력 | `docs/readinggo/specs/meta/decisions.md` |
 
 ---

@@ -15,7 +15,7 @@
 
 | 항목 | Phase 0 (정적 웹 데모) | Phase 1+ (Supabase) |
 |---|---|---|
-| 데이터 저장 | `localStorage` (키 `rg_v41`) + 정적 TSV (`data/books.tsv`) | PostgreSQL + RLS |
+| 데이터 저장 | `localStorage` (키 `rg_v41`) + Supabase `books` 카탈로그 (#490; 구 정적 TSV 제거 #972) | PostgreSQL + RLS |
 | 인증 | 없음 (가짜 세션 localStorage) | Supabase Auth (Google OAuth) |
 | 배치 | 없음 (날짜 시뮬레이터로 대체, §발표용) | pg_cron (UTC 15:00 일일, 월 00:00 주간) |
 | AI 도서 추천 | 하드코딩 추천 시뮬 | **Gemini Flash 무료 티어** + 서버리스 프록시 (§7.9) |
