@@ -170,6 +170,51 @@ function NestView({ state, onCheckin, onOpenSearch }) {
     const ni = ((idx < 0 ? 0 : idx) + dir + readingBooks.length) % readingBooks.length;
     if (window.RG_activateBook) window.RG_activateBook(readingBooks[ni]);
   };
+  // 활성 책 좌우 스와이프 전환 (#1001) — 버튼(switchBook) 외 제스처 추가(대체 아님, 접근성 유지).
+  // Pointer Events 통합(터치+데스크탑 드래그). 가로 우세(|dx|>|dy|)일 때만 발동 → 세로 스크롤 통과.
+  // 임계 SWIPE_PX 넘으면 switchBook(밀기 방향: ←=다음+1, →=이전-1; 버튼·내용 따라가기와 일치).
+  const _cardRef = _useRef(null);
+  const _swipe = _useRef({ id: null, x0: 0, y0: 0, dx: 0, locked: null, dragged: false });
+  const SWIPE_PX = 45;   // 전환 임계
+  const SWIPE_SLOP = 8;  // 방향 판정 시작 전 무시 구간(탭 오발동 방지)
+  const _swipeEnabled = readingBooks.length > 1;  // 1권 이하면 제스처 no-op
+  const _setCardX = (px, animate) => {
+    const el = _cardRef.current; if (!el) return;
+    el.style.transition = animate ? 'transform .2s ease-in-out' : 'none';
+    el.style.transform = px ? `translateX(${px}px)` : '';
+  };
+  const _onSwipeDown = (e) => {
+    if (!_swipeEnabled || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const s = _swipe.current;
+    s.id = e.pointerId; s.x0 = e.clientX; s.y0 = e.clientY; s.dx = 0; s.locked = null; s.dragged = false;
+  };
+  const _onSwipeMove = (e) => {
+    const s = _swipe.current; if (s.id !== e.pointerId) return;
+    const dx = e.clientX - s.x0, dy = e.clientY - s.y0;
+    if (s.locked === null) {
+      if (Math.abs(dx) < SWIPE_SLOP && Math.abs(dy) < SWIPE_SLOP) return;
+      s.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';  // 세로 우세면 'y'로 잠가 제스처 포기(스크롤 통과)
+      if (s.locked === 'x') { try { _cardRef.current && _cardRef.current.setPointerCapture(e.pointerId); } catch (_) {} }
+    }
+    if (s.locked !== 'x') return;
+    if (e.cancelable) e.preventDefault();  // 가로 제스처 확정 후에만 스크롤 억제
+    s.dragged = true; s.dx = dx;
+    _setCardX(dx * 0.6, false);  // 저항감(rubber-band) — 카드가 손가락을 따라가되 절제
+  };
+  const _onSwipeEnd = (e) => {
+    const s = _swipe.current; if (s.id !== e.pointerId) return;
+    const committed = s.locked === 'x' && Math.abs(s.dx) >= SWIPE_PX;
+    const dir = s.dx < 0 ? 1 : -1;  // 왼쪽으로 밀기(dx<0)=다음, 오른쪽=이전
+    try { _cardRef.current && _cardRef.current.releasePointerCapture(e.pointerId); } catch (_) {}
+    _setCardX(0, true);  // 항상 원위치로 스냅(전환 후 새 책은 transform 0에서 다시 그려짐)
+    s.id = null; s.locked = null;
+    if (committed) switchBook(dir);  // 끝 책 바운스/순환은 switchBook(모듈러)과 일치
+  };
+  // 드래그가 실제로 일어났으면 카드 탭(책 상세 열기)을 1회 억제 — 스와이프와 탭 분리.
+  const _swallowClickIfDragged = (e) => {
+    if (_swipe.current.dragged) { e.preventDefault(); e.stopPropagation(); _swipe.current.dragged = false; return true; }
+    return false;
+  };
   // 시간차 되감기 (#346, resurface.md) — 둥지 진입 시 백그라운드 체크, 1일 1회, 비침습 카드.
   const [resurfaceCard, setResurfaceCard] = _useState(null);
   _useEffect(() => {
@@ -504,8 +549,10 @@ function NestView({ state, onCheckin, onOpenSearch }) {
 
   return (
     <section className="view active">
-      {/* 활성 책 카드 — 좌우 리볼빙으로 활성 책 전환 (#185) */}
-      <div className="card book-card-wrap" style={{ position: 'relative' }}>
+      {/* 활성 책 카드 — 좌우 리볼빙으로 활성 책 전환 (#185). 버튼 + 스와이프 제스처(#1001).
+          touchAction 'pan-y' = 세로 스크롤은 브라우저, 가로는 우리가 처리(세로 충돌 방지). */}
+      <div className="card book-card-wrap" style={{ position: 'relative', touchAction: _swipeEnabled ? 'pan-y' : 'auto' }}
+        onPointerDown={_onSwipeDown} onPointerMove={_onSwipeMove} onPointerUp={_onSwipeEnd} onPointerCancel={_onSwipeEnd}>
         {readingBooks.length > 1 && (
           <>
             <button onClick={() => switchBook(-1)} aria-label="이전 책" style={{ position: 'absolute', left: 2, top: '50%', transform: 'translateY(-50%)', zIndex: 3, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.06)', color: 'var(--ink-2)', fontSize: 16, cursor: 'pointer' }}>‹</button>
@@ -515,10 +562,11 @@ function NestView({ state, onCheckin, onOpenSearch }) {
             </div>
           </>
         )}
-        {/* 책 정보 탭 → 책 상세 모달(BookInfoModal) 진입 (#495). ⚙️ 수정 버튼은 stopPropagation으로 격리. */}
-        <div className="book-card" role="button" tabIndex={0} aria-label="책 상세 정보 보기"
-          style={{ cursor: (nestState.book.id && window.RG_openBook) ? 'pointer' : 'default' }}
-          onClick={() => { if (nestState.book.id && window.RG_openBook) window.RG_openBook(nestState.book.id); }}
+        {/* 책 정보 탭 → 책 상세 모달(BookInfoModal) 진입 (#495). ⚙️ 수정 버튼은 stopPropagation으로 격리.
+            ref=_cardRef: 스와이프 중 이 카드만 translateX(화살표·점은 wrap 기준 고정, #1001). */}
+        <div className="book-card" ref={_cardRef} role="button" tabIndex={0} aria-label="책 상세 정보 보기"
+          style={{ cursor: (nestState.book.id && window.RG_openBook) ? 'pointer' : 'default', willChange: 'transform' }}
+          onClick={(e) => { if (_swallowClickIfDragged(e)) return; if (nestState.book.id && window.RG_openBook) window.RG_openBook(nestState.book.id); }}
           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && nestState.book.id && window.RG_openBook) { e.preventDefault(); window.RG_openBook(nestState.book.id); } }}>
           <BookCover className="book-cover" title={nestState.book.title} author={nestState.book.author} cover={nestState.book.cover} fb={nestState.book.fb} />
           <div className="book-meta">
