@@ -2,40 +2,29 @@
 
 이 디렉토리(`docs/readinggo/`)가 ReadingGo Phase 0 데모의 루트다.
 
-## 도서 데이터 — books.tsv
+## 도서 데이터 — Supabase `books` (canonical)
 
-`data/books.tsv` 가 유일한 도서 데이터 소스다. **책 정보를 코드에 하드코딩하지 말 것.**
-
-### 파일 구조
-
-```
-book_id  isbn             title      author      publisher  total_pages  cover_url
-b001     9788934972464    사피엔스   유발 하라리  김영사     648          https://image.aladin.co.kr/...
-```
-
-- 구분자: 탭(`\t`), 인코딩: UTF-8
-- 총 542권 (민음사 세계문학전집 중심 + 사피엔스·코스모스 등 교양서)
-- `cover_url`: 알라딘 CDN 이미지 URL — 모든 행에 존재
+도서 데이터의 단일 진실원천은 **Supabase `books` 테이블**이다(#490). 게스트도 publishable key + anon RLS read 로 같은 카탈로그를 읽는다. **책 정보를 코드에 하드코딩하지 말 것.** 구 정적 `books.tsv`(542권)는 과도기 잔재이자 stale 드리프트 원인이라 **제거됨(#972)** — Supabase 미설정/장애 시 폴백은 `data.js`의 인라인 `RG_BOOKS`(12권, 데모 무중단용)뿐이다.
 
 ### 코드에서 사용하는 법
 
 ```js
-// data.js의 loadBooks()가 TSV를 비동기 파싱 후 배열 반환 (내부 캐시됨)
+// data.js의 loadBooks()가 Supabase books 를 적재·캐시(실패 시 인라인 RG_BOOKS 폴백)
 const books = await loadBooks();
-// books[0] → { book_id, isbn, title, author, publisher, total_pages, cover_url }
+// books[0] → { id, isbn, title, author, pub, total, cover, ... }
 
-// 정확한 제목 검색
-const book = books.find(b => b.title === '사피엔스');
+// 동기 단건 조회 — 부팅 시 캐시 워밍됨 (#490)
+const book = window.getBook(bookId);
 
 // 퍼지 검색 (검색창용)
 const results = fuzzySearch(books, query).slice(0, 20);
 ```
 
-`loadBooks`와 `fuzzySearch`는 `window`에 export됨 — `data.js` 로드 이후 어디서든 호출 가능.
+`loadBooks`·`fuzzySearch`·`getBook`는 `window`에 export됨.
 
 ### 새 책 추가가 필요하다면
 
-`public/data/books.tsv`에 행 추가 (탭 구분). 코드 수정 불필요.
+검색·등록 시 워커가 알라딘 결과를 Supabase `books`에 upsert 한다(#489). 코드 수정 불필요.
 
 ## 파일 구조
 
@@ -46,9 +35,8 @@ docs/readinggo/
 ├── setup-globals.js    # React/ReactDOM/Fuse/htmlToImage/supabase → window 노출
 ├── vite.config.js      # .js→JSX(esbuild classic), base './', dist 산출
 ├── public/             # 정적자산(런타임 fetch/참조)
-│   ├── data/books.tsv  # 도서 DB (542권, 유일한 소스) · books_toc.csv
 │   ├── fonts/          # Moneygraphy Rounded / Pixel
-│   └── assets/         # sparrow 등
+│   └── assets/         # sparrow 등 (도서 데이터는 Supabase — §도서 데이터)
 ├── js/
 │   ├── data.js         # 상태·시드 데이터·loadBooks·fuzzySearch
 │   ├── components.js   # 공용 UI (AppHeader, BookCover, StreakCalendar 등)

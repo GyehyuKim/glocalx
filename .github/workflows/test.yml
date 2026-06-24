@@ -9,17 +9,6 @@ on:
 # 배포는 Cloudflare Workers Build(main 푸시 시 자동)가 담당 — Netlify deploy job 제거(#254).
 
 jobs:
-  contracts:
-    name: contracts (books.tsv schema)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Validate books.tsv
-        run: python tests/data/validate-books.py
-
   spec-align:
     name: spec-align (스펙↔구현 동기화 게이트)
     runs-on: ubuntu-latest

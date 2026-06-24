@@ -1,7 +1,7 @@
 // SearchModal: 도서 검색 기능
 // - Fuse.js를 사용한 클라이언트 사이드 fuzzy 검색
 // - ISBN / 제목 / 저자 검색
-// - Phase 0: books.tsv 데이터 위에서만 검색
+// - 검색 소스: 우리 DB(Supabase ilike) + 로컬 카탈로그(Fuse, 인라인 폴백) + 알라딘 원격
 
 const SearchModal = ({
   isOpen,
