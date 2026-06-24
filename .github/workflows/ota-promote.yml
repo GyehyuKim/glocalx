@@ -1,0 +1,61 @@
+# OTA 승격 — beta → production (수동, 앱판 카나리) (#876 페이즈 C, 이슈 #982)
+#
+# spec ota.md §3③·§4: main 머지는 beta 채널만 자동 publish 한다(ota-release.yml).
+#   운영자/베타테스터가 beta 를 먼저 받아 확인한 뒤, 이 워크플로우를 수동 실행(workflow_dispatch)해
+#   현재 beta 매니페스트를 그대로 production 채널로 승격한다. = 설치 사용자에게 한 겹 더 보수적.
+#   (웹은 main=즉시 100%지만 앱은 수동 게이트. 잘못된 번들이 prod 앱에 바로 가지 않게.)
+#
+# 동작: KV `ota:android:beta` 를 읽어 → `ota:android:production` 에 verbatim 복사.
+#   새로 빌드/zip 하지 않는다(베타에서 검증한 그 바이너리·체크섬을 그대로 승격해야 카나리가 의미 있음).
+#
+# 인프라/시크릿: ota-release.yml 과 동일(OTA_KV id e22049c87f9d44139242316c3c445bf9,
+#   CLOUDFLARE_API_TOKEN · CLOUDFLARE_ACCOUNT_ID).
+name: ota-promote
+
+on:
+  workflow_dispatch:
+
+# 승격은 직렬화(동시 실행 시 prod 매니페스트 경합 방지).
+concurrency:
+  group: ota-promote
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ota-promote:
+    name: promote beta → production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Read beta manifest → write to production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          BETA=$(npx -y wrangler@4 kv key get --namespace-id e22049c87f9d44139242316c3c445bf9 "ota:android:beta")
+          if [ -z "$BETA" ]; then
+            echo "::error::beta 채널이 비어 있음(ota:android:beta). 먼저 main 머지로 beta 를 publish 하세요(ota-release.yml)."
+            exit 1
+          fi
+          # 유효한 JSON·필수 필드 검증(빈 prod·깨진 매니페스트 승격 방지).
+          echo "$BETA" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const m=JSON.parse(s);if(!m.version||!m.url){console.error("invalid manifest: version/url 누락");process.exit(1)}})'
+          echo "promoting beta manifest: $BETA"
+          npx -y wrangler@4 kv key put --namespace-id e22049c87f9d44139242316c3c445bf9 \
+            "ota:android:production" "$BETA"
+          VER=$(echo "$BETA" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))')
+          URL=$(echo "$BETA" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).url))')
+          {
+            echo "### OTA promoted to production ⬆️"
+            echo ""
+            echo "- version: \`$VER\`"
+            echo "- url: $URL"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ production 승격 완료: $VER → $URL"
