@@ -567,14 +567,21 @@ async function extractHighlightsProxy(request, env) {
 const SHELF_EXTRACT_SYSTEM = '너는 책 구매내역·서재 캡쳐의 OCR 텍스트에서 책 목록만 뽑는 추출기다. 각 책의 제목(title)과 저자(author)만 JSON 배열로 출력한다. 형식: [{"title":"제목","author":"저자"}]. 규칙: (1) UI 텍스트(가격·할인·배송·날짜·버튼·카테고리·별점·페이지수·"장바구니" 등)는 모두 제외. (2) 저자가 불분명하면 author는 빈 문자열. (3) 같은 책은 한 번만. (4) 확실한 책만, 애매하면 제외. (5) 설명·코드펜스 없이 JSON 배열만 출력.';
 
 // OCR→LLM 출력(JSON 배열) 견고 파싱 — 코드펜스·잡텍스트 제거, 제목 기준 중복 제거, 상한 60.
+// 관용 폴백(#1038 P2-4): 1차 JSON.parse 실패 시 trailing comma 제거 후 재시도, 그래도 실패면
+// 단일 객체({...})를 배열로 감싸 수용(parseSeedJson 선례) → LLM 사소한 포맷 흠으로 전체 0건 추락 방지.
 function parseShelfBooks(s) {
   if (!s) return [];
   let t = String(s).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   const a = t.indexOf('['), b = t.lastIndexOf(']');
   if (a >= 0 && b > a) t = t.slice(a, b + 1);
+  else { const oa = t.indexOf('{'), ob = t.lastIndexOf('}'); if (oa >= 0 && ob > oa) t = '[' + t.slice(oa, ob + 1) + ']'; }
   let arr;
-  try { arr = JSON.parse(t); } catch { return []; }
-  if (!Array.isArray(arr)) return [];
+  try { arr = JSON.parse(t); }
+  catch {
+    try { arr = JSON.parse(t.replace(/,\s*([\]}])/g, '$1')); } // trailing comma 제거 후 재시도
+    catch { return []; }
+  }
+  if (!Array.isArray(arr)) arr = [arr];
   const seen = new Set(), out = [];
   for (const it of arr) {
     if (!it || typeof it !== 'object') continue;

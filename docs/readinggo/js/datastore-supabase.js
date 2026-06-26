@@ -185,13 +185,24 @@
         const row = unwrap(await sb().from('user_books').insert(ins).select('*, book:books(*)').single());
         return _applyBookOverrides(row);
       },
-      // 스샷 서가 복원 (#772) — 책 목록 일괄 등록. items: [{book, status}]. 개별 실패는 스킵(무중단).
+      // 스샷 서가 복원 (#772·#1038) — 책 목록 일괄 등록. items: [{book, status}]. 개별 실패는 스킵(무중단).
+      // status 라우팅: 'wish' → books.upsert 로 캐노니컬 id 확보 후 wish_books(위시 UX 일치),
+      //   그 외('completed'/'reading') → user_books(add 재사용). local 어댑터와 표면 일치.
       async addBatch(items) {
         const list = Array.isArray(items) ? items : [];
         const out = [];
         for (const it of list) {
           if (!it || !it.book) continue;
-          try { out.push(await this.add({ book: it.book, status: it.status })); } catch (e) { /* 개별 실패 스킵 */ }
+          try {
+            if (it.status === 'wish') {
+              // 검색 raw id(b001/외서)는 books 행이 없어 wish_books FK 위반 → upsert 로 캐노니컬 id 확보(#552 선례).
+              const isUuid = it.book.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(it.book.id));
+              const bk = isUuid ? it.book : await A.books.upsert(it.book);
+              if (bk && bk.id) { await A.wishBooks.add(bk.id); out.push({ book_id: bk.id, book: bk }); }
+            } else {
+              out.push(await this.add({ book: it.book, status: it.status }));
+            }
+          } catch (e) { /* 개별 실패 스킵 */ }
         }
         return out;
       },

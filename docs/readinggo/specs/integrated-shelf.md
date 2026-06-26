@@ -51,15 +51,17 @@
 
 ### 4.3 매칭·미존재 처리
 
-- 각 추출 책 → `DataStore.books.search(title)` + 저자 퍼지 매칭(isbn13 우선, 없으면 제목+저자).
-- **매칭 성공** → 카탈로그 `Book`(표지·메타 확보).
-- **매칭 실패** → "미확인 책"으로 보존(제목·저자 텍스트만). 검수 리스트에서 알라딘 검색 보조 버튼 제공(`/aladin`). 끝까지 미매칭이면 표지 없는 최소 책으로 등록 허용(메타는 후속 보강).
+- 각 추출 책 → 카탈로그(`loadBooks`) **랭크 매칭**(#1038): `fuzzySearch` 후보를 제목 정확도로 점수화(완전일치>prefix>짧은 길이차) + 저자 일치 가산 → 최적 1건. 보수 가드(제목 양방향 정규화 포함)는 유지해 환각 표지·갖다붙이기 방지. 무순위 `hits[0]` 채택(구 동작)을 대체해 오매칭↓.
+- **매칭 성공** → 카탈로그 `Book`(표지·메타 확보). 카탈로그 book(data.js 형태 `cover`/`total`/`isbn`)은 **어댑터 표면**(`cover_url`/`total_pages`/`isbn13`)으로 **정규화**해 등록 — 게스트(local)·로그인(Supabase) 모두 표지·쪽수·ISBN 보존(패리티, #1038 P1-2). 검수 카드 표지도 `cover_url`로 표시(P1-3).
+- **매칭 실패** → **알라딘 보강**(#1038 P1-1, §4.3 구 약속 구현): 검수 진입 시 미매칭 책을 `/aladin` 검색(worker `ItemSearch`)으로 자동 보강(표지·쪽수·ISBN). 자동이 못 찾으면 검수 카드의 **"🔍 찾기" 버튼**으로 재시도(제목 편집 후). 알라딘 결과도 제목 정확도로 랭크. 워커가 결과를 Supabase `books`에 비파괴 upsert(#489)하므로 카탈로그도 점진 보강. 끝까지 미매칭이면 표지 없는 최소 책으로 등록 허용("미확인").
+- 핵심 매핑·매칭·보강 로직은 `window.RG_shelfImport`(`normalizeCatalogBook`·`rankMatch`·`aladinLookup`·`matchRows`)로 추출 — 재사용 가능(#1039 유연 임포트 등).
 
 ### 4.4 일괄 등록 (DataStore 계약 확장)
 
-- 검수 후 선택분을 **배치 등록**. 신설 제안: `myBooks.addBatch(items[]) → UserBook[]` (없으면 `myBooks.add` 반복 — Phase 0 폴백).
-- **기본 status**: 과거 독서 복원 맥락이라 후보는 `completed`(완독) 또는 `wish`. → **§7 미해결**(유저 선택 토글 권장: "다 읽었어요 / 읽고 싶어요").
-- 게스트(미로그인)는 §7.7(backend.md) pending 흐름으로 로컬 보관 후 로그인 시 흡수.
+- 검수 후 선택분을 **배치 등록**: `myBooks.addBatch(items[]) → UserBook[]`(양 어댑터 구현). `items[i] = { book, status }`.
+- **목적지 토글**(#1038 결정 — §7 미해결 해소): 검수 단계에서 **읽은 책(기본=`completed`) / 읽고싶어요(`wish`) / 읽는 중(`reading`)** 일괄 선택 → 그 status 로 등록(구 `completed` 고정 해제). 전체 일괄 토글 1개(책별 status 는 후속).
+- **status 라우팅**(`addBatch`): `wish` → `wish_books`(위시 UX 일치 — Supabase 는 `books.upsert`로 캐노니컬 id 확보 후, local 은 메타를 `BOOK_BY_ID`에 시드해 getBook 해소). `completed`/`reading` → `user_books`(`add` 재사용, 중복 자동 스킵).
+- 게스트(미로그인)는 local 어댑터로 보관 후 로그인 시 흡수(§7.7 backend.md).
 
 ### 4.5 폴백·실패 UX
 
@@ -69,7 +71,7 @@
 ### 4.6 프라이버시·분석
 
 - 업로드 스샷은 **처리 후 미저장**(워커 메모리 경유, 영속 저장 없음). 원본은 분석·리플레이에 미포함.
-- 이벤트: `shelf_import_started` / `shelf_import_extracted{count}` / `shelf_import_registered{count}` (analytics.md §3 필수=익명 집계).
+- 이벤트: `shelf_import_started` / `shelf_import_extracted{count}` / `shelf_import_registered{count, status}` (analytics.md §3 필수=익명 집계). `status`=목적지 토글값(#1038).
 
 ## 5. ② 웹 리뷰 마중물 시드 (#774)
 
@@ -171,9 +173,9 @@ alter table public.seed_sentences enable row level security;
 ## 7. 결정·미해결
 
 - **[결정] #774 방향**: **실제 출처 시드**(책속문장 + 네이버 블로그 API → 후속 서점 리뷰). AI 생성 폐기. 비영리·출처표기·인용 최소 가드(§5.2).
-- **[미해결] #772 등록 기본 status**: 완독 vs 읽고 싶어요 — **권장: 유저 토글("다 읽었어요/읽고 싶어요")**.
+- **[결정·구현 #1038] #772 등록 status**: 검수 단계 **목적지 토글**(읽은 책=`completed` 기본 / 읽고싶어요=`wish` / 읽는 중=`reading`) 일괄 1개 → 그 status 로 `addBatch`. 책별 status 는 후속.
 - **[미해결] 시드 상호작용**: 짹/대화 허용 범위 — **권장: 읽기 전용, 대화는 검토**.
-- **[미해결] 다중 스샷**: MVP는 1장, 다중은 후속.
+- **[미해결] 다중 스샷**: MVP는 1장, 다중은 후속(#1038에서 미구현 — 코어 정리·알라딘 보강 우선).
 
 ## 8. Phasing (MVP cut)
 
