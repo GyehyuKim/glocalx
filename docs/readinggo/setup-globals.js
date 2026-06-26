@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { Browser as CapBrowser } from '@capacitor/browser';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 window.React = React;
 window.ReactDOM = { createRoot, createPortal };
@@ -31,3 +32,15 @@ window.RG_NATIVE = !!(
 );
 window.CapApp = CapApp;
 window.CapBrowser = CapBrowser;
+window.CapStatusBar = StatusBar;
+
+// 상태바 아이콘을 어두운색으로(#1016). 앱 배경이 밝은 크림(--paper)이라 시스템 기본 흰
+// 아이콘/시계가 묻혀 안 보인다. Style.Light = "밝은 배경" 가정 → 어두운 글씨/아이콘.
+// #1013(MainActivity.onCreate)이 스플래시 처리에 덮여 실패 → WebView 로드 후 JS 런타임에서
+// 직접 호출(여기가 웹 번들의 첫 실행)이라 스플래시·onCreate 타이밍을 우회. resume 마다
+// 재적용해 시스템/플러그인이 리셋해도 다시 어두운 아이콘으로 복구. 웹/비네이티브는 no-op.
+if (window.RG_NATIVE) {
+  const darkStatusIcons = () => { try { StatusBar.setStyle({ style: Style.Light }).catch(() => {}); } catch (e) {} };
+  darkStatusIcons();
+  try { CapApp.addListener('resume', darkStatusIcons); } catch (e) {}
+}
