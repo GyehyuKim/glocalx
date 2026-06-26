@@ -784,7 +784,7 @@
         await sb().from('village_members').insert({ village_id: v.id, user_id: id });
         // parts + book + member count 포함해서 다시 조회 — insert 응답에는 미포함
         return unwrap(await sb().from('villages')
-          .select('*, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
+          .select('id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
           .eq('id', v.id).single()) || v;
       },
       async join(villageId) {
@@ -811,13 +811,13 @@
       async listMine() {
         const id = await uid();
         const rows = unwrap(await sb().from('village_members')
-          .select('village:villages(*, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count))')
+          .select('village:villages(id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count))')
           .eq('user_id', id));
         return (rows || []).map(r => r.village).filter(Boolean);
       },
       async get(villageId) {
         return unwrap(await sb().from('villages')
-          .select('*, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
+          .select('id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
           .eq('id', villageId).single());
       },
       async members(villageId) {
@@ -884,7 +884,7 @@
       },
       async listPublic({ limit } = {}) {
         let q = sb().from('villages')
-          .select('*, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
+          .select('id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
           .eq('visibility', 'public').order('created_at', { ascending: false });
         if (limit) q = q.limit(limit);
         return unwrap(await q) || [];
@@ -892,7 +892,7 @@
       async findByCode(code) {
         // 공개·비공개 모두 invite_code 직접 조회 (전체 스캔 없음)
         return unwrap(await sb().from('villages')
-          .select('*, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
+          .select('id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(isbn13, title, author, cover_url), parts:village_parts(*), village_members(count)')
           .eq('invite_code', String(code).toUpperCase().trim())
           .maybeSingle());
       },
@@ -963,8 +963,10 @@
        부활·rename + slim. 기존 villages/village_members 테이블·RLS 재사용(병렬 테이블 신설 X).
        create 에 password·invite_token 추가, join 에 password 검증 추가. local 어댑터와 표면 일치. */
     rooms: {
-      // 공통 select 프로젝션 — 책·멤버수 임베드 (parts 는 P1 미사용이라 제외)
-      _SEL: '*, book:books(id, isbn13, title, author, cover_url, total_pages), village_members(count)',
+      // 공통 select 프로젝션 — 책·멤버수 임베드 (parts 는 P1 미사용이라 제외).
+      // ⚠ '*' 금지 — password_hash 는 클라 read 차단(#996, REVOKE)이라 '*' 면 권한 에러.
+      //   컬럼을 명시(password_hash 제외, has_password 만 노출 = 비번여부 플래그)한다.
+      _SEL: 'id, book_id, name, description, visibility, invite_code, invite_token, has_password, capacity, status, created_by, created_at, book:books(id, isbn13, title, author, cover_url, total_pages), village_members(count)',
       async create({ bookId, name, visibility, capacity, password }) {
         const id = await uid();
         // bookId 가 로컬 카탈로그 ID("b104" 등)인 경우 Supabase books 테이블 UUID로 해소(기존 로직).
@@ -983,6 +985,8 @@
         const vis = visibility === 'private' ? 'private' : 'public';
         const pw = (vis === 'private' && password) ? String(password) : null; // 비밀번호는 비공개 방만
         // invite_code(6자리) + invite_token(22+자) 동시 생성. UNIQUE 충돌 시 최대 5회 재시도.
+        // ⚠ 비밀번호는 평문으로 insert 하지 않는다 (#996) — 방 생성 후 room_set_password RPC 로
+        //   bcrypt 해시 저장(crypt+gen_salt('bf'), 서버 보관). password_hash 는 클라가 못 읽는다.
         let v = null;
         for (let attempt = 0; attempt < 5; attempt++) {
           const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -990,7 +994,6 @@
           const res = await sb().from('villages').insert({
             book_id: supaBookId, name, visibility: vis, created_by: id,
             invite_code: inviteCode, invite_token: inviteToken,
-            ...(pw != null && { password: pw }),
             ...(capacity != null && { capacity }),
           }).select().single();
           if (!res.error) { v = res.data; break; }
@@ -999,26 +1002,26 @@
         }
         if (!v) throw new Error('방 코드 생성 실패 (5회 시도 초과)');
         await sb().from('village_members').insert({ village_id: v.id, user_id: id });
+        // 비밀번호 설정 — host(방금 만든 created_by=나)만 통과하는 SECURITY DEFINER RPC 로 해시 저장.
+        if (pw != null) { unwrap(await sb().rpc('room_set_password', { p_room_id: v.id, p_password: pw })); }
         // book + member count 포함해 다시 조회 (insert 응답엔 임베드 미포함)
         return unwrap(await sb().from('villages').select(this._SEL).eq('id', v.id).single()) || v;
       },
       async join(roomId, opts) {
         const id = await uid();
         const password = opts && opts.password;
-        // 정원·비밀번호 검증 — capacity 설정 방은 미만이어야, 비밀번호 설정 방은 일치해야 참여.
+        // 정원 검증 — capacity 설정 방은 미만이어야 참여. (password_hash 는 select 하지 않는다 — #996.)
         const vRow = unwrap(await sb().from('villages')
-          .select('capacity, password, visibility, village_members(count)')
+          .select('capacity, visibility, village_members(count)')
           .eq('id', roomId).maybeSingle());
-        if (vRow) {
-          if (vRow.capacity) {
-            const cnt = (Array.isArray(vRow.village_members) && vRow.village_members[0]) ? (vRow.village_members[0].count || 0) : 0;
-            if (cnt >= vRow.capacity) throw new Error('정원이 마감되었습니다.');
-          }
-          // 비공개+비밀번호 방: 비밀번호가 맞아야 한다(토큰/링크 입장은 미리보기에서 분기 — join 직접 호출 시 검증).
-          if (vRow.password && String(vRow.password) !== String(password || '')) {
-            throw new Error('비밀번호가 맞지 않아요.');
-          }
+        if (vRow && vRow.capacity) {
+          const cnt = (Array.isArray(vRow.village_members) && vRow.village_members[0]) ? (vRow.village_members[0].count || 0) : 0;
+          if (cnt >= vRow.capacity) throw new Error('정원이 마감되었습니다.');
         }
+        // 비밀번호 검증 = 서버측 (#996). room_verify_password(SECURITY DEFINER, bcrypt crypt 비교)
+        // 가 boolean 만 반환 — 해시·평문 모두 클라에 노출 안 됨. 비번 없는 방은 항상 true(입장 자유).
+        const ok = unwrap(await sb().rpc('room_verify_password', { p_room_id: roomId, p_password: password || '' }));
+        if (ok === false) throw new Error('비밀번호가 맞지 않아요.');
         await sb().from('village_members').upsert({ village_id: roomId, user_id: id }, { onConflict: 'village_id,user_id' });
         return true;
       },

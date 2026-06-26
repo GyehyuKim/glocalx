@@ -846,10 +846,14 @@ const DataStore = {
       let s = ''; for (let i = 0; i < 26; i++) s += a[Math.floor(Math.random() * a.length)]; return s;
     },
     // 로컬 방을 Supabase 어댑터 표면으로 — book 임베드(getBook 해소) + village_members count.
+    // 표면 일치(#996): Supabase 는 password_hash 를 클라에 안 주고 has_password 플래그만 노출한다.
+    // 로컬도 동일하게 — 평문 password 는 반환 객체에서 제거(저장 레코드엔 유지, 로컬 join 검증용)하고
+    // has_password 만 노출한다. (로컬은 서버가 없어 클라 비교가 불가피 — 한계, co-reading §6.4.)
     _shape(r) {
       const bk = (typeof window.getBook === 'function') ? window.getBook(r.book_id) : null;
       const book = bk ? { id: bk.id, isbn13: bk.isbn, title: bk.title, author: bk.author, cover_url: bk.cover, total_pages: bk.total } : { id: r.book_id };
-      return { ...r, book, village_members: [{ count: (r._members && r._members.length) || 1 }] };
+      const { password, ...safe } = r;   // 평문은 표면 밖으로
+      return { ...safe, has_password: !!password, book, village_members: [{ count: (r._members && r._members.length) || 1 }] };
     },
     async create({ bookId, name, visibility, capacity, password }) {
       const list = this._load();

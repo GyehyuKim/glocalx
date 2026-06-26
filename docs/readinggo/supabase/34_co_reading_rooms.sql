@@ -10,7 +10,10 @@
 --           입장 검증(정원·비밀번호)은 어댑터·미리보기 단계, 멤버 insert 가 곧 접근권 부여(§6.3).
 
 -- ── villages: 비밀번호(선택) + 토큰 URL 초대 ───────────────────────────
-alter table public.villages add column if not exists password      text;
+-- NOTE(#996): 구 평문 `password text` 컬럼은 35_room_password_hash.sql 이 bcrypt
+--   해시(password_hash)로 격상하며 제거(drop)했다. 따라서 여기서 더 이상 추가하지 않는다
+--   (이미 적용된 프로덕션엔 컬럼이 있었고 #35 가 변환 후 drop · 신규 DB 는 #35 가 해시 컬럼 생성).
+--   migrations_applied.py 가 제거된 컬럼을 "기대"하지 않도록 이 줄을 주석으로 남긴다.
 alter table public.villages add column if not exists invite_token  text unique;
 
 -- 토큰 URL 입장(findByToken) 직접 조회용 인덱스 — unique 제약이 인덱스를 만들지만

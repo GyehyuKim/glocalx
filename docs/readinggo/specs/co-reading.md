@@ -197,7 +197,7 @@
 | 방 이름 | 필수 |
 | 공개 설정 | **공개**(책으로 검색 노출) / **비공개**(초대 링크·코드, 선택적 비밀번호) |
 | 정원 | 선택 — 기본 제한 없음. 설정 시 최소 2명 (기존 `capacity` 컬럼 재사용) |
-| 비밀번호 | 선택 — 비공개 방에 한해 설정 가능(`password`, 평문 아님 권고는 §6.4) |
+| 비밀번호 | 선택 — 비공개 방에 한해 설정 가능. **bcrypt 해시 + 서버 RPC 검증**(`password_hash`, 클라 비노출 — §6.4, #996) |
 
 > **만든 사람(생성자)**: 방 생성자 자동 기록(`created_by`). P1 에서 생성자에게 별도 *권한*은 없다(역할·공동관리자·강퇴는 P2). 단 방 삭제는 생성자만(어댑터 `delete` 가 `created_by` 가드 — §6.3).
 > **마일스톤(`village_parts`) 미사용**: P1 방 만들기에 챕터·마감 입력 단계 **없음**. 테이블은 존재하나 쓰지 않는다(P2 마일스톤에서 활성화).
@@ -325,21 +325,24 @@
 
 ```sql
 -- co-reading P1: 비밀번호(선택) + 토큰 URL 초대 (기존 villages 재사용)
-alter table public.villages add column if not exists password      text;  -- nullable, 비공개 방 선택
 alter table public.villages add column if not exists invite_token  text unique;  -- 모든 방, 토큰 URL 입장
+-- 비밀번호 = bcrypt 해시 + 서버 RPC 검증 (#996, 35_room_password_hash.sql §6.4). 평문 컬럼 제거됨.
+alter table public.villages add column if not exists password_hash text;          -- bcrypt 해시, 클라 read 차단(REVOKE)
+alter table public.villages add column if not exists has_password  boolean not null default false;  -- 비번여부 플래그(비-비밀)
 ```
 
 | 테이블/컬럼 | P1 사용 | 비고 |
 |---|---|---|
 | `villages` (id, book_id, name, visibility, invite_code, capacity, created_by) | ✅ | 마을 = 방. `name`·`visibility`(public/private)·`capacity`(정원)·`invite_code`(6자리) 그대로 |
-| `villages.password` (신규) | ✅ | nullable. 비공개 방 선택적 비밀번호(§5.2) |
+| `villages.password_hash` (#996) | ✅ | nullable. 비공개 방 선택 비밀번호 **bcrypt 해시**(§6.4). 클라 read 차단(REVOKE). 구 평문 `password` 제거 |
+| `villages.has_password` (#996) | ✅ | boolean(비-비밀). 비번 걸렸나 — 미리보기 입력칸 노출 판단(§4.5·§6.4) |
 | `villages.invite_token` (신규) | ✅ | unique. 모든 방의 토큰 URL 입장(§5.2) |
 | `village_members` (village_id, user_id, joined_at) | ✅ | 방 멤버십 그대로 |
 | `village_parts` (id, village_id, part_order, title, end_page, due_date) | ✅ **마일스톤 활성화(#999)** | host(`villages.created_by`)가 구간(part) 목록 작성·편집(§5.6). 기존 컬럼 그대로 — 새 컬럼·새 테이블 없음. RLS `vparts_sel`(멤버/공개 read)·`vparts_mod`(host write)도 기존 정의 재사용(`schema.sql`) |
 | `village_topics`/`village_opinions` (게시판) | ❌ P1 미사용 | **P2 게시판** |
 | `is_village_member(uuid)` SECURITY DEFINER | ✅ | RLS 순환 방지 헬퍼 — `villages_sel`/`vmembers_sel` 정책 그대로 재사용(`schema.sql` RLS 블록) |
 
-> **RLS**: 기존 정책(`villages_sel`: public OR 생성자 OR `is_village_member`; `vmembers_sel`/`vmembers_mod`: 본인 가입·탈퇴, 공개 방 멤버 조회)을 **그대로 쓴다**. `password`/`invite_token` 은 컬럼이라 RLS 변경 불필요(입장 검증은 어댑터·미리보기 단계). 비공개 방 토큰/비밀번호 입장 시 멤버 insert 가 곧 접근권 부여.
+> **RLS**: 기존 정책(`villages_sel`: public OR 생성자 OR `is_village_member`; `vmembers_sel`/`vmembers_mod`: 본인 가입·탈퇴, 공개 방 멤버 조회)을 **그대로 쓴다**. `invite_token`·`has_password` 는 컬럼이라 RLS 변경 불필요. **`password_hash` 만 예외** — `revoke select (password_hash)` 로 클라 read 를 컬럼 단위 차단하고, 검증은 SECURITY DEFINER RPC(`room_verify_password`)가 서버에서만(§6.4, #996). 비공개 방 토큰/비밀번호 입장 시 멤버 insert 가 곧 접근권 부여.
 
 ### 6.2 DataStore 계약 — `rooms.*` (구 `villages.*` 부활·rename)
 
@@ -369,8 +372,8 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 
 | 신 메서드(`rooms.*`) | 구 메서드(`villages.*`) | 변경 |
 |---|---|---|
-| `create` | `create` | `parts` 인자 제거(P1 마일스톤 없음), `password` 인자 추가, `invite_token` 생성 추가 |
-| `join` | `join` | `password` 검증 추가(비공개+PW 방) |
+| `create` | `create` | `parts` 인자 제거(P1 마일스톤 없음), `password` 인자 추가(→ `room_set_password` RPC 로 **bcrypt 해시 저장**, #996), `invite_token` 생성 추가 |
+| `join` | `join` | `password` **서버측 검증** 추가 — `room_verify_password` RPC(boolean), 평문·해시 클라 비노출(비공개+PW 방, #996) |
 | `leave`/`get`/`members` | 동일 | 시그니처 동일(재사용) |
 | `byBook` | `listPublic` 확장 | 책 필터 검색(제목/저자/ISBN) — `listPublic` 에 book 필터 추가 |
 | `myRooms` | `listMine` | rename |
@@ -391,10 +394,22 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 | 토큰/코드 유효성 | `findByToken`/`findByCode` (없으면 null → "방을 찾을 수 없어요") |
 | 멤버십·열람권 | RLS(`is_village_member`) — insert 가 접근권 부여 |
 
-### 6.4 보안 메모
+### 6.4 보안 메모 — 비밀번호 해시화 + 서버측 검증 (#996, 평문 후속)
 
-- `password` 평문 저장은 P1 데모 한정 허용 가능하나, **권고는 클라이언트 해시 또는 서버 함수 검증**(Phase 1 코드 PR 에서 결정 — `/cso` 검토 대상). 스펙은 컬럼만 정의, 저장 방식은 코드 PR 에서 확정.
+> **결정·구현됨 (#996).** P1 의 평문 `password` 컬럼을 **bcrypt 해시 + 서버측 검증**으로 격상한다. 클라이언트에 해시·평문 모두 노출 금지 — 검증은 서버(Supabase RPC)에서만.
+
+| 항목 | 방식 |
+|---|---|
+| 저장 | `villages.password_hash`(`text`) = `crypt(password, gen_salt('bf'))`(pgcrypto, **bcrypt**). 구 평문 `password` 컬럼은 **제거**(`35_room_password_hash.sql` 마이그레이션이 기존 평문→해시 1회 변환 후 drop). |
+| 해시 노출 차단 | `revoke select (password_hash) on villages from anon, authenticated` — 해시 컬럼은 **클라가 read 불가**. 어댑터 select 도 `password_hash` 미포함(컬럼 명시, `*` 금지). |
+| 비번여부 플래그 | `villages.has_password`(`boolean`, 비-비밀) — 미리보기에서 입력칸 노출 여부 판단용(해시 없이도 "비번 걸림"은 알아야 함). 클라 read 허용. |
+| 설정/해제 (host) | `room_set_password(room_id, password)` — **SECURITY DEFINER** RPC, `created_by = auth.uid()`(host) 가드. 빈 값이면 해제(NULL). 해시 저장 + `has_password` 갱신. |
+| 입장 검증 | `room_verify_password(room_id, password)` — **SECURITY DEFINER** RPC, `crypt(input, stored) = stored` 로 서버 비교, **boolean 만 반환**(해시 비노출). 비번 없는 방은 항상 `true`(입장 자유). |
+| 어댑터 (supabase) | `rooms.create` 는 평문 insert 안 함 — 방 생성 후 `room_set_password` RPC 로 해시 저장. `rooms.join` 은 `password` select 제거 → `room_verify_password` RPC 결과(boolean)로 분기. |
+| 어댑터 (local, Phase 0) | 서버 부재 → 평문 비교 불가피(한계 명시). 저장 레코드엔 평문 유지하되 **반환 표면에선 `password` 제거 + `has_password` 만 노출**(supabase 표면 일치). |
+
 - `invite_token` 은 추측 불가한 충분 길이(예: 22+ 문자) 랜덤. unique 충돌 시 재시도(기존 `invite_code` 5회 재시도 패턴 재사용).
+- **마이그레이션 수동 적용 전제**: `35_room_password_hash.sql`(pgcrypto 확장·`password_hash`/`has_password` 컬럼·REVOKE·RPC 2개)은 Supabase Dashboard SQL Editor 또는 Management API 로 **사람이 1회 실행**해야 한다(코드 머지 ≠ DB 적용). `migrations_applied.py` 는 컬럼/테이블만 검사하므로 RPC·REVOKE 는 적용 후 수동 확인.
 
 ---
 
@@ -475,7 +490,7 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 |---|---|---|
 | 1 | 방 단위 정식 명칭 | ✅ **확정 = "숲"**(§8, #987 후속) |
 | 2 | 탭 라벨 "함께" vs "같이" | ✅ **확정 = "함께"**(§8) |
-| 3 | `password` 저장 방식(평문/해시/서버검증) | 보류 — §6.4, 별도 추적 #996(평문은 P1 데모 현행) |
+| 3 | `password` 저장 방식(평문/해시/서버검증) | ✅ **해소 = bcrypt 해시 + 서버 RPC 검증**(§6.4, #996). 평문 컬럼 제거, 해시 클라 비노출 |
 | 4 | 멤버 0 숲 가비지 컬렉션 | 보류 — §5.4, P2 |
 | 5 | "혼자/같이" 분기 + auto-match | ◐ **분기 = 해소**(§7.5 같이 기본 opt-out + 공개 자동합류, #988). **auto-match 풀**(추천·매칭 기준)만 P2 잔여 |
 | 6 | 숲 탭 미읽음/오늘 신호 배지 | 보류 — §4.1, P1 미적용(목록만), P2 검토 |
@@ -493,6 +508,8 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 
 `docs/readinggo/supabase/34_co_reading_rooms.sql` — `villages.password`(nullable) + `villages.invite_token`(unique) 컬럼 2개 추가 + `invite_token` 부분 인덱스. 기존 `villages`/`village_members`/RLS 그대로 재사용(병렬 테이블·새 RLS 신설 없음, §6.1). `schema.sql` 통합 정의에도 반영. **적용 = 사람(또는 Management API)이 라이브 DB에 실행** — `migrations_applied.py` 가 적용 여부를 검사(코드 머지≠DB 적용).
 
+`docs/readinggo/supabase/35_room_password_hash.sql` (#996) — 비밀번호 평문 → **bcrypt 해시 + 서버측 검증** 격상(§6.4). pgcrypto 확장 + `villages.password_hash`(해시)·`has_password`(플래그) 컬럼 + `revoke select (password_hash)`(클라 read 차단) + RPC 2개(`room_set_password` host-only, `room_verify_password` boolean). 기존 평문 `password` 는 해시로 1회 변환 후 컬럼 drop. **수동 1회 적용 필수**(Dashboard SQL Editor/Management API). `migrations_applied.py` 는 컬럼/테이블만 검사 — RPC·REVOKE 는 적용 후 수동 확인.
+
 ### 10.2 DataStore 계약 `rooms.*` (양 어댑터 대칭)
 
 `js/datastore.js`(localStorage) · `js/datastore-supabase.js`(supabase) 양쪽에 동일 시그니처 구현(§6.2):
@@ -500,7 +517,7 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 `create({bookId,name,visibility,capacity?,password?})` · `join(roomId,{password?})` · `leave(roomId)` · `byBook(bookId,{limit?})` · `myRooms()` · `get(roomId)` · `members(roomId)` · `findByToken(token)` · `findByCode(code)` · **`listParts(roomId)` · `setParts(roomId,parts[])`**(마일스톤 #999, §10.7).
 
 - `invite_token` = 26자 랜덤(crypto, §6.4). `invite_code` 6자리 병행. UNIQUE 충돌 5회 재시도.
-- `password` = **평문 저장**(P1 데모 한정, §6.4 — 해시/서버검증은 Phase 1 `/cso` 후속). 검증은 `join` + 미리보기.
+- `password` = **bcrypt 해시 + 서버측 검증**(#996, §6.4). supabase: `create` 후 `room_set_password` RPC 로 해시 저장, `join` 은 `room_verify_password` RPC(boolean)로 검증(평문·해시 클라 비노출). local(Phase 0): 서버 부재로 평문 비교 불가피하되 반환 표면은 `has_password` 만(평문 제거 — supabase 표면 일치).
 - supabase `rooms.*` 는 폐기 `villages.*` 구현 재사용(rename·slim, 게시판 메서드는 P1 계약에서 제외). `parts` 는 #999 에서 `village_parts` 로 활성화(§10.7). 구 `villages.*` 블록은 잔존(데드, 호환).
 - **`pokes`** — 마일스톤 응원용. supabase 는 기존 `pokes.send(toUserId)`, local 은 no-op 어댑터 추가(대칭, 새 테이블 없음).
 - local 어댑터: 타 사용자 부재 → `members` 는 나 1명, `byBook`/`myRooms` 는 `rg_rooms_v1` 키 로컬 방. 표면 일치만 보장.
@@ -542,7 +559,7 @@ coReadMode.set('together' | 'solo')      → 'together' | 'solo'             // 
 | 공개 자동합류 교차 사용자 | ✅ 로직 동작(로컬 검증). 단 **타 사용자의 공개 숲에 실제로 붙는 건 Supabase 로그인 의존** — 게스트/로컬은 자기 로컬 숲만(표면 일치). |
 | auto-match 풀(추천·매칭 기준) | ❌ **P2 잔여(#988)** — 매칭 풀·기준 설계 비자명. 이 PR은 "같이/혼자 분기 + 공개 자동합류"까지 |
 | 숲 미리보기 capacity 'N/M' | ✅ 인원 카운트는 `village_members(count)` 임베드 의존(supabase) |
-| `password` 해시화 | ❌ 별도 추적 **#996**(평문은 P1 데모 현행, 이 PR 범위 아님) |
+| `password` 해시화 | ✅ **구현(#996)** — bcrypt 해시 + 서버 RPC 검증(§6.4). 마이그레이션 `35_room_password_hash.sql` 수동 적용 필요 |
 
 > 위 잔여는 대부분 *기능 누락*이 아니라 **실데이터(Supabase 로그인) 의존 표면** — 핵심 루프(만들기·참여·접근제어·진척 그리드·한 문장·나가기·**자동합류·모드 토글**)는 양 어댑터에서 동작.
 
