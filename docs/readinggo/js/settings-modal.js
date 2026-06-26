@@ -14,6 +14,38 @@ const { useState, useEffect } = React;
 function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
   const [consentOn, setConsentOn] = useState(window.RG_consent && window.RG_consent.get() === 'yes'); // 데이터 활용 동의 (#294)
   const [qPreset, setQPreset] = useState(window.RG_companionPreset ? window.RG_companionPreset.get() : 'balanced'); // 참새 질문 결 (#375)
+  // 스트릭 리마인더 (#1033) — 매일 정해진 시각 로컬 알림. 네이티브에서만 실효(웹은 토글 비노출).
+  const reminderApi = window.RG_streakReminder;
+  const reminderNative = !!(reminderApi && reminderApi.isNativeSupported && reminderApi.isNativeSupported());
+  const initReminder = reminderApi ? reminderApi.getSettings() : { enabled: false, hour: 21, minute: 0 };
+  const [reminderOn, setReminderOn] = useState(!!initReminder.enabled);
+  const [reminderHour, setReminderHour] = useState(initReminder.hour);
+  const [reminderMin, setReminderMin] = useState(initReminder.minute);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const fmtTime = (h, m) => String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  const toggleReminder = async () => {
+    if (!reminderApi || reminderBusy) return;
+    setReminderBusy(true);
+    try {
+      if (reminderOn) {
+        await reminderApi.disable();
+        setReminderOn(false);
+        showToast('스트릭 리마인더를 껐어요');
+      } else {
+        const ok = await reminderApi.enable();
+        if (ok) { setReminderOn(true); showToast(`매일 ${fmtTime(reminderHour, reminderMin)}에 알려드릴게요 🐦`, { sparrow: true }); }
+        else { showToast('알림 권한이 꺼져 있어요. 기기 설정에서 허용해주세요'); }
+      }
+    } finally { setReminderBusy(false); }
+  };
+  const changeReminderTime = async (e) => {
+    const [h, m] = String(e.target.value || '21:00').split(':').map((n) => parseInt(n, 10));
+    const hour = Number.isFinite(h) ? h : 21;
+    const minute = Number.isFinite(m) ? m : 0;
+    setReminderHour(hour); setReminderMin(minute);
+    if (reminderApi) await reminderApi.setTime(hour, minute);
+    if (reminderOn) showToast(`알림 시각을 ${fmtTime(hour, minute)}로 바꿨어요`);
+  };
   // 위시리스트 공개 토글 (#558) — Supabase 모드에서만 유효. 초기값은 me.wishlist_public.
   const me = window.RG_ME || {};
   const isSupabase = window.DataStore === window.SupabaseDataStore;
@@ -178,6 +210,28 @@ function SettingsModal({ onClose, spoilerReveal, setSpoilerReveal }) {
               <span style={{ position: 'absolute', top: 3, left: spoilerReveal ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
             </button>
           </div>
+          {/* 스트릭 리마인더 (#1033) — 네이티브 앱에서만 노출(로컬 알림). 웹/데모엔 의미 없어 숨김. */}
+          {reminderNative && (
+            <div style={{ padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)', marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1, paddingRight: 10 }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--ink)' }}>🔔 스트릭 리마인더</div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.4 }}>매일 정해진 시각에 "오늘 한 줄" 알림을 보내요. 오늘 이미 읽었으면 건너뛰어요.</div>
+                </div>
+                <button onClick={toggleReminder} aria-pressed={reminderOn} title="스트릭 리마인더 토글" disabled={reminderBusy}
+                  style={{ width: 52, height: 30, borderRadius: 15, border: 'none', cursor: reminderBusy ? 'default' : 'pointer', background: reminderOn ? 'var(--brand)' : 'var(--line)', position: 'relative', transition: 'background .2s', flexShrink: 0, opacity: reminderBusy ? 0.6 : 1 }}>
+                  <span style={{ position: 'absolute', top: 3, left: reminderOn ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+                </button>
+              </div>
+              {reminderOn && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--ink-2)' }}>알림 시각</span>
+                  <input type="time" value={fmtTime(reminderHour, reminderMin)} onChange={changeReminderTime}
+                    style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 10px', background: 'var(--paper, #fff)' }} />
+                </div>
+              )}
+            </div>
+          )}
           {/* 참새 질문 결 프리셋 (#375) */}
           <div style={{ padding: '12px', borderRadius: 10, border: '1.5px solid var(--line)' }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>{rgIcon('chat', 15)} 재키 질문 결</div>

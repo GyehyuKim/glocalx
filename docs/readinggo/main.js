@@ -35,6 +35,7 @@ import './js/follow-list-modal.js';
 import './js/library.js';
 import './js/settings-modal.js';
 import './js/shelf-import.js';
+import './js/streak-reminder.js';   // #1033 스트릭 리마인더 로컬 알림 (window.RG_streakReminder)
 
 // 4) Supabase DataStore 스왑(로그인 시) → 그 다음 app 마운트.
 //    기존 index.html IIFE 가 library.js 와 settings-modal.js 사이에서 await 하던 로직.
@@ -62,6 +63,17 @@ async function boot() {
         await CapacitorUpdater.notifyAppReady();
       }
     } catch (e) { console.warn('[OTA] notifyAppReady 실패', e); }
+
+    // 스트릭 리마인더(#1033) — 부팅 시 1회 재무장(오늘 읽음 상태 반영), 이후 resume 마다 갱신.
+    //   네이티브 아니면 reschedule()은 즉시 no-op. 웹/데모엔 영향 없음.
+    try {
+      if (window.RG_streakReminder) {
+        window.RG_streakReminder.reschedule();
+        if (window.CapApp && window.CapApp.addListener) {
+          window.CapApp.addListener('resume', () => { try { window.RG_streakReminder.reschedule(); } catch (e) {} });
+        }
+      }
+    } catch (e) { console.warn('[reminder] 재무장 실패', e); }
   } catch (err) {
     console.error('[ReadingGo] 로드 실패:', err);
     const root = document.getElementById('root');

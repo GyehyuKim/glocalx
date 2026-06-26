@@ -12,6 +12,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { Browser as CapBrowser } from '@capacitor/browser';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 window.React = React;
 window.ReactDOM = { createRoot, createPortal };
@@ -33,6 +34,9 @@ window.RG_NATIVE = !!(
 window.CapApp = CapApp;
 window.CapBrowser = CapBrowser;
 window.CapStatusBar = StatusBar;
+// 스트릭 리마인더(#1033) — 매일 정해진 시각 *로컬* 알림(서버·FCM 불필요). 웹에선 권한/스케줄
+//   호출이 no-op(플러그인이 web 스텁) → 설정 토글은 네이티브에서만 실효. 실제 분기는 RG_NATIVE.
+window.CapLocalNotifications = LocalNotifications;
 
 // 상태바 아이콘을 어두운색으로(#1016). 앱 배경이 밝은 크림(--paper)이라 시스템 기본 흰
 // 아이콘/시계가 묻혀 안 보인다. Style.Light = "밝은 배경" 가정 → 어두운 글씨/아이콘.
