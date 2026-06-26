@@ -179,14 +179,15 @@
 | JS/HTML/CSS(웹 레이어) | **OTA Live Updates**(`@capacitor/live-updates`/Appflow 또는 오픈소스 Capgo) | 없음(스토어 약관 허용) | 즉시 |
 | 네이티브(플러그인·권한·SDK·아이콘) | **스토어 바이너리 릴리스** | 있음 | 주기적(예: 월 1회) |
 
-**브랜치/릴리스 규칙**
-- `main` = 연속 통합. 머지되면 (1) 웹 CF 배포 (2) 앱 OTA `production` 채널 갱신.
+**브랜치/릴리스 규칙** (요약 — 운영 절차 전문은 [`RELEASE.md`](./RELEASE.md))
+- `main` = 연속 통합. 머지되면 (1) 웹 CF 배포 (2) 앱 OTA `beta` 채널 자동 갱신 → 확인 후 `production` 수동 승격(앱판 카나리).
 - **스토어 바이너리** = `main`에서 `release/x.y.z` 태그/브랜치 컷 → 버전 범프 → iOS(App Store Connect)·Android(Play) 제출. 네이티브 버전은 *네이티브 변경 시에만* 올림.
 - **SemVer**: `major.minor.patch`. patch·웹 핫픽스는 OTA, 네이티브 추가는 minor 바이너리 릴리스.
-- **단계적 출시**(Play staged rollout 10%→50%→100%, App Store phased release)로 회귀 방어. OTA도 채널(`staging`→`production`)로 단계 배포.
-- **롤백**: OTA는 이전 번들로 즉시 롤백, 네이티브는 스토어 이전 빌드 복귀(느림) → 네이티브 변경은 보수적으로.
+- **단계적 출시**(Play staged rollout 10%→50%→100%, App Store phased release)로 회귀 방어. OTA도 채널(`beta`→`production`)로 단계 배포(staging=beta).
+- **롤백**: OTA는 이전 KV 매니페스트로 즉시 롤백, 네이티브는 스토어 이전 빌드 복귀(느림) → 네이티브 변경은 보수적으로.
 
 > 효과: 일상 업데이트(카피·버그·UI)는 OTA로 *지금처럼 수시 배포*, 스토어 제출은 네이티브가 바뀔 때만 → 심사 병목 최소화.
+> **상세**: 채널·버전 동기화·롤백 검증의 전체 절차는 [`RELEASE.md`](./RELEASE.md)(프로세스) + `RELEASE-BUILD.md`(빌드 메커닉, #1024). OTA 구현 결정은 [`specs/ota.md`](./specs/ota.md).
 
 ## 11. 변경 이력
 
