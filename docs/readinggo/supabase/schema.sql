@@ -7,6 +7,7 @@
 -- =====================================================================
 
 create extension if not exists pg_trgm;
+create extension if not exists pgcrypto;   -- 숲 비밀번호 bcrypt 해시·검증 (co-reading §6.4, #996)
 
 -- ── 테이블 ────────────────────────────────────────────────────────────
 -- users: auth.users 와 1:1 (id 공유). 공개 프로필.
@@ -162,7 +163,8 @@ create table if not exists public.sentence_bookmarks (   -- DEPRECATED (#641): c
 );
 
 -- 마을(village)/방(room, co-reading) — 스키마 owner=backend(계휴). 같은 책 그룹.
--- capacity/status 는 16_village_board.sql, password/invite_token 은 34_co_reading_rooms.sql 에서 추가됨
+-- capacity/status 는 16_village_board.sql, invite_token 은 34_co_reading_rooms.sql 에서 추가됨.
+-- password 는 35_room_password_hash.sql 에서 bcrypt 해시(password_hash)로 격상·평문 제거(#996).
 -- (이 정의는 신규 프로젝트용 통합 참조 — 마이그레이션 파일이 적용 진실원천).
 create table if not exists public.villages (
   id            uuid primary key default gen_random_uuid(),
@@ -172,7 +174,8 @@ create table if not exists public.villages (
   visibility    text not null default 'public',     -- 'public' | 'private'
   invite_code   text unique,                         -- 6자리 사람용 코드
   invite_token  text unique,                         -- 토큰 URL 입장 (co-reading §5.2)
-  password      text,                                -- 비공개 방 선택적 비밀번호 (co-reading §5.2)
+  password_hash text,                                -- 비공개 방 선택 비번 bcrypt 해시 (co-reading §6.4, #996). 클라 read 차단(아래 REVOKE)
+  has_password  boolean not null default false,      -- 비번 걸렸나(비-비밀 플래그) — 미리보기 입력칸 노출 판단 (#996)
   capacity      int,                                 -- 정원(선택, 최소 2)
   status        text not null default 'active',
   created_by    uuid not null references public.users(id) on delete cascade,
@@ -353,6 +356,33 @@ create policy villages_ins on public.villages for insert with check (created_by 
 drop policy if exists villages_upd on public.villages;
 create policy villages_upd on public.villages for update using (created_by = auth.uid());
 
+-- 숲 비밀번호 — bcrypt 해시 저장 + 서버측 검증 RPC (co-reading §6.4, #996, 35_room_password_hash.sql).
+-- 평문 금지·해시 비노출: 해시 컬럼은 클라 read 차단(아래 REVOKE), 검증은 boolean 만 반환.
+create or replace function public.room_set_password(p_room_id uuid, p_password text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_owner uuid;
+begin
+  select created_by into v_owner from public.villages where id = p_room_id;
+  if v_owner is null then raise exception 'room not found'; end if;
+  if v_owner <> auth.uid() then raise exception 'only the room host can set the password'; end if;
+  update public.villages
+     set password_hash = case when p_password is null or p_password = '' then null
+                              else crypt(p_password, gen_salt('bf')) end,
+         has_password  = (p_password is not null and p_password <> '')
+   where id = p_room_id;
+end; $$;
+create or replace function public.room_verify_password(p_room_id uuid, p_password text)
+returns boolean language plpgsql security definer stable set search_path = public as $$
+declare v_hash text; v_exists boolean;
+begin
+  select (id is not null), password_hash into v_exists, v_hash from public.villages where id = p_room_id;
+  if not coalesce(v_exists, false) then return false; end if;   -- 없는 방
+  if v_hash is null then return true; end if;                    -- 비번 미설정 = 입장 자유
+  return v_hash = crypt(coalesce(p_password, ''), v_hash);
+end; $$;
+grant execute on function public.room_set_password(uuid, text)    to authenticated;
+grant execute on function public.room_verify_password(uuid, text) to anon, authenticated;
+
 -- village_parts: 마을 볼 수 있으면 select, 생성자만 write
 drop policy if exists vparts_sel on public.village_parts;
 create policy vparts_sel on public.village_parts for select using (
@@ -385,6 +415,10 @@ grant usage on schema public to anon, authenticated;
 grant select on all tables in schema public to anon, authenticated;
 grant insert, update, delete on all tables in schema public to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
+
+-- 숲 비밀번호 해시는 클라이언트가 절대 읽지 못한다 (#996, co-reading §6.4).
+-- `grant select on all tables` 가 password_hash 까지 열어주므로 컬럼 단위로 회수 — 검증은 RPC 만.
+revoke select (password_hash) on public.villages from anon, authenticated;
 
 -- =====================================================================
 -- 끝. 재실행 안전. 다음: supabaseAdapter(§7.2) + config.js + 알라딘 프록시.

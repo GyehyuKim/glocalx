@@ -372,7 +372,9 @@ function RoomPreviewSheet({ room, onClose, onJoined }) {
   const me = window.RG_ME && window.RG_ME.id;
   const alreadyIn = !!(me && (room._members ? room._members.includes(me) : false));
   const full = room.capacity ? cnt >= room.capacity : false;
-  const needsPw = !!room.password;
+  // 비번 걸린 방인지 = has_password 플래그(비-비밀, #996). 해시·평문은 클라가 못 읽는다 —
+  // 입력칸 노출 여부만 이 플래그로 판단하고, 실제 검증은 서버(room_verify_password)가 한다.
+  const needsPw = !!room.has_password;
 
   const join = async () => {
     setErr(''); setBusy(true);

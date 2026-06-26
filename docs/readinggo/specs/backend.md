@@ -384,7 +384,7 @@ village_parts(village_id, part_order)                    -- v7 신설
 - `sentence_bookmarks`: 본인만 insert/select/delete
 - `inquiries` (v7.2): 본인만 insert(user_id=auth.uid()). select = 본인 OR `is_admin()`. update = `is_admin()`만(상태 변경)
 - `village_members` (v7.2): leave = 본인 행 delete (마을 탈퇴, #9)
-- `villages`: 누구나 공개 마을 목록 select. insert는 로그인 사용자. `village_members` 의 멤버만 피드/멤버 현황 select (구경 불가는 §village 에서 규정)
+- `villages`: 누구나 공개 마을 목록 select. insert는 로그인 사용자. `village_members` 의 멤버만 피드/멤버 현황 select (구경 불가는 §village 에서 규정). **단 `password_hash` 컬럼은 `revoke select` 로 클라 read 차단** — 비번 검증은 `room_verify_password` RPC 서버측만(#996, §7.6.1)
 - `village_members`: 본인 가입/탈퇴만 insert/delete
 - v7 제거: `operator_replies` RLS (운영자 짹 폐기)
 
@@ -394,6 +394,18 @@ village_parts(village_id, part_order)                    -- v7 신설
 POST /rpc/check_handle  { handle }
 → { ok: true } | { ok: false, reason: 'taken' | 'format' | 'banned' }
 ```
+
+#### 7.6.1 숲(방) 비밀번호 RPC (#996, co-reading §6.4)
+
+방 비밀번호는 **평문 저장 금지** — pgcrypto **bcrypt** 해시(`villages.password_hash`) + 서버측 검증. 해시 컬럼은 `revoke select (password_hash)` 로 클라 read 차단, 비번여부는 비-비밀 `has_password` 플래그로만 노출. 둘 다 **SECURITY DEFINER**(search_path 고정).
+
+```
+room_set_password(p_room_id uuid, p_password text)    → void     -- host(created_by=auth.uid())만. bcrypt 해시 저장(빈값=해제). has_password 갱신
+room_verify_password(p_room_id uuid, p_password text) → boolean  -- crypt(input, stored)=stored 서버 비교. boolean만(해시 비노출). 비번 없는 방=true
+```
+
+- `rooms.create` 는 평문 insert 안 함 — 방 생성 후 `room_set_password` 호출. `rooms.join` 은 `password` select 제거 → `room_verify_password`(boolean)로 분기.
+- 마이그레이션 `35_room_password_hash.sql` **수동 1회 적용 필수**(pgcrypto·컬럼·REVOKE·RPC). 기존 평문은 해시로 변환 후 컬럼 drop.
 
 ### 7.7 가입 전 데이터 동기화 (DataStore 어댑터 전환점)
 
