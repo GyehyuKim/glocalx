@@ -338,10 +338,13 @@ const DataStore = {
     list() {
       return localStorageAdapter.mutate(s => (s.user_books || []).map(_applyBookOverrides));
     },
-    add({ book, current_page, status }) {
+    add({ book, current_page, status, rating }) {
       book = book || {};
       // #772 서가 복원: status='completed'면 완독으로 등록(completed_at·진척 100%). 기본 'reading'.
       const st = (status === 'completed' || status === 'reading') ? status : 'reading';
+      // 별점(#1042 스샷 비전 추출) — 0.5~5.0, 0.5 단위 스냅(Supabase ub_rating_range 와 동일 규칙), 아니면 null.
+      const rn = Number(rating);
+      const rt = (Number.isFinite(rn) && rn > 0) ? Math.min(5, Math.max(0.5, Math.round(rn * 2) / 2)) : null;
       return localStorageAdapter.mutate(s => {
         s.user_books = s.user_books || [];
         // 동일 책(isbn13 또는 title) 있으면 재사용 — 중복 등록 방지.
@@ -358,18 +361,22 @@ const DataStore = {
             },
             status: st,
             current_page: st === 'completed' ? (tp || current_page || 0) : (current_page || 0),
-            rating: null, review_text: null,
+            rating: rt, review_text: null,
             started_at: _today(), completed_at: st === 'completed' ? _today() : null, sessions: [], sentences: [],
           };
           s.user_books.push(ub);
+        } else if (rt != null && ub.rating == null) {
+          // 기존 책이고 아직 별점이 없으면 스샷 별점으로 채움(기존 평가는 덮어쓰지 않음).
+          ub.rating = rt;
         }
         return ub;
       });
     },
-    // 스샷 서가 복원 (#772·#1038) — 책 목록 일괄 등록. items: [{book, status}].
+    // 스샷 서가 복원 (#772·#1038·#1042) — 책 목록 일괄 등록. items: [{book, status, rating?}].
     // status 라우팅: 'wish' → 위시리스트(wish_books), 그 외('completed'/'reading') → user_books(add 재사용).
     // 'wish' 는 user_book 이 아니라 wish_books 에 담아 기존 위시 UX(library.js)와 일치시킨다.
     // 매칭/알라딘 책의 메타(표지·쪽수·isbn)는 BOOK_BY_ID 에 시드해 getBook 으로 해소 → 위시 카드 표지 보존(#1038 게스트 패리티).
+    // rating(#1042): user_books 경로만 별점 보존(wish_books 엔 별점 컬럼 없음 → 무시).
     // 모두 add 류처럼 개별 try/catch — 한 권 실패해도 나머지 진행(무중단).
     addBatch(items) {
       const list = Array.isArray(items) ? items : [];
@@ -381,7 +388,7 @@ const DataStore = {
             const w = DataStore.wishBooks.addOne(it.book);
             if (w) out.push(w);
           } else {
-            out.push(this.add({ book: it.book, status: it.status }));
+            out.push(this.add({ book: it.book, status: it.status, rating: it.rating }));
           }
         } catch (e) { /* 개별 실패 스킵 */ }
       }

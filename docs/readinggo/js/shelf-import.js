@@ -12,6 +12,11 @@
    - 알라딘 보강: 카탈로그 밖 미매칭 책을 /aladin 검색으로 표지·쪽수·ISBN 채움(자동 1차 + "찾기" 버튼).
    - 랭크 매칭: 무순위 hits[0] → 제목 정확도 랭킹으로 오매칭↓.
    - 핵심 로직은 window.RG_shelfImport 로 추출(매핑·매칭·보강 재사용 — #1039 유연 임포트가 재사용).
+
+   #1042 비전 추출:
+   - 워커가 비전(Gemini Flash)을 1순위로 써 표지 그리드(왓챠·밀리·교보 서재) 스샷에서 책을 직접 인식
+     (텍스트 OCR이 0건 추락하는 케이스). 응답에 별점(rating)이 함께 오면 검수 카드에 ★ 표시 + 등록 시 보존.
+   - 업로드/검수 흐름은 동일 — rating 한 필드만 추가로 흐른다(matchRows → rows.rating → addBatch item.rating).
    ========================================================= */
 
 const { useState } = React;
@@ -100,16 +105,20 @@ const RG_shelfImport = (function () {
   }
 
   // 추출 결과(books)를 카탈로그와 매칭 — 행 배열 생성. UI 가 호출.
-  // 행: {title, author, book|null, checked, source}. source: 'catalog'(매칭)|'' (미확인).
+  // 행: {title, author, rating, book|null, checked, source}. source: 'catalog'(매칭)|'' (미확인).
+  // rating(#1042): 비전 추출이 별점을 주면 0.5~5.0 숫자로 보존(없으면 null) → 검수 표시·등록 보존.
   async function matchRows(books) {
     let catalog = [];
     try { catalog = (await (window.loadBooks ? window.loadBooks() : [])) || []; } catch (e) { catalog = []; }
     return (books || []).map((b) => {
       const hit = rankMatch(catalog, b.title, b.author);
       const book = hit ? normalizeCatalogBook(hit) : null;
+      const rn = Number(b && b.rating);
+      const rating = (Number.isFinite(rn) && rn > 0) ? Math.min(5, Math.max(0.5, rn)) : null;
       return {
         title: b.title,
         author: b.author || (book && book.author) || '',
+        rating,
         book,
         checked: true,
         source: book ? 'catalog' : '',
@@ -130,7 +139,7 @@ const SHELF_DESTS = [
 
 function ShelfImportModal({ onClose }) {
   const [phase, setPhase] = useState('upload');   // upload | loading | review
-  const [rows, setRows] = useState([]);           // [{title, author, book|null, checked, source}]
+  const [rows, setRows] = useState([]);           // [{title, author, rating, book|null, checked, source}]
   const [dest, setDest] = useState('completed');  // 목적지 토글(기본 '읽은 책')
   const [enriching, setEnriching] = useState(false); // 알라딘 보강 진행 표시
   const [err, setErr] = useState('');
@@ -203,9 +212,11 @@ function ShelfImportModal({ onClose }) {
     const DS = window.DataStore || {};
     if (!(DS.myBooks && DS.myBooks.addBatch)) { setErr('등록 경로가 준비되지 않았어요.'); return; }
     // 매칭/보강된 책은 어댑터 표면 메타(정규화 완료), 미확인은 제목·저자만. status=목적지 토글값.
+    // rating(#1042): 비전 추출 별점을 함께 넘김 → 어댑터가 user_books.rating 으로 보존(wish 는 별점 없음 → 무시).
     const items = picked.map((r) => ({
       book: r.book ? r.book : { title: r.title.trim(), author: (r.author || '').trim() },
       status: dest,
+      rating: (typeof r.rating === 'number' && r.rating > 0) ? r.rating : null,
     }));
     Promise.resolve(DS.myBooks.addBatch(items))
       .then((res) => {
@@ -224,6 +235,15 @@ function ShelfImportModal({ onClose }) {
   const checkedCount = rows.filter((r) => r.checked).length;
   const matchedCount = rows.filter((r) => r.book).length;
   const destLabel = (SHELF_DESTS.find((d) => d.value === dest) || {}).label || '읽은 책';
+  // 별점 표시 문자열(#1042) — ★ 정수 + 반점(½)은 ⯨ 대신 0.5 텍스트로 간결히. 0/없음이면 '' .
+  const fmtStars = (n) => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return '';
+    const full = Math.floor(v);
+    return '★'.repeat(full) + (v - full >= 0.5 ? '½' : '');
+  };
+  // 별점은 '읽은 책'/'읽는 중' 맥락에서만 의미(위시는 아직 안 읽음) — wish 목적지면 표시 숨김.
+  const showRating = dest !== 'wish';
 
   return (
     <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -286,6 +306,11 @@ function ShelfImportModal({ onClose }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <input value={r.title} onChange={(e) => edit(i, 'title', e.target.value)} placeholder="제목" style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', padding: 0 }} />
                       <input value={r.author} onChange={(e) => edit(i, 'author', e.target.value)} placeholder="저자" style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 11.5, color: 'var(--ink-3)', padding: 0, marginTop: 2 }} />
+                      {showRating && r.rating > 0 && (
+                        <div title={`내 별점 ${r.rating}점 (스샷에서 인식)`} style={{ fontSize: 11, color: '#f5a623', marginTop: 1, letterSpacing: 0.5 }}>
+                          {fmtStars(r.rating)} <span style={{ color: 'var(--ink-3)' }}>{r.rating}</span>
+                        </div>
+                      )}
                     </div>
                     {!r.book && (
                       <button type="button" onClick={() => enrichOne(i)} disabled={r._finding}
