@@ -66,3 +66,8 @@ _local/
 .dev.vars
 .wrangler/
 docs/readinggo/dist/
+
+# Android release 서명 — 절대 커밋 금지 (#1024). 업로드 키스토어·비번은 GitHub Secret 경유.
+*.jks
+*.keystore
+keystore.properties
