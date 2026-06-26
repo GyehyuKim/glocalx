@@ -1,8 +1,30 @@
 apply plugin: 'com.android.application'
 
+// Release 업로드 서명 (#1024) — Play App Signing 의 업로드 키.
+// keystore.properties(gitignore)가 있을 때만 release signingConfig 를 구성한다.
+// 파일이 없으면(로컬 디버그·android-apk.yml 의 assembleDebug) 분기 전체를 건너뛰므로
+// 디버그 빌드는 영향 없음. release.signingConfig 도 조건부 연결 → assembleDebug 무관, bundleRelease 만 키 필요.
+// 평문 키/비번은 절대 커밋 금지 — keystore.properties + GitHub Secret 경유. 문서: ../../RELEASE-BUILD.md
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+def hasReleaseKeystore = keystorePropsFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
 android {
     namespace = "com.readinggo.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    if (hasReleaseKeystore) {
+        signingConfigs {
+            release {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.readinggo.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -20,6 +42,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 키스토어가 있을 때만 release 서명 연결. 없으면 미설정(assembleDebug·CI 무영향).
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

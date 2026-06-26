@@ -1,0 +1,90 @@
+# 안드로이드 release AAB 빌드 (#1024) — Play 업로드용, 수동 트리거.
+# 디버그 APK(android-apk.yml)와 달리 서명된 App Bundle(.aab)을 만들어 Play Console 에 올린다.
+# 서명키는 평문 커밋 금지 → GitHub Secret(base64 키스토어 + 비번)을 디코드해 런타임에만 복원.
+# 흐름: Secret → keystore.properties + upload-keystore.jks 복원 → Vite build(dist)
+#       → cap sync android → gradlew bundleRelease → AAB 아티팩트 업로드.
+# 키스토어 생성·Secret 등록 절차(사용자 1회): docs/readinggo/RELEASE-BUILD.md
+name: android-release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    name: build release AAB
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22   # Capacitor 8 CLI 는 Node >=22 요구(cap sync). android-apk.yml 과 동일.
+
+      # Capacitor 8 / AGP 8 = JDK 17+. 21 사용(android-apk.yml 과 동일).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Android SDK + 라이선스 자동 수락 + ANDROID_HOME 설정.
+      - uses: android-actions/setup-android@v3
+
+      # Secret → 업로드 키스토어 + keystore.properties 복원.
+      # 4개 Secret 필요(없으면 디코드 결과가 빈 파일 → bundleRelease 실패로 드러남):
+      #   RG_UPLOAD_KEYSTORE_BASE64 · RG_KEYSTORE_PASSWORD · RG_KEY_ALIAS · RG_KEY_PASSWORD
+      # storeFile 경로는 android/ 루트 기준(build.gradle 의 rootProject.file).
+      - name: Restore upload keystore from secrets
+        working-directory: docs/readinggo/android
+        env:
+          RG_UPLOAD_KEYSTORE_BASE64: ${{ secrets.RG_UPLOAD_KEYSTORE_BASE64 }}
+          RG_KEYSTORE_PASSWORD: ${{ secrets.RG_KEYSTORE_PASSWORD }}
+          RG_KEY_ALIAS: ${{ secrets.RG_KEY_ALIAS }}
+          RG_KEY_PASSWORD: ${{ secrets.RG_KEY_PASSWORD }}
+        run: |
+          if [ -z "$RG_UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "::error::RG_UPLOAD_KEYSTORE_BASE64 Secret 미설정 — docs/readinggo/RELEASE-BUILD.md 참고해 4개 Secret 등록 필요."
+            exit 1
+          fi
+          echo "$RG_UPLOAD_KEYSTORE_BASE64" | base64 --decode > upload-keystore.jks
+          cat > keystore.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=${RG_KEYSTORE_PASSWORD}
+          keyAlias=${RG_KEY_ALIAS}
+          keyPassword=${RG_KEY_PASSWORD}
+          EOF
+
+      # 웹 번들(dist) 빌드 — capacitor webDir=dist.
+      - name: Build web bundle (Vite)
+        working-directory: docs/readinggo
+        run: |
+          npm ci
+          npm run build
+
+      # dist → android 동기화 + 플러그인(capgo 등) 반영.
+      - name: Capacitor sync (android)
+        working-directory: docs/readinggo
+        run: npx cap sync android
+
+      # 서명된 release AAB 빌드. build.gradle 이 keystore.properties 를 읽어 release 서명 연결.
+      - name: Gradle bundleRelease
+        working-directory: docs/readinggo/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+
+      # 빌드 끝나면 복원한 키스토어·비번 삭제(아티팩트·로그 유출 방지).
+      - name: Clean up keystore
+        if: always()
+        working-directory: docs/readinggo/android
+        run: rm -f upload-keystore.jks keystore.properties
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: readinggo-release-aab
+          path: docs/readinggo/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 14
