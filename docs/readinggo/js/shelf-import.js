@@ -17,6 +17,11 @@
    - 워커가 비전(Gemini Flash)을 1순위로 써 표지 그리드(왓챠·밀리·교보 서재) 스샷에서 책을 직접 인식
      (텍스트 OCR이 0건 추락하는 케이스). 응답에 별점(rating)이 함께 오면 검수 카드에 ★ 표시 + 등록 시 보존.
    - 업로드/검수 흐름은 동일 — rating 한 필드만 추가로 흐른다(matchRows → rows.rating → addBatch item.rating).
+
+   #1045 큰 이미지 타일링(추출 앞단만 교체):
+   - 긴 서재 스샷은 한 장 호출이면 책을 소수만 잡힘(실측 1권) → 클라 canvas 로 세로 ~1800px 조각·~250px
+     겹침으로 잘라 각 조각을 순차+지연으로 /api/shelf-import 호출 → 병합·dedup(실측 35권). 진행 표시 N/M.
+   - 작은 이미지(모바일 한 화면)는 타일링 없이 단일 호출(현행 보존). 핵심은 RG_shelfImport.extractBooks.
    ========================================================= */
 
 const { useState } = React;
@@ -126,7 +131,156 @@ const RG_shelfImport = (function () {
     });
   }
 
-  return { normalizeCatalogBook, rankMatch, aladinLookup, matchRows };
+  /* ── #1045 큰 이미지 클라(canvas) 타일링 ──────────────────────
+     긴 서재 스샷(왓챠 풀페이지·여러 화면 이어붙인 캡쳐)을 한 장으로 비전 호출하면 책을 소수만
+     잡는다(실측: 풀이미지 1권 vs 타일링 35권 — Gemini가 큰 그리드의 일부만 읽음). 가로 폭은 그대로,
+     세로를 ~1800px 조각으로 잘라(경계서 잘린 책을 다음 조각이 통째로 잡게 ~250px 겹침) 각 조각을
+     순차로 /api/shelf-import 에 보낸다(Gemini 무료티어 rate limit 대응 — 조각 간 지연, #844 배치 OCR
+     순차+지연 패턴 차용). 결과는 정규화 제목으로 dedup(겹침 중복 제거)하고 UI 잡음을 블랙리스트로 건다.
+     작은 이미지(모바일 한 화면)는 타일링 없이 원본 그대로 단일 호출 — 현행 동작·화질 보존. */
+  const TILE_TRIGGER_HEIGHT = 2200;  // 이 높이(px) 초과면 타일링(아래 비율 트리거와 OR)
+  const TILE_TRIGGER_RATIO = 2.3;    // 세로/가로 비율이 길면(여러 화면 이어붙인 캡쳐) 타일링
+  const TILE_HEIGHT = 1800;          // 조각 세로(px)
+  const TILE_OVERLAP = 250;          // 조각 간 겹침(px) — 경계 책 보존(필수)
+  const TILE_DELAY_MS = 1800;        // 조각 간 지연(무료티어 rate limit, 1.5~3s 범위)
+  const TILE_MAX = 12;               // 조각 수 안전 상한(폭주 방지)
+
+  // 알려진 UI 문구 — 추출에 가끔 버튼/탭/메뉴 텍스트가 섞인다(예: "오늘부터 독서시작").
+  // 정규화(소문자·공백제거) 완전일치만 거른다 — 부분일치는 실제 제목 오삭제 위험이라 피함.
+  // 못 거른 잡음은 검수 단계에서 유저가 체크 해제(무중단).
+  const UI_NOISE = new Set([
+    '오늘부터독서시작', '독서시작', '내서재', '전체보기', '더보기',
+    '구매내역', '주문내역', '장바구니', '담기', '로그인', '회원가입',
+    '카테고리', '베스트셀러', '바로구매',
+  ]);
+
+  function _sleep(ms) { return new Promise((res) => setTimeout(res, ms)); }
+
+  // 업로드 파일(또는 조각 Blob)을 /api/shelf-import 로 POST. {ok,status,data} 반환(파싱 실패→data null).
+  async function _postImage(blob, filename) {
+    const fd = new FormData();
+    fd.append('document', blob, filename);
+    const r = await fetch('/api/shelf-import', { method: 'POST', body: fd });
+    let data = null;
+    try { data = await r.json(); } catch (e) { data = null; }
+    return { ok: r.ok, status: r.status, data };
+  }
+
+  // 파일 → 이미지 디코드. {img,width,height,cleanup} 반환(cleanup 으로 objectURL 해제).
+  function _loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const objUrl = URL.createObjectURL(file);
+      const img = new Image();
+      const revoke = () => { try { URL.revokeObjectURL(objUrl); } catch (e) { /* noop */ } };
+      img.onload = () => resolve({
+        img,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        cleanup: revoke,
+      });
+      img.onerror = () => { revoke(); reject(new Error('image decode failed')); };
+      img.src = objUrl;
+    });
+  }
+
+  // 이미지를 세로 ~TILE_HEIGHT 조각(가로 그대로, ~TILE_OVERLAP 겹침)으로 잘라 jpeg Blob 배열로.
+  // 마지막 조각은 바닥까지 덮고(겹침 보장), 안전 상한(TILE_MAX)을 넘지 않는다.
+  function sliceToBlobs(img, w, h) {
+    const step = Math.max(1, TILE_HEIGHT - TILE_OVERLAP);
+    const slices = [];
+    for (let y = 0; y < h; y += step) {
+      const sliceH = Math.min(TILE_HEIGHT, h - y);
+      slices.push({ y, sliceH });
+      if (y + sliceH >= h || slices.length >= TILE_MAX) break;
+    }
+    return Promise.all(slices.map(({ y, sliceH }) => new Promise((resolve) => {
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = sliceH;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, y, w, sliceH, 0, 0, w, sliceH);
+      cv.toBlob((b) => resolve(b), 'image/jpeg', 0.85);
+    }))).then((bs) => bs.filter(Boolean));
+  }
+
+  // 조각별 books 를 합쳐 정규화 제목으로 dedup + UI 잡음 제거. author·rating 은 채워진 쪽 우선.
+  function dedupeBooks(books) {
+    const byKey = new Map(), out = [];
+    for (const b of (books || [])) {
+      const title = String((b && b.title) || '').trim();
+      const key = _norm(title);
+      if (!title || !key || UI_NOISE.has(key)) continue;   // 빈 제목·UI 잡음 제외
+      const rn = Number(b && b.rating);
+      const rating = (Number.isFinite(rn) && rn > 0) ? rn : null;
+      const author = String((b && b.author) || '').trim();
+      if (byKey.has(key)) {
+        const ex = byKey.get(key);                          // 겹침 중복 — 빈 필드만 보강
+        if (!ex.author && author) ex.author = author;
+        if (!(ex.rating > 0) && rating) ex.rating = rating;
+        continue;
+      }
+      const row = { title, author };
+      if (rating) row.rating = rating;
+      byKey.set(key, row);
+      out.push(row);
+    }
+    return out;
+  }
+
+  // 단일 응답(data) → { books, empty?, demo? }. 단일 호출 경로 2곳(폴백·작은 이미지) 공용.
+  function _fromResponse(data) {
+    if (data && data.demo) return { demo: true };
+    const books = (data && Array.isArray(data.books)) ? data.books : [];
+    return { books: dedupeBooks(books), empty: !books.length && !!(data && data.empty) };
+  }
+
+  // 업로드 이미지 → 책 목록 추출. 큰/긴 이미지는 클라 타일링(순차+지연+병합), 작으면 단일 호출.
+  // 반환: { books, empty?, demo? }. demo=true 면 워커 미설정(데모) — 호출부가 안내한다.
+  // onProgress(done,total): 진행 표시("책 찾는 중… N/M 조각"). 단일 호출은 total=1.
+  async function extractBooks(file, opts) {
+    const onProgress = (opts && opts.onProgress) || function () { /* noop */ };
+    let loaded = null;
+    try { loaded = await _loadImage(file); } catch (e) { loaded = null; }
+    // 디코드 실패(희귀) → 원본 그대로 단일 호출 폴백.
+    if (!loaded) {
+      onProgress(0, 1);
+      const { data } = await _postImage(file, file.name || 'shelf.jpg');
+      onProgress(1, 1);
+      return _fromResponse(data);
+    }
+    const { img, width, height, cleanup } = loaded;
+    const isBig = height > TILE_TRIGGER_HEIGHT || (width > 0 && height / width >= TILE_TRIGGER_RATIO);
+    try {
+      // 작은 이미지(모바일 한 화면) — 현행대로 원본 그대로 단일 호출(재인코딩 없음).
+      if (!isBig) {
+        onProgress(0, 1);
+        const { data } = await _postImage(file, file.name || 'shelf.jpg');
+        onProgress(1, 1);
+        return _fromResponse(data);
+      }
+      // 큰/긴 이미지 — 세로 타일 분할 → 순차 호출(+지연) → 병합.
+      const tiles = await sliceToBlobs(img, width, height);
+      const total = tiles.length || 1;
+      const all = [];
+      let demo = false;
+      for (let i = 0; i < tiles.length; i++) {
+        onProgress(i, total);
+        try {
+          const { data } = await _postImage(tiles[i], 'tile-' + i + '.jpg');
+          if (data && data.demo) { demo = true; break; }    // 워커 미설정 — 즉시 중단
+          if (data && Array.isArray(data.books)) all.push(...data.books);
+        } catch (e) { /* 이 조각 실패 — 부분 병합 계속 */ }
+        onProgress(i + 1, total);
+        if (i < tiles.length - 1) await _sleep(TILE_DELAY_MS);
+      }
+      if (demo) return { demo: true };
+      const books = dedupeBooks(all);
+      return { books, empty: books.length === 0 };
+    } finally {
+      cleanup();
+    }
+  }
+
+  return { normalizeCatalogBook, rankMatch, aladinLookup, matchRows, extractBooks, dedupeBooks, sliceToBlobs };
 })();
 window.RG_shelfImport = RG_shelfImport;
 
@@ -142,34 +296,38 @@ function ShelfImportModal({ onClose }) {
   const [rows, setRows] = useState([]);           // [{title, author, rating, book|null, checked, source}]
   const [dest, setDest] = useState('completed');  // 목적지 토글(기본 '읽은 책')
   const [enriching, setEnriching] = useState(false); // 알라딘 보강 진행 표시
+  const [progress, setProgress] = useState(null);  // 타일링 진행 {done,total} — 큰 이미지일 때만(#1045)
   const [err, setErr] = useState('');
 
-  const onPick = (file) => {
+  // 업로드 → 추출(#1045 타일링: 큰 이미지는 클라가 세로 조각으로 잘라 순차 호출·병합, 작으면 단일)
+  // → 매칭 → 검수. 추출 오케스트레이션은 RG_shelfImport.extractBooks 가 담당(진행 콜백으로 N/M 표시).
+  const onPick = async (file) => {
     if (!file) return;
     setErr('');
     if (file.size > 8 * 1024 * 1024) { setErr('이미지가 너무 커요 (최대 8MB)'); return; }
     setPhase('loading');
+    setProgress(null);
     if (window.rgTrack) window.rgTrack('shelf_import_started', {});
-    const fd = new FormData();
-    fd.append('document', file, file.name || 'shelf.jpg');
-    fetch('/api/shelf-import', { method: 'POST', body: fd })
-      .then((r) => r.json())
-      .then(async (d) => {
-        if (d && d.demo) { setErr('데모 환경에선 서가 복원이 비활성이에요.'); setPhase('upload'); return; }
-        const books = (d && Array.isArray(d.books)) ? d.books : [];
-        if (!books.length) {
-          setErr(d && d.empty ? '사진에서 글자를 못 찾았어요 — 더 또렷한 캡쳐로 다시 시도해요.' : '책을 찾지 못했어요 — 책 목록이 잘 보이는 캡쳐가 필요해요.');
-          setPhase('upload');
-          return;
-        }
-        const matched = await RG_shelfImport.matchRows(books);
-        setRows(matched);
-        setPhase('review');
-        if (window.rgTrack) window.rgTrack('shelf_import_extracted', { count: matched.length });
-        // 미매칭 책은 백그라운드로 알라딘 보강 시도([P1-1]) — 표지·쪽수·ISBN 자동 채움.
-        autoEnrich(matched);
-      })
-      .catch(() => { setErr('처리 중 문제가 생겼어요 — 잠시 후 다시 시도해요.'); setPhase('upload'); });
+    try {
+      const out = await RG_shelfImport.extractBooks(file, {
+        onProgress: (done, total) => setProgress({ done, total }),
+      });
+      if (out && out.demo) { setErr('데모 환경에선 서가 복원이 비활성이에요.'); setPhase('upload'); return; }
+      const books = (out && Array.isArray(out.books)) ? out.books : [];
+      if (!books.length) {
+        setErr(out && out.empty ? '사진에서 글자를 못 찾았어요 — 더 또렷한 캡쳐로 다시 시도해요.' : '책을 찾지 못했어요 — 책 목록이 잘 보이는 캡쳐가 필요해요.');
+        setPhase('upload');
+        return;
+      }
+      const matched = await RG_shelfImport.matchRows(books);
+      setRows(matched);
+      setPhase('review');
+      if (window.rgTrack) window.rgTrack('shelf_import_extracted', { count: matched.length });
+      // 미매칭 책은 백그라운드로 알라딘 보강 시도([P1-1]) — 표지·쪽수·ISBN 자동 채움.
+      autoEnrich(matched);
+    } catch (e) {
+      setErr('처리 중 문제가 생겼어요 — 잠시 후 다시 시도해요.'); setPhase('upload');
+    }
   };
 
   // 미매칭 행을 알라딘으로 일괄 보강(자동). 찾으면 book 채우고 source='aladin'.
@@ -271,6 +429,11 @@ function ShelfImportModal({ onClose }) {
             <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--ink-3)' }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>🔎</div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>사진에서 책을 찾는 중…</div>
+              {progress && progress.total > 1 && (
+                <div style={{ fontSize: 12, marginTop: 6, color: 'var(--ink-3)' }}>
+                  큰 사진이라 나눠 읽는 중 · {Math.min(progress.done, progress.total)}/{progress.total} 조각
+                </div>
+              )}
             </div>
           )}
 
