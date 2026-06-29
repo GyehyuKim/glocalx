@@ -744,9 +744,9 @@ function NestView({ state, onCheckin, onOpenSearch }) {
         )}
       </div>
       {bookQuotes.length === 0 ? (
-        // #1068: 임시 참새 SVG → 브랜드 마크(SparrowMark) + 유도 카피 + '한 문장 남기기' CTA(위 입력창 포커스).
+        // #1068/#1081: 손코딩 참새 SVG → 모노라인 아이콘(rgIcon) + 유도 카피 + '한 문장 남기기' CTA(위 입력창 포커스).
         <div className="my-q-empty">
-          <span className="ico" aria-hidden="true"><window.SparrowMark size={36} /></span>
+          <span className="ico" aria-hidden="true">{window.rgIcon('pen', 28)}</span>
           <div className="my-q-empty-lead">이 책에서 만난 한 줄을 짹 해보세요.</div>
           <div className="my-q-empty-sub">남긴 문장이 여기 쌓여요.</div>
           <button type="button" className="my-q-empty-cta" onClick={focusSentenceInput}>한 문장 남기기</button>
