@@ -88,10 +88,10 @@ function rgNoteKind(note) {
   if (free) return 'note';
   return '';
 }
-// 문장별 성찰 기본 모드 (#1070) — ⚠️ 계휴 확정 필요(companion.md §4.6). 카드 버튼은 모드를 명시해
-// 열기 때문에, 이 기본값은 '모드 미지정 + 빈 문장' 진입(되감기·모아보기 등)에만 적용된다.
-//   'jacky' = 현행 유지(재키를 먼저 노출하되 '내 감상' 토글이 한 탭) · 'note' = 감상 우선.
-const RG_REFLECT_DEFAULT = 'jacky';
+// 문장별 성찰 기본 모드 (#1070, 기본=note 확정 #1081). 카드 버튼은 모드를 명시해 열기 때문에,
+// 이 기본값은 '모드 미지정 + 빈 문장' 진입(되감기·모아보기 등)에만 적용된다.
+//   'note' = 내 감상 우선(계휴 결정) · 'jacky' = 재키 먼저.
+const RG_REFLECT_DEFAULT = 'note';
 window.rgSplitNote = rgSplitNote;
 window.rgJoinNote = rgJoinNote;
 window.rgNoteKind = rgNoteKind;
