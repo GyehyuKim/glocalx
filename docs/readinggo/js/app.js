@@ -389,6 +389,8 @@ function App() {
   useEffect(() => { window.RG_openCollection = (opts) => { setCollectionFilter(opts && opts.filter); setCollectionOpen(true); }; return () => { window.RG_openCollection = null; }; }, []);
   // 스샷 서가 복원(#772) — 빈 서재 CTA로 열림.
   const [shelfImportOpen, setShelfImportOpen] = useState(false);
+  // 유연 임포트(#1039) — 붙여넣기/파일 텍스트로 가져오기. 스샷과 형제 진입점(텍스트/파일이 1순위).
+  const [textImportOpen, setTextImportOpen] = useState(false);
   // 게스트 게이트(#1048): 미로그인(게스트)은 모달 대신 로그인 유도(+토스트). 이유: 비전 LLM 코스트 +
   // 임포트는 실계정에 영속(검토함). 로그인 사용자만 모달 진입. authUser 변화 시 재등록(최신 게스트 판정).
   useEffect(() => {
@@ -400,7 +402,16 @@ function App() {
       }
       setShelfImportOpen(true);
     };
-    return () => { window.RG_openShelfImport = null; };
+    // 유연 임포트(#1039) — 스샷과 동일한 로그인 게이트(검토함 영속·일관성, flexible-import.md §3).
+    window.RG_openTextImport = () => {
+      if (_supa && authUser === null) {
+        if (window.showToast) window.showToast('로그인하면 책을 가져올 수 있어요');
+        if (window.RG_login) window.RG_login();
+        return;
+      }
+      setTextImportOpen(true);
+    };
+    return () => { window.RG_openShelfImport = null; window.RG_openTextImport = null; };
   }, [authUser]);
   const [appState, setAppState] = useState(() => ({ ...INITIAL_STATE }));
   const [popularBooks, setPopularBooks] = useState(null);  // #835: 검색 추천 인기 도서(우리 사이트) — startedThisWeek + ALL_BOOKS 폴백
@@ -963,6 +974,11 @@ function App() {
         {/* 스샷 서가 복원 (#772) */}
         {shelfImportOpen && ReactDOM.createPortal(
           <ShelfImportModal onClose={() => setShelfImportOpen(false)} />,
+          document.body
+        )}
+        {/* 유연 도서기록 임포트 — 붙여넣기/파일 (#1039) */}
+        {textImportOpen && window.TextImportModal && ReactDOM.createPortal(
+          <window.TextImportModal onClose={() => setTextImportOpen(false)} />,
           document.body
         )}
 

@@ -32,6 +32,8 @@ const RG_ICONS = {
   camera: <g stroke="currentColor" strokeWidth="1.35" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M2 5.4h2.3l1-1.6h5.4l1 1.6H14a.8.8 0 0 1 .8.8v6.2a.8.8 0 0 1-.8.8H2a.8.8 0 0 1-.8-.8V6.2A.8.8 0 0 1 2 5.4z"/><circle cx="8" cy="9" r="2.5"/></g>,
   trash: <g stroke="currentColor" strokeWidth="1.35" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.3h11"/><path d="M4 4.3l.7 8.8a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.8"/><path d="M6 4.3V3.2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.1"/><path d="M6.7 6.6l.3 4.8M9.3 6.6l-.3 4.8"/></g>,
   box: <g stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M13.5 11V5a1 1 0 0 0-.5-.87l-4.5-2.6a1 1 0 0 0-1 0L3 4.13A1 1 0 0 0 2.5 5v6a1 1 0 0 0 .5.87l4.5 2.6a1 1 0 0 0 1 0l4.5-2.6A1 1 0 0 0 13.5 11z"/><path d="M2.7 4.9L8 7.9l5.3-3"/><path d="M8 14V7.9"/></g>,
+  // 붙여넣기/파일 가져오기 진입점 (#1039) — 클립보드+텍스트 라인. 모노라인 16x16, currentColor 상속.
+  paste: <g stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 4h2M10.5 4h2a1 1 0 0 1 1 1v8.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h0"/><rect x="5" y="2.5" width="6" height="2.8" rx="0.9"/><path d="M5.2 8.3h5.6M5.2 10.8h3.6"/></g>,
 };
 function rgIcon(name, size) {
   const s = size || 16;

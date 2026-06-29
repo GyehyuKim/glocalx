@@ -453,15 +453,22 @@ function LibraryView({ state, onActivateUserBook }) {
 
       {/* 내 서재 섹션 */}
       <div style={{padding:'0 16px', marginBottom:20}}>
-        {/* #832: '스샷으로 복원' 상시 진입점 — 빈 서가(아래 CTA)뿐 아니라 책장이 차 있어도 접근 가능.
-            DESIGN 3차(텍스트·아이콘) 버튼 위계. 빈 서가 큰 CTA(아래)는 유지. */}
-        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12}}>
+        {/* 상시 임포트 진입점 — 텍스트/파일 가져오기(#1039, 1순위)와 스샷 복원(#772, #832)을 나란히.
+            DESIGN 3차(텍스트·아이콘) 버튼 위계. 빈 서가 큰 CTA(아래)는 유지. 텍스트/파일을 먼저(왼쪽). */}
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, gap:8}}>
           <div style={{fontSize:16, fontWeight:900, color:'var(--ink)', letterSpacing:'-0.3px'}}>내 서재</div>
-          <button onClick={() => window.RG_openShelfImport && window.RG_openShelfImport()}
-            title="책장 스크린샷으로 읽은 책 한 번에 복원"
-            style={{display:'inline-flex', alignItems:'center', gap:4, background:'transparent', border:'none', color:'var(--brand-3)', fontSize:12, fontWeight:800, cursor:'pointer', padding:'4px 2px', whiteSpace:'nowrap'}}>
-            {window.rgIcon('camera',13)} 스샷으로 복원
-          </button>
+          <div style={{display:'flex', alignItems:'center', gap:10, flexShrink:0}}>
+            <button onClick={() => window.RG_openTextImport && window.RG_openTextImport()}
+              title="노션·엑셀·메모에서 복사해 붙여넣거나 파일로 가져오기"
+              style={{display:'inline-flex', alignItems:'center', gap:4, background:'transparent', border:'none', color:'var(--brand-3)', fontSize:12, fontWeight:800, cursor:'pointer', padding:'4px 2px', whiteSpace:'nowrap'}}>
+              {window.rgIcon('paste',13)} 붙여넣기·파일
+            </button>
+            <button onClick={() => window.RG_openShelfImport && window.RG_openShelfImport()}
+              title="책장 스크린샷으로 읽은 책 한 번에 복원"
+              style={{display:'inline-flex', alignItems:'center', gap:4, background:'transparent', border:'none', color:'var(--brand-3)', fontSize:12, fontWeight:800, cursor:'pointer', padding:'4px 2px', whiteSpace:'nowrap'}}>
+              {window.rgIcon('camera',13)} 스샷
+            </button>
+          </div>
         </div>
 
         {/* 📦 검토함 (#1048) — 임포트가 책장 직행 대신 여기로 적재. 항목별 책장 토글 + [내 서재로][제외] + 일괄.
@@ -646,11 +653,18 @@ function LibraryView({ state, onActivateUserBook }) {
               {activeSubtab === 'completed' && (ratingFilter.size ? '이 별점의 완독한 책이 없어요' : '완독한 책이 없어요')}
               {activeSubtab === 'aborted' && '중단한 책이 없어요'}
             </div>
-            {/* 빈 서가 박멸 (#772) — 스샷으로 서가 복원 진입 */}
-            <button onClick={() => window.RG_openShelfImport && window.RG_openShelfImport()}
-              style={{marginTop:14, padding:'10px 16px', borderRadius:10, border:'1.5px solid var(--brand)', background:'var(--brand-tint)', color:'var(--brand-3)', fontWeight:800, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5}}>
-              {window.rgIcon('camera',14)} 스샷으로 서가 복원
-            </button>
+            {/* 빈 서가 박멸 — 텍스트/파일 가져오기 1순위(#1039), 스샷 복원(#772)은 형제로 아래에. */}
+            <div style={{marginTop:14, display:'flex', flexDirection:'column', alignItems:'center', gap:8}}>
+              <button onClick={() => window.RG_openTextImport && window.RG_openTextImport()}
+                title="노션·엑셀·메모에서 복사해 붙여넣거나 파일로 가져오기"
+                style={{padding:'10px 16px', borderRadius:12, border:'1.5px solid var(--brand)', background:'var(--brand-tint)', color:'var(--brand-3)', fontWeight:800, fontSize:13, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5}}>
+                {window.rgIcon('paste',14)} 붙여넣기·파일로 가져오기
+              </button>
+              <button onClick={() => window.RG_openShelfImport && window.RG_openShelfImport()}
+                style={{background:'transparent', border:'none', color:'var(--brand-3)', fontWeight:800, fontSize:12.5, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:5, padding:'4px 8px'}}>
+                {window.rgIcon('camera',13)} 스샷으로 복원
+              </button>
+            </div>
           </div>
         )}
 
