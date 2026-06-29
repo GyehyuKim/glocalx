@@ -122,7 +122,7 @@ const RG_shelfImport = (function () {
       const book = hit ? normalizeCatalogBook(hit) : null;
       const rn = Number(b && b.rating);
       const rating = (Number.isFinite(rn) && rn > 0) ? Math.min(5, Math.max(0.5, rn)) : null;
-      return {
+      const row = {
         title: b.title,
         author: b.author || (book && book.author) || '',
         rating,
@@ -130,7 +130,31 @@ const RG_shelfImport = (function () {
         checked: true,
         source: book ? 'catalog' : '',
       };
+      // 유연 임포트(#1039): 파싱이 준 상태(completed/reading/wish)·날짜를 행에 보존.
+      //   이미지 경로 books엔 status/date 가 없어 무해(additive — 텍스트 경로만 채워짐).
+      if (b && typeof b.status === 'string' && b.status) row.status = b.status;
+      if (b && typeof b.date === 'string' && b.date) row.date = b.date;
+      return row;
     });
+  }
+
+  /* ── #1039 유연 임포트 — 텍스트(붙여넣기/파일) → 책 목록 추출 ──────────────
+     extractBooks(이미지)의 텍스트 형제. 붙여넣은 임의 포맷 텍스트를 /api/parse-books(텍스트 LLM)로
+     보내 책 목록을 구조화한다. 파일(.csv/.tsv/.txt)은 클라가 텍스트로 평탄화해 같은 경로로 흘린다.
+     반환: { books, empty?, demo? }. demo=true 면 워커 미설정(데모) — 호출부가 안내. */
+  async function extractBooksFromText(text) {
+    const t = String(text || '').trim();
+    if (!t) return { books: [], empty: true };
+    let data = null;
+    try {
+      const r = await fetch('/api/parse-books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: t.slice(0, 32 * 1024) }),   // 32KB 상한(워커도 동일 컷)
+      });
+      try { data = await r.json(); } catch (e) { data = null; }
+    } catch (e) { data = null; }
+    return _fromResponse(data);   // {demo} | {books(dedup·status보존), empty}
   }
 
   /* ── #1045 큰 이미지 클라(canvas) 타일링 ──────────────────────
@@ -205,6 +229,7 @@ const RG_shelfImport = (function () {
   }
 
   // 조각별 books 를 합쳐 정규화 제목으로 dedup + UI 잡음 제거. author·rating 은 채워진 쪽 우선.
+  // status·date(#1039 유연 임포트)도 채워진 쪽 우선으로 보존(이미지 경로 books엔 없어 무해 — additive).
   function dedupeBooks(books) {
     const byKey = new Map(), out = [];
     for (const b of (books || [])) {
@@ -214,14 +239,20 @@ const RG_shelfImport = (function () {
       const rn = Number(b && b.rating);
       const rating = (Number.isFinite(rn) && rn > 0) ? rn : null;
       const author = String((b && b.author) || '').trim();
+      const status = (b && typeof b.status === 'string') ? b.status.trim() : '';
+      const date = (b && typeof b.date === 'string') ? b.date.trim() : '';
       if (byKey.has(key)) {
         const ex = byKey.get(key);                          // 겹침 중복 — 빈 필드만 보강
         if (!ex.author && author) ex.author = author;
         if (!(ex.rating > 0) && rating) ex.rating = rating;
+        if (!ex.status && status) ex.status = status;
+        if (!ex.date && date) ex.date = date;
         continue;
       }
       const row = { title, author };
       if (rating) row.rating = rating;
+      if (status) row.status = status;
+      if (date) row.date = date;
       byKey.set(key, row);
       out.push(row);
     }
@@ -282,7 +313,7 @@ const RG_shelfImport = (function () {
     }
   }
 
-  return { normalizeCatalogBook, rankMatch, aladinLookup, matchRows, extractBooks, dedupeBooks, sliceToBlobs };
+  return { normalizeCatalogBook, rankMatch, aladinLookup, matchRows, extractBooks, extractBooksFromText, dedupeBooks, sliceToBlobs };
 })();
 window.RG_shelfImport = RG_shelfImport;
 
@@ -506,3 +537,248 @@ function ShelfImportModal({ onClose }) {
   );
 }
 window.ShelfImportModal = ShelfImportModal;
+
+// 파싱이 준 상태 칩 라벨(#1039) — 검수 카드에 표시(읽음/읽는 중/읽고 싶음).
+const FLEX_STATUS_LABEL = { completed: '읽음', reading: '읽는 중', wish: '읽고 싶음' };
+
+/* ── #1039 유연 도서기록 임포트 모달 — 붙여넣기/파일 → /api/parse-books → 검수 → 검토함 ──
+   ShelfImportModal(이미지)의 텍스트 형제. 매칭·검수·검토함 코어(RG_shelfImport·importStaging)는
+   그대로 재사용하고 입력 어댑터(텍스트/파일)만 새로 둔다. 열린 PR #1078 이 ShelfImportModal 을
+   건드리므로 충돌 회피 위해 별도 컴포넌트로 분리(이 파일에 추가, ShelfImportModal 무수정).
+   목적지(§8): 파싱이 status 준 행은 그 값 보존, status 없는 행은 사용자가 1회 선택해야 적재(기본값 없음).
+   게스트 차단은 RG_openTextImport 게이트(app.js). 파일은 .csv/.tsv/.txt 만 텍스트로 평탄화 —
+   .xlsx 는 셀 복사→붙여넣기(TSV)로 커버, 파일 파싱은 후속(라이브러리 결정 필요 — Stack Lock). */
+function TextImportModal({ onClose }) {
+  const [phase, setPhase] = useState('input');     // input | loading | review
+  const [text, setText] = useState('');
+  const [rows, setRows] = useState([]);            // [{title, author, rating, book|null, checked, source, status?, date?}]
+  const [dest, setDest] = useState('');            // status 없는 행 목적지 — 기본값 없음(§8). '' = 미선택.
+  const [enriching, setEnriching] = useState(false);
+  const [err, setErr] = useState('');
+
+  // 붙여넣기/파일 텍스트 → 추출(/api/parse-books) → 매칭 → 검수. 코어는 ShelfImportModal 과 공유.
+  const runParse = async (raw) => {
+    const t = String(raw || '').trim();
+    if (!t) { setErr('붙여넣을 텍스트나 파일을 넣어주세요.'); return; }
+    setErr('');
+    setPhase('loading');
+    if (window.rgTrack) window.rgTrack('flexible_import_started', {});
+    try {
+      const out = await RG_shelfImport.extractBooksFromText(t);
+      if (out && out.demo) { setErr('데모 환경에선 가져오기가 비활성이에요.'); setPhase('input'); return; }
+      const books = (out && Array.isArray(out.books)) ? out.books : [];
+      if (!books.length) {
+        setErr('책을 찾지 못했어요 — 제목·저자가 보이는 목록인지 확인하고 다시 시도해요.');
+        setPhase('input');
+        return;
+      }
+      const matched = await RG_shelfImport.matchRows(books);   // status·date 보존(확장)
+      setRows(matched);
+      setPhase('review');
+      if (window.rgTrack) window.rgTrack('flexible_import_parsed', { count: matched.length });
+      autoEnrich(matched);
+    } catch (e) {
+      setErr('가져오는 중 문제가 생겼어요 — 잠시 후 다시 시도해요.'); setPhase('input');
+    }
+  };
+
+  // 파일(.csv/.tsv/.txt) → 텍스트 평탄화 → 같은 경로. .xlsx 는 막고 안내(셀 복사→붙여넣기로 우회).
+  const onPickFile = async (file) => {
+    if (!file) return;
+    setErr('');
+    const name = (file.name || '').toLowerCase();
+    if (!/\.(csv|tsv|txt)$/i.test(name)) {
+      if (/\.xlsx?$/i.test(name)) setErr('엑셀(.xlsx) 파일은 아직 못 읽어요 — 엑셀에선 셀을 복사해 위 칸에 붙여넣으면(표가 탭으로 들어와요) 그대로 가져와져요.');
+      else setErr('CSV·TSV·TXT 파일만 올릴 수 있어요. (엑셀은 셀 복사→붙여넣기)');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) { setErr('파일이 너무 커요 (최대 2MB)'); return; }
+    let txt = '';
+    try { txt = await file.text(); } catch (e) { setErr('파일을 읽지 못했어요 — 다시 시도해요.'); return; }
+    setText(txt);
+    runParse(txt);
+  };
+
+  // 미매칭 행을 알라딘으로 일괄 보강(ShelfImportModal autoEnrich 과 동일 패턴 — 순차, 무중단).
+  const autoEnrich = async (matched) => {
+    const targets = [];
+    (matched || []).forEach((r, idx) => { if (!r.book && (r.title || '').trim()) targets.push({ idx, r }); });
+    if (targets.length) {
+      setEnriching(true);
+      for (const { idx, r } of targets) {
+        let found = null;
+        try { found = await RG_shelfImport.aladinLookup(r.title, r.author); } catch (e) { found = null; }
+        if (found) {
+          setRows((rs) => rs.map((row, j) => (j === idx && !row.book
+            ? { ...row, book: found, author: row.author || found.author, source: 'aladin' } : row)));
+        }
+      }
+      setEnriching(false);
+    }
+    setRows((rs) => _dedupRowsByIsbn(rs));
+  };
+
+  // 단건 수동 보강("찾기") — 자동이 못 찾은 책을 제목 편집 후 다시 시도.
+  const enrichOne = async (i) => {
+    const r = rows[i];
+    if (!r) return;
+    setRows((rs) => rs.map((x, j) => (j === i ? { ...x, _finding: true } : x)));
+    let found = null;
+    try { found = await RG_shelfImport.aladinLookup(r.title, r.author); } catch (e) { found = null; }
+    setRows((rs) => rs.map((x, j) => (j === i
+      ? { ...x, _finding: false, book: found || x.book, author: x.author || (found && found.author) || '', source: found ? 'aladin' : x.source }
+      : x)));
+  };
+
+  const toggle = (i) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, checked: !r.checked } : r)));
+  const edit = (i, k, v) => setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [k]: v } : r)));
+
+  const picked = rows.filter((r) => r.checked && (r.title || '').trim());
+  const needDest = picked.some((r) => !r.status);    // status 없는 행이 있으면 목적지 1회 선택 필요(§8)
+  const checkedCount = picked.length;
+  const matchedCount = rows.filter((r) => r.book).length;
+
+  // 검수 "담기" → 검토함(import_staging) 적재(책장 직행 아님 — ShelfImportModal 과 동일 코어).
+  // status: 파싱이 준 행은 그 값, 없는 행은 사용자 1회 선택 dest. 미선택 시 막음(§8). 별점 보존(#1042).
+  const register = () => {
+    if (!picked.length) { setErr('담을 책을 한 권 이상 선택해요.'); return; }
+    if (needDest && !dest) { setErr('상태가 없는 책을 어디에 담을지 먼저 골라주세요.'); return; }
+    const DS = window.DataStore || {};
+    if (!(DS.importStaging && DS.importStaging.add)) { setErr('검토함이 준비되지 않았어요.'); return; }
+    const items = picked.map((r) => ({
+      book: r.book ? r.book : { title: r.title.trim(), author: (r.author || '').trim() },
+      status: r.status || dest,    // 파싱 status 우선, 없으면 사용자 1회 선택분(§8)
+      rating: (typeof r.rating === 'number' && r.rating > 0) ? r.rating : null,
+    }));
+    Promise.resolve(DS.importStaging.add(items))
+      .then((res) => {
+        const n = Array.isArray(res) ? res.length : 0;
+        if (!n) { setErr('검토함에 담지 못했어요 — 다시 시도해요.'); return; }
+        if (window.rgTrack) window.rgTrack('flexible_import_staged', { count: n, status: dest || 'parsed' });
+        try { window.dispatchEvent(new CustomEvent('rg:import-staged')); } catch (e) {}
+        if (window.showToast) window.showToast(`검토함에 ${n}권 담았어요 — 책장에서 검토하세요`);
+        onClose();
+      })
+      .catch(() => { setErr('검토함 담기에 문제가 생겼어요 — 다시 시도해요.'); });
+  };
+
+  // 별점 표시(#1042 fmtStars 동일) — ★ 정수 + 반점(½). 0/없음이면 ''.
+  const fmtStars = (n) => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) return '';
+    const full = Math.floor(v);
+    return '★'.repeat(full) + (v - full >= 0.5 ? '½' : '');
+  };
+
+  return (
+    <div className="modal-backdrop show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet" role="dialog" aria-label="붙여넣기·파일로 책 가져오기">
+        <div className="sheet-grip" />
+        <button onClick={onClose} aria-label="닫기" style={{ position: 'absolute', top: 10, right: 14, background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', color: 'var(--ink-2)', lineHeight: 1, zIndex: 2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{window.rgIcon('close', 16)}</button>
+        <div style={{ padding: '8px 20px 20px' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 900, margin: '4px 0 6px', color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 7 }}>{window.rgIcon('paste', 18)} 붙여넣기·파일로 가져오기</h2>
+
+          {phase === 'input' && (
+            <div>
+              <p style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 12 }}>
+                노션·엑셀·메모·서점 구매내역에서 <b>책 목록을 복사해 붙여넣</b>으세요. 형식이 뒤죽박죽이어도 제목·저자를 알아서 골라내요.
+              </p>
+              {err && <div style={{ fontSize: 12.5, color: 'var(--danger, #d23)', marginBottom: 10 }}>{err}</div>}
+              <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7}
+                placeholder={'예)\n데미안 / 헤르만 헤세 ★★★★★ 읽음\n사피엔스 유발 하라리 읽는 중\n불안 알랭 드 보통'}
+                style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--line)', borderRadius: 12, background: 'var(--card)', color: 'var(--ink)', fontSize: 13, lineHeight: 1.6, padding: '10px 12px', resize: 'vertical', fontFamily: 'inherit' }} />
+              <button className="submit-btn" style={{ width: '100%', margin: '10px 0 0' }} disabled={!text.trim()} onClick={() => runParse(text)}>
+                가져오기
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0 10px' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+                <span style={{ fontSize: 11, color: 'var(--ink-3)', fontWeight: 700 }}>또는 파일로</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 12, background: 'var(--brand-soft)', color: 'var(--brand-3)', fontSize: 13, fontWeight: 800, border: '1.5px solid var(--brand-soft)' }}>
+                {window.rgIcon('download', 14)} CSV·TSV·TXT 파일 고르기
+                <input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" style={{ display: 'none' }} onChange={(e) => onPickFile(e.target.files && e.target.files[0])} />
+              </label>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10, lineHeight: 1.5 }}>엑셀은 셀을 복사해 위 칸에 붙여넣으면 돼요 · 텍스트는 책 인식에만 쓰고 저장하지 않아요</p>
+            </div>
+          )}
+
+          {phase === 'loading' && (
+            <div style={{ padding: '36px 0', textAlign: 'center', color: 'var(--ink-3)' }}>
+              <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center', color: 'var(--ink-3)' }}>{window.rgIcon('search', 24)}</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>붙여넣은 글에서 책을 찾는 중…</div>
+            </div>
+          )}
+
+          {phase === 'review' && (
+            <div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-2)', marginBottom: 8 }}>
+                {rows.length}권 찾았어요 (서가 매칭 {matchedCount}권){enriching ? ' · 표지 채우는 중…' : ''}. 담을 책을 확인하세요.
+              </div>
+
+              {/* status 없는 행 목적지 — 기본값 없음(§8). 파싱이 status 준 행은 각자 값 보존(아래 칩). */}
+              {needDest && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink-2)', marginBottom: 6 }}>상태가 없는 책은 어디에 담을까요?</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {SHELF_DESTS.map((d) => (
+                      <button key={d.value} type="button" onClick={() => setDest(d.value)} title={d.hint}
+                        style={{
+                          flex: 1, padding: '7px 4px', borderRadius: 12, fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                          border: dest === d.value ? '1.5px solid var(--brand)' : '1.5px solid var(--line)',
+                          background: dest === d.value ? 'var(--brand-soft)' : 'var(--card)',
+                          color: dest === d.value ? 'var(--brand-3)' : 'var(--ink-2)',
+                        }}>
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {err && <div style={{ fontSize: 12.5, color: 'var(--danger, #d23)', marginBottom: 10 }}>{err}</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '42vh', overflowY: 'auto', marginBottom: 14 }}>
+                {rows.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--card)', border: '1.5px solid var(--line)', borderRadius: 12, padding: '8px 10px', opacity: r.checked ? 1 : 0.5 }}>
+                    <input type="checkbox" checked={r.checked} onChange={() => toggle(i)} aria-label="담기 선택" style={{ width: 18, height: 18, flexShrink: 0 }} />
+                    <div style={{ width: 30, height: 42, flexShrink: 0, borderRadius: 12, overflow: 'hidden', background: 'var(--line)' }}>
+                      {r.book && r.book.cover_url && <img src={r.book.cover_url} alt="" referrerPolicy="no-referrer" onError={(e) => (e.target.style.display = 'none')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <input value={r.title} onChange={(e) => edit(i, 'title', e.target.value)} placeholder="제목" style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', padding: 0 }} />
+                      <input value={r.author} onChange={(e) => edit(i, 'author', e.target.value)} placeholder="저자" style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 11.5, color: 'var(--ink-3)', padding: 0, marginTop: 2 }} />
+                      {((r.status && FLEX_STATUS_LABEL[r.status]) || r.rating > 0) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                          {r.status && FLEX_STATUS_LABEL[r.status] && (
+                            <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--brand-3)', background: 'var(--brand-soft)', borderRadius: 12, padding: '1px 7px' }}>{FLEX_STATUS_LABEL[r.status]}</span>
+                          )}
+                          {r.rating > 0 && (
+                            <span title={`내 별점 ${r.rating}점`} style={{ fontSize: 11, color: 'var(--gold)', letterSpacing: 0.5 }}>{fmtStars(r.rating)} <span style={{ color: 'var(--ink-3)' }}>{r.rating}</span></span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {!r.book && (
+                      <button type="button" onClick={() => enrichOne(i)} disabled={r._finding}
+                        title="알라딘에서 표지·정보 찾기"
+                        style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-3)', background: 'var(--brand-soft)', border: 'none', borderRadius: 12, padding: '3px 7px', flexShrink: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {r._finding ? '찾는 중…' : <>{window.rgIcon('search', 11)} 찾기</>}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button className="submit-btn" style={{ width: '100%', margin: 0 }} disabled={!checkedCount || enriching || (needDest && !dest)} onClick={register}>
+                {enriching ? '책 정보 찾는 중… 잠시만요' : `${checkedCount}권 검토함에 담기`}
+              </button>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
+                바로 책장에 넣지 않고 <b>검토함</b>에 담아요 · 책장(서재)에서 확인하고 옮기세요
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+window.TextImportModal = TextImportModal;

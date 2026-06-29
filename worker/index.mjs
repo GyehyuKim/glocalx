@@ -37,6 +37,13 @@ export default {
       if (origin && origin !== url.origin) return json({ error: 'forbidden origin' }, 403);
       return wikiAskProxy(request, env);
     }
+    // 유연 도서기록 임포트 — 붙여넣기/파일 텍스트 → 책 목록 구조화 (#1039). wiki-ask 형제.
+    // 같은 텍스트 LLM 프록시(callLLM)·동일출처 가드·키 서버보관. 클라가 붙여넣은 텍스트만 전송.
+    if (p === '/api/parse-books') {
+      const origin = request.headers.get('Origin');
+      if (origin && origin !== url.origin) return json({ error: 'forbidden origin' }, 403);
+      return parseBooksProxy(request, env);
+    }
     // 계정 삭제 (#875, Apple 심사 필수) — 호출자 토큰으로 본인 확인 후 service_role 로 admin 삭제.
     // public.users → auth.users(id) on delete cascade 라 전 데이터(서재·문장·둥지) 일괄 삭제. 동일출처만.
     if (p === '/api/delete-account') {
@@ -577,6 +584,17 @@ const SHELF_VISION_SYSTEM = '너는 사용자의 책장·평가 목록 스크린
 // 관용 폴백(#1038 P2-4): 1차 JSON.parse 실패 시 trailing comma 제거 후 재시도, 그래도 실패면
 // 단일 객체({...})를 배열로 감싸 수용(parseSeedJson 선례) → LLM 사소한 포맷 흠으로 전체 0건 추락 방지.
 // rating(#1042): 비전 추출이 별점을 함께 주면 0.5~5.0 으로 클램프해 보존(텍스트 OCR 경로엔 미출현 → 무해).
+// 유연 임포트(#1039) — LLM이 준 상태 라벨을 completed/reading/wish 로 정규화. 매핑 못 하면 ''(생략 → 검수 시 사용자 1회 선택, flexible-import.md §8).
+// 순서 주의: 'reading' 을 먼저 봐 'read'(completed) 부분일치 오인식을 막는다.
+function normImportStatus(s) {
+  const t = String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, '');
+  if (!t) return '';
+  if (/(읽는중|독서중|읽고있|reading)/.test(t)) return 'reading';
+  if (/(읽고싶|보고싶|위시|관심|wish|want|toread|tbr)/.test(t)) return 'wish';
+  if (/(완독|읽음|다읽|완료|read|done|finish|complete)/.test(t)) return 'completed';
+  return '';
+}
+
 function parseShelfBooks(s) {
   if (!s) return [];
   let t = String(s).trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -603,6 +621,11 @@ function parseShelfBooks(s) {
     // 별점 — 숫자만 채택, 0.5~5.0 클램프. 0/음수/비숫자는 미부착(rating 없음).
     const rn = Number(it.rating);
     if (Number.isFinite(rn) && rn > 0) row.rating = Math.min(5, Math.max(0.5, Math.round(rn * 2) / 2));
+    // 상태·날짜(#1039 유연 임포트) — 텍스트에 있으면 보존. 비전/OCR 경로의 LLM 응답엔 키가 없어 무해(additive).
+    const st = normImportStatus(it.status);
+    if (st) row.status = st;
+    const dt = String(it.date == null ? '' : it.date).trim().slice(0, 40);
+    if (dt) row.date = dt;
     out.push(row);
     if (out.length >= 60) break;
   }
@@ -1019,6 +1042,38 @@ async function wikiAskProxy(request, env) {
     return json({ answer: out || '모은 문장에서는 못 찾았어요' }, 200);
   } catch (e) {
     return json({ error: '답하기 실패', detail: String((e && e.message) || e) }, 502);
+  }
+}
+
+/* ── 유연 도서기록 임포트 — 붙여넣기/파일 텍스트 → 책 목록 (#1039) ──────────
+   shelf-import(#772)의 텍스트 형제. 임의 포맷(노션·엑셀 셀 복붙·서점 구매내역 표·메모)을 받아
+   책 항목만 구조화한다. callLLM(solar-pro3) 재사용 · 키 서버보관(Stack Lock). 저작권 가드:
+   서지 메타 + 본인 상태/별점/날짜만, 타인 서평·책 원문은 옮기지 않는다(flexible-import.md §2·§4.1). */
+const FLEXIBLE_PARSE_SYSTEM = '너는 임의 포맷의 도서 목록 텍스트(노션·엑셀 셀 복붙·서점 구매내역·메모 등)에서 책 항목만 구조화하는 추출기다. 각 책의 제목(title, 필수)과 저자(author)를, 그리고 텍스트에 분명히 드러나 있으면 상태(status: 읽음/읽는 중/읽고 싶음 중 하나)·별점(rating: 0.5~5.0 숫자)·날짜(date: 보이는 그대로의 문자열)를 함께 뽑는다. 형식은 오직 JSON 배열: [{"title":"제목","author":"저자","status":"읽음","rating":4.5,"date":"2024-01"}]. 규칙: (1) 책이 아닌 줄(머리말·합계·페이지수·가격·배송·UI·메뉴·카테고리·통계·서평 본문)은 모두 무시. (2) 불확실하면 제외 — 지어내지 말 것(제목이 분명한 책만). (3) status·rating·date 는 텍스트에 없으면 그 키를 생략(0 이나 빈 값을 넣지 말 것). (4) 타인의 서평·감상·책 속 문장 원문은 절대 옮기지 말 것 — 서지 메타데이터(제목·저자)와 본인 상태/별점/날짜만. (5) 같은 책은 한 번만. (6) 설명·코드펜스 없이 JSON 배열만 출력.';
+
+async function parseBooksProxy(request, env) {
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  let body;
+  try { body = await request.json(); } catch { return json({ error: 'invalid json' }, 400); }
+  // 붙여넣은 원문 — 상한 가드 32KB(클라도 동일 컷). 텍스트만 받는다(파일은 클라가 텍스트로 평탄화).
+  const text = String((body && body.text) || '').slice(0, 32 * 1024).trim();
+  if (!text) return json({ error: 'text 필요', empty: true }, 422);
+  // 키/설정 없으면 503 데모(무중단) — 클라가 비활성 안내 + 수동 추가 폴백.
+  if (!env.UPSTAGE_API_KEY || !env.LLM_BASE_URL || !env.LLM_MODEL) {
+    return json({ demo: true }, 503);
+  }
+  try {
+    const out = await callLLM({
+      messages: [
+        { role: 'system', content: FLEXIBLE_PARSE_SYSTEM },
+        { role: 'user', content: '다음 텍스트에서 책 목록을 JSON 배열로 추출:\n' + text },
+      ], env, maxTokens: 4000, temperature: 0.1,
+    });
+    const books = parseShelfBooks(out);   // 제목·저자·별점 + status·date 정규화(#1039 확장)
+    return json({ books, partial: books.length === 0 }, 200);
+  } catch (e) {
+    // LLM 실패 — 빈 목록 + partial(무중단). 클라가 "수동 추가" 폴백 안내.
+    return json({ books: [], partial: true, error: 'LLM 실패' }, 200);
   }
 }
 
