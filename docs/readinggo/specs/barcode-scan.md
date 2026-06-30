@@ -60,6 +60,7 @@ ISBN 해석 (§2.1)
 |---|---|
 | `BarcodeDetector` 미지원 (iOS Safari·구형) | 진입점 자체를 숨김(§5). 사용자는 평소처럼 텍스트 검색. |
 | 지원하나 `ean_13` 미포함 | 동일하게 숨김(`getSupportedFormats()` 확인). |
+| **네이티브 권한 선언 누락 (#1103)** | AndroidManifest `CAMERA` + iOS `NSCameraUsageDescription` 가 없으면 시스템이 권한 요청을 **띄우지 못한다**(증상: "권한 요청 자체를 안 함") → 둘 다 **선언 필수**. |
 | 카메라 권한 거부 | 명확한 안내 + "직접 검색하기" 버튼(검색 모달로 폴백). 무한 로딩 금지. |
 | `getUserMedia` 실패(HTTPS 아님·장치 없음) | 동일 폴백. (프로덕션은 `https://readinggo.hyuniverse.workers.dev` — secure context OK.) |
 | 검출은 됐으나 ISBN 13자리 아님(잡 바코드) | 무시하고 스캔 계속(토스트 스팸 금지). |
