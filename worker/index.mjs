@@ -1368,14 +1368,22 @@ async function backfillPages(env) {
     while (idx < todo.length && Date.now() - start < TIME_BUDGET_MS) {
       const b = todo[idx++];
       try {
+        // 1순위 Aladin itemPage → 없으면 Google Books pageCount 폴백(#1117 — 전자책·외서·Aladin 미보유 대응).
+        let pages = null;
         const lk = await aladinFetch(`${ALADIN}ItemLookUp.aspx?ttbkey=${KEY}&itemIdType=ISBN13&ItemId=${b.isbn13}&output=js&Version=20131101&OptResult=packing`);
-        const p = lk[0] && lk[0].subInfo && lk[0].subInfo.itemPage;
-        if (p && Number(p) > 1) {
+        const ap = lk[0] && lk[0].subInfo && lk[0].subInfo.itemPage;
+        if (ap && Number(ap) > 1) pages = Number(ap);
+        if (!pages) {
+          const gb = await googleBooksSearch(`isbn:${b.isbn13}`, 1, env);
+          const gp = gb[0] && gb[0].total_pages;
+          if (gp && Number(gp) > 1) pages = Number(gp);
+        }
+        if (pages) {
           // total_pages=is.null 가드 — 그 사이 다른 경로가 채웠으면 덮지 않음(멱등).
           await fetch(`${SB}/rest/v1/books?id=eq.${b.id}&total_pages=is.null`, {
             method: 'PATCH',
             headers: { ...sbAuth, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-            body: JSON.stringify({ total_pages: Number(p) }),
+            body: JSON.stringify({ total_pages: pages }),
           });
         }
       } catch (e) { /* skip */ }
@@ -1443,7 +1451,10 @@ async function existingIsbns(SB, SRK, list) {
 }
 
 async function upsertBook(SB, SRK, book) {
-  if (!book.isbn13) return;
+  // #1117: 진짜 ISBN-13(978/979)인 책만 카탈로그에 적재 — Aladin 묶음상품 K-id·ISBN-10·잡 id 차단.
+  // 세트("[세트] … 전2권")는 단일 쪽수가 없어 영구 total_pages=null + 검색 노이즈였다. 단일 chokepoint
+  // 라 검색·archive·seed 전 경로에 일괄 적용(개별 호출부의 truthy 체크보다 강함).
+  if (!/^97[89]\d{10}$/.test(book.isbn13 || '')) return;
   const row = { ...book, enriched_at: new Date().toISOString() };  // #489: 메타 보강 시각
   await fetch(`${SB}/rest/v1/books?on_conflict=isbn13`, {
     method: 'POST',

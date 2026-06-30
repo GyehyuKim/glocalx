@@ -10,6 +10,7 @@ const SRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const KEY = process.env.ALADIN_TTB_KEY;
 if (!SB || !SRK || !KEY) { console.error('env 누락 (SUPABASE_URL / SERVICE_ROLE_KEY / ALADIN_TTB_KEY)'); process.exit(1); }
 
+const GKEY = process.env.GOOGLE_BOOKS_API_KEY || '';
 const LIMIT = parseInt(process.env.BACKFILL_LIMIT || '0', 10) || 0;   // 0 = 전체
 const CONC = parseInt(process.env.BACKFILL_CONC || '3', 10);
 const DELAY = parseInt(process.env.BACKFILL_DELAY || '150', 10);
@@ -42,6 +43,17 @@ async function aladinPage(isbn) {
   return p ? Number(p) : null;
 }
 
+async function googlePage(isbn) {
+  // Aladin 미보유/쪽수없음 폴백 (#1117) — Google Books pageCount.
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}` + (GKEY ? `&key=${GKEY}` : '');
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    const v = (d.items && d.items[0] && d.items[0].volumeInfo) || {};
+    return v.pageCount ? Number(v.pageCount) : null;
+  } catch { return null; }
+}
+
 async function patchPages(id, pages) {
   // total_pages=is.null 가드 — 그 사이 다른 경로가 채웠으면 덮지 않음(멱등).
   const r = await fetch(`${SB}/rest/v1/books?id=eq.${id}&total_pages=is.null`, {
@@ -62,7 +74,8 @@ async function patchPages(id, pages) {
     while (idx < valid.length) {
       const b = valid[idx++];
       try {
-        const p = await aladinPage(b.isbn13);
+        let p = await aladinPage(b.isbn13);
+        if (!p) p = await googlePage(b.isbn13);   // Aladin 미보유/쪽수없음 → Google Books 폴백
         if (p && p > 1) { if (await patchPages(b.id, p)) filled++; else err++; }
         else nopage++;
       } catch (e) { err++; }

@@ -161,7 +161,7 @@ function NestView({ state, onCheckin, onOpenSearch }) {
         id: r.book_id || (r.book && r.book.id) || r.id, ubId: r.id,
         title: (r.book && r.book.title) || r.title || '', author: (r.book && r.book.author) || r.author || '',
         pub: (r.book && r.book.publisher) || '', cur: r.current_page || r.cur || 0,
-        total: (r.book && r.book.total_pages) || r.total || 1,
+        total: (r.book && r.book.total_pages) || r.total || 0,   // #1117: 미상은 0(가짜 1p 금지) — 소비처가 total>0 가드
         cover: (r.book && r.book.cover_url) || r.cover || '', fb: ['#9AA7B2', '#C7D0D8'],
       })));
     }).catch(() => {});
@@ -593,9 +593,10 @@ function NestView({ state, onCheckin, onOpenSearch }) {
             <p className="book-author">{[nestState.book.author, nestState.book.pub].map(x => (x || '').trim()).filter(Boolean).join(' · ')}</p>
             <div className="book-progress-row">
               <div className="book-progress">
-                <span style={{width: Math.min(100, Math.round(nestState.book.cur / nestState.book.total * 100)) + '%'}} />
+                <span style={{width: (nestState.book.total > 0 ? Math.min(100, Math.round(nestState.book.cur / nestState.book.total * 100)) : 0) + '%'}} />
               </div>
-              <span className="book-progress-num">{nestState.book.cur} / {nestState.book.total}p</span>
+              {/* #1117: 쪽수 미상(total=0)이면 "/ Np" 대신 현재 쪽만 — 가짜 "/ 1p"·100% 방지 */}
+              <span className="book-progress-num">{nestState.book.total > 0 ? `${nestState.book.cur} / ${nestState.book.total}p` : `${nestState.book.cur}p`}</span>
             </div>
           </div>
         </div>
