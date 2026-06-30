@@ -116,6 +116,37 @@ export default {
 //   github_issue_number IS NULL 인 문의를 PII 마스킹해 GitHub 이슈로. 성공 시 번호 기록(멱등).
 const GH_REPO = 'GyehyuKim/readinggo';
 const INQ_EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
+
+// 문의 LLM 정리·분류 (#1105, inquiry-sync.md §4.5) — 원문을 한 줄 제목·요약·분류로 정돈해
+//   이슈 가독성·트리아지를 높인다(예: #1104 앱 화면 복붙으로 의도 불명). callLLM(텍스트 프록시)
+//   재사용·키 서버보관. 실패/미설정/JSON 깨짐 시 null → 호출부가 원문만으로 폴백(graceful).
+//   환각 가드: 원문에 없는 사실 추가 금지. 원문(masked)은 호출부가 본문에 항상 별도 보존.
+const INQUIRY_CATEGORY_LABELS = { 버그: 'type:bug', 기능요청: 'type:feature', UX: 'type:ux', 문의: 'type:question', 기타: 'type:feedback' };
+const INQUIRY_TRIAGE_SYSTEM = '너는 오픈베타 앱의 사용자 문의를 운영자 트리아지용으로 정돈하는 분류기다. 입력은 사용자가 보낸 문의 원문(앱 화면 텍스트가 섞여 불명확할 수 있음)이다. 다음 형태의 JSON 객체 하나만 출력한다: {"title":"한 줄 제목","summary":"핵심 요약과 추정 의도","category":"버그"}. 규칙: (1) title 은 한국어 한 줄, 40자 이내, 무엇에 대한 문의인지 드러나게. 원문이 화면 텍스트 복붙이라 불명확하면 "[불명확]"로 시작. (2) summary 는 1~2문장으로 핵심과 사용자가 무엇을 원하는지(추정 의도)를 적되, 원문에 없는 사실을 지어내지 말 것. 불명확하면 "원문만으로는 의도 불명확"이라고 솔직히 적는다. (3) category 는 정확히 다음 중 하나: 버그, 기능요청, UX, 문의, 기타. (4) 개인정보(이름·전화번호·이메일)는 제목·요약에 옮기지 말 것. (5) 설명·코드펜스 없이 JSON 객체 하나만 출력.';
+
+async function triageInquiry(masked, env) {
+  try {
+    const out = await callLLM({
+      messages: [
+        { role: 'system', content: INQUIRY_TRIAGE_SYSTEM },
+        { role: 'user', content: '다음 문의를 정돈해 JSON 으로:\n' + masked },
+      ], env, maxTokens: 400, temperature: 0.2,
+    });
+    let t = String(out || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a < 0 || b <= a) return null;
+    const o = JSON.parse(t.slice(a, b + 1));
+    const title = stripMd(String(o.title || '')).replace(/\s+/g, ' ').trim().slice(0, 70);
+    const summary = stripMd(String(o.summary || '')).trim().slice(0, 600);
+    if (!title || !summary) return null;                 // 핵심 필드 비면 폴백
+    const cat = String(o.category || '').trim();
+    const category = INQUIRY_CATEGORY_LABELS[cat] ? cat : '기타';   // enum 밖이면 기타
+    return { title, summary, category, label: INQUIRY_CATEGORY_LABELS[category] };
+  } catch (e) {
+    return null;   // env 미설정·HTTP 실패·JSON 파싱 실패 — 전부 원문 폴백
+  }
+}
+
 async function syncInquiries(env, ctx) {
   if (!env.GITHUB_TOKEN || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return; // 미구성 → no-op
   const sb = (path, init) => fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
@@ -136,8 +167,15 @@ async function syncInquiries(env, ctx) {
     const key = masked.slice(0, 120);
     if (seen.has(key)) continue;                  // 배치 내 중복 — 하나만
     seen.add(key);
-    const title = (masked.length > 50 ? masked.slice(0, 50) + '…' : masked).replace(/\s+/g, ' ');
-    const body = `> 오픈베타 사용자 문의 자동 등록 (PII 마스킹됨)\n\n**문의 내용**\n${masked}\n\n---\n- app_version: \`${q.app_version || '-'}\`\n- 접수: \`${q.created_at}\`\n- inquiry: \`${q.id}\``;
+    // LLM 정리·분류(#1105). 실패/미설정 시 null → 원문만으로 폴백. 원문(masked)은 두 경로 모두 보존.
+    const triage = await triageInquiry(masked, env);
+    const fallbackTitle = (masked.length > 50 ? masked.slice(0, 50) + '…' : masked).replace(/\s+/g, ' ');
+    const title = triage ? triage.title : fallbackTitle;
+    const meta = `- app_version: \`${q.app_version || '-'}\`\n- 접수: \`${q.created_at}\`\n- inquiry: \`${q.id}\``;
+    const body = triage
+      ? `> 오픈베타 사용자 문의 자동 등록 (LLM 정리·분류 · 원문 보존 · PII 마스킹됨)\n\n**요약·추정 의도**\n${triage.summary}\n\n**분류**: ${triage.category}\n\n---\n**문의 원문 (마스킹됨)**\n${masked}\n\n---\n${meta}`
+      : `> 오픈베타 사용자 문의 자동 등록 (PII 마스킹됨)\n\n**문의 내용**\n${masked}\n\n---\n${meta}`;
+    const labels = ['source:beta-inquiry', triage ? triage.label : 'type:feedback'];
     try {
       const gh = await fetch(`https://api.github.com/repos/${GH_REPO}/issues`, {
         method: 'POST',
@@ -145,7 +183,7 @@ async function syncInquiries(env, ctx) {
           Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json',
           'Content-Type': 'application/json', 'User-Agent': 'readinggo-worker',
         },
-        body: JSON.stringify({ title, body, labels: ['source:beta-inquiry', 'type:feedback'] }),
+        body: JSON.stringify({ title, body, labels }),
       });
       if (gh.status !== 201) continue;            // 실패 → 컬럼 유지, 다음 런 재시도
       const issue = await gh.json();
